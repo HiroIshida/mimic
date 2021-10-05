@@ -3,7 +3,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 import numpy.typing as npt
-from typing import List, Dict
+from typing import Dict
+from typing import List
+from typing import Optional
 
 from torch.functional import Tensor
 
@@ -17,7 +19,6 @@ class AbstractDataSequence(ABC):
 
 class AbstractDataChunk(ABC):
     keys : List[type] = [] # override this
-    n_intact : int
     seqdict_list : List[Dict[type, AbstractDataSequence]]
 
     def __init__(self):
@@ -55,20 +56,23 @@ class CommandDataChunk(AbstractDataChunk):
         super()._push_epoch([cmdseq])
 
 class ImageDataSequence(AbstractDataSequence):
-    encoder : nn.Module
-    def __init__(self, data: npt.ArrayLike, encoder : nn.Module):
+    encoder : Optional[nn.Module] = None
+    def __init__(self, data: npt.ArrayLike, encoder : Optional[nn.Module] = None):
         super().__init__(data)
         self.encoder = encoder
 
     def to_featureseq(self) -> torch.Tensor:
         data_torch = torch.from_numpy(self.data).float()
-        encoded = self.encoder(data_torch)
-        return encoded
+        if self.encoder:
+            out = self.encoder(data_torch)
+        else:
+            out = data_torch
+        return out
 
 class ImageDataChunk(AbstractDataChunk):
     keys = [ImageDataSequence]
-    encoder : nn.Module
-    def __init__(self, encoder):
+    encoder : Optional[nn.Module] = None
+    def __init__(self, encoder: Optional[nn.Module] = None):
         super().__init__()
         self.encoder = encoder
 
