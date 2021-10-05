@@ -26,7 +26,10 @@ class AbstractDataChunk(ABC):
     def __init__(self):
         self.seqdict_list = []
 
-    def push_epoch(self, seqs :List[AbstractDataSequence]):
+    @abstractmethod
+    def push_epoch(self, seqs) -> None: ...
+
+    def _push_epoch(self, seqs :List[AbstractDataSequence]) -> None:
         assert set(self.keys) == set([type(e) for e in seqs])
         seqdict : Dict[type, AbstractDataSequence] = {}
         for seq in seqs:
@@ -46,6 +49,6 @@ class AbstractDataChunk(ABC):
 
 class CommandDataChunk(AbstractDataChunk):
     keys = [CommandDataSequence]
-    def push_epoch(self, seq: npt.ArrayLike):
+    def push_epoch(self, seq: npt.ArrayLike) -> None:
         cmdseq = CommandDataSequence(seq)
-        super().push_epoch([cmdseq])
+        super()._push_epoch([cmdseq])

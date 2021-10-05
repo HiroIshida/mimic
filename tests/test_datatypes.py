@@ -3,7 +3,7 @@ import numpy as np
 
 from mimic.datatype import CommandDataChunk
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def cmd_datachunk():
     chunk = CommandDataChunk()
     for i in range(10):
