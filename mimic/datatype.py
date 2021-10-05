@@ -63,10 +63,7 @@ class ImageDataSequence(AbstractDataSequence):
 
     def to_featureseq(self) -> torch.Tensor:
         data_torch = torch.from_numpy(self.data).float()
-        if self.encoder:
-            out = self.encoder(data_torch)
-        else:
-            out = data_torch
+        out = self.encoder(data_torch).detach() if self.encoder else data_torch
         return out
 
 class ImageDataChunk(AbstractDataChunk):
@@ -80,3 +77,7 @@ class ImageDataChunk(AbstractDataChunk):
         # TODO check if pil image type
         imgseq = ImageDataSequence(seq, self.encoder)
         super()._push_epoch([imgseq])
+
+    @property
+    def is_with_encode(self):
+        return (self.encoder != None)
