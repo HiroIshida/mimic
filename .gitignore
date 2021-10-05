@@ -5,6 +5,7 @@ tags
 *.pyc
 /__pycache__
 /.mypy_cache
+/.pytest_cache
 
 # Distribution / packaging
 .Python

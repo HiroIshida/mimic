@@ -6,36 +6,46 @@ from typing import List, Dict
 
 from torch.functional import Tensor
 
-class DataSequence(ABC):
+class AbstractDataSequence(ABC):
     data : npt.ArrayLike
-    def __init__(self, data):
+    def __init__(self, data :npt.ArrayLike):
         self.data = data
 
     @abstractmethod
     def to_featureseq(self) -> torch.Tensor: ...
 
-class CommandDataSequence(DataSequence):
+class CommandDataSequence(AbstractDataSequence):
     def to_featureseq(self):
         return torch.from_numpy(self.data)
 
-class DataChunk:
+class AbstractDataChunk(ABC):
+    keys : List[type] = [] # override this
     n_intact : int
-    keys : List[type]
-    seqdict_list : List[Dict[type, DataSequence]]
+    seqdict_list : List[Dict[type, AbstractDataSequence]]
 
     def __init__(self):
         self.seqdict_list = []
 
-    def push_epoch(self, seqs :List[DataSequence]):
-        seqdict : Dict[type, DataSequence] = {}
+    def push_epoch(self, seqs :List[AbstractDataSequence]):
+        assert set(self.keys) == set([type(e) for e in seqs])
+        seqdict : Dict[type, AbstractDataSequence] = {}
         for seq in seqs:
             datatype = type(seq)
             seqdict[datatype] = seq
+            self.seqdict_list.append(seqdict)
 
     def to_featureseq_list(self) -> List[torch.Tensor]:
-        # a default converter method
+        """
+        each Tensor in return values is of the shape of (n_seq, n_feature) 
+        """
         seqtorch_list = []
         for seqdict in self.seqdict_list:
             seqtorch = torch.cat([seqdict[key].to_featureseq() for key in self.keys])
             seqtorch_list.append(seqtorch)
         return seqtorch_list
+
+class CommandDataChunk(AbstractDataChunk):
+    keys = [CommandDataSequence]
+    def push_epoch(self, seq: npt.ArrayLike):
+        cmdseq = CommandDataSequence(seq)
+        super().push_epoch([cmdseq])
