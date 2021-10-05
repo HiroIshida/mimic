@@ -27,6 +27,7 @@ jobs:
             - name: pip install pytest and mypy
               run: |
                   pip3 install pytest mypy
+                  pip3 install pytest 
 
             - name: Run mypy
               run: mypy .
