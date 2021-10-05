@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import torch
+import torch.nn as nn
 import numpy as np
 import numpy.typing as npt
 from typing import List, Dict
@@ -13,10 +14,6 @@ class AbstractDataSequence(ABC):
 
     @abstractmethod
     def to_featureseq(self) -> torch.Tensor: ...
-
-class CommandDataSequence(AbstractDataSequence):
-    def to_featureseq(self):
-        return torch.from_numpy(self.data)
 
 class AbstractDataChunk(ABC):
     keys : List[type] = [] # override this
@@ -47,8 +44,35 @@ class AbstractDataChunk(ABC):
             seqtorch_list.append(seqtorch)
         return seqtorch_list
 
+class CommandDataSequence(AbstractDataSequence):
+    def to_featureseq(self):
+        return torch.from_numpy(self.data).float()
+
 class CommandDataChunk(AbstractDataChunk):
     keys = [CommandDataSequence]
     def push_epoch(self, seq: npt.ArrayLike) -> None:
         cmdseq = CommandDataSequence(seq)
         super()._push_epoch([cmdseq])
+
+class ImageDataSequence(AbstractDataSequence):
+    encoder : nn.Module
+    def __init__(self, data: npt.ArrayLike, encoder : nn.Module):
+        super().__init__(data)
+        self.encoder = encoder
+
+    def to_featureseq(self) -> torch.Tensor:
+        data_torch = torch.from_numpy(self.data).float()
+        encoded = self.encoder(data_torch)
+        return encoded
+
+class ImageDataChunk(AbstractDataChunk):
+    keys = [ImageDataSequence]
+    encoder : nn.Module
+    def __init__(self, encoder):
+        super().__init__()
+        self.encoder = encoder
+
+    def push_epoch(self, seq: npt.ArrayLike) -> None:
+        # TODO check if pil image type
+        imgseq = ImageDataSequence(seq, self.encoder)
+        super()._push_epoch([imgseq])
