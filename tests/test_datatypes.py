@@ -1,3 +1,4 @@
+import hashlib
 import pytest
 import numpy as np
 import torch
@@ -13,6 +14,10 @@ def cmd_datachunk():
         seq = np.zeros((20, 7))
         chunk.push_epoch(seq)
     return chunk
+
+def test_dump_load(cmd_datachunk):
+    cmd_datachunk.dump("test")
+    chunk = CommandDataChunk.load("test")
 
 def test_featureseq_list_generation_pipeline(cmd_datachunk):
     fslist = cmd_datachunk.to_featureseq_list()

@@ -9,6 +9,9 @@ from typing import Optional
 
 from torch.functional import Tensor
 
+from mimic.file import dump_pickled_data
+from mimic.file import load_pickled_data
+
 class AbstractDataSequence(ABC):
     data : npt.ArrayLike
     def __init__(self, data :npt.ArrayLike):
@@ -44,6 +47,13 @@ class AbstractDataChunk(ABC):
             seqtorch = torch.cat([seqdict[key].to_featureseq() for key in self.keys])
             seqtorch_list.append(seqtorch)
         return seqtorch_list
+
+    @classmethod
+    def load(cls, project_name: str) -> 'AbstractDataChunk':
+        return load_pickled_data(project_name, cls)
+
+    def dump(self, project_name: str) -> None:
+        dump_pickled_data(self, project_name, self.__class__)
 
 class CommandDataSequence(AbstractDataSequence):
     def to_featureseq(self):
