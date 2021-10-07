@@ -30,7 +30,8 @@ class AbstractAutoEncoder(AbstractEncoderDecoder):
     def loss(self, sample : torch.Tensor) -> Dict[str, torch.Tensor]:
         f_loss = nn.MSELoss()
         reconstructed = self.forward(sample)
-        return {'reconstruction': reconstructed}
+        loss = f_loss(sample, reconstructed)
+        return {'reconstruction': loss}
 
 class ImageAutoEncoder(AbstractAutoEncoder):
     def _create_layers(self, **kwargs):

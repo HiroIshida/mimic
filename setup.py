@@ -5,7 +5,8 @@ setup_requires = []
 
 install_requires = [
         "numpy",
-        "torch"
+        "torch",
+        "tqdm",
         ]
 
 setup(

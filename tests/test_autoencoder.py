@@ -13,4 +13,5 @@ def test_image_auto_encoder():
 
         reconstructed = ae(sample)
         assert reconstructed.shape == sample.shape
-        ae.loss(sample)
+        loss = ae.loss(sample)
+        assert len(list(loss.values())) == 1

@@ -17,8 +17,8 @@ class ReconstructionDataset(Dataset):
         data = torch.reshape(tmp, (-1, n_channel, n_pixel1, n_pixel2))
         return ReconstructionDataset(data)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
 
-    def __getitem__(self, idx):
-        self.data[idx]
+    def __getitem__(self, idx) -> torch.Tensor:
+        return self.data[idx]
