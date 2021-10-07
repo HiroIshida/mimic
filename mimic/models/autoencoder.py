@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
-from typing import Any
+from typing import Dict
+
+from .common import _Model
 
 class Reshape(nn.Module):
     def __init__(self, *args):
@@ -11,37 +13,24 @@ class Reshape(nn.Module):
     def forward(self, x):
         return x.view(self.shape)
 
-class AbstractEncoderDecoder(ABC, nn.Module):
+class AbstractEncoderDecoder(_Model, ABC):
     encoder : nn.Module
     decoder : nn.Module
     n_bottleneck : int
-    device : torch.device
 
     def __init__(self, n_bottleneck, device, **kwargs):
-        nn.Module.__init__(self)
+        _Model.__init__(self, device)
         self.n_bottleneck = n_bottleneck
-        self.device = device
         self._create_layers(**kwargs)
-
-    @abstractmethod
-    def _create_layers(self, **kwargs) -> None: ...
-
-    @abstractmethod
-    def _loss(self, sample : Any) -> torch.Tensor: ...
-
-    def loss(self, sample : Any) -> torch.Tensor:
-        sample = sample.to(self.device)
-        loss = self._loss(sample)
-        return loss
 
     def forward(self, inp : torch.Tensor) -> torch.Tensor:
         return self.decoder(self.encoder(inp))
 
 class AbstractAutoEncoder(AbstractEncoderDecoder):
-    def _loss(self, sample : torch.Tensor) -> torch.Tensor:
+    def loss(self, sample : torch.Tensor) -> Dict[str, torch.Tensor]:
         f_loss = nn.MSELoss()
         reconstructed = self.forward(sample)
-        return f_loss(reconstructed, sample)
+        return {'reconstruction': reconstructed}
 
 class ImageAutoEncoder(AbstractAutoEncoder):
     def _create_layers(self, **kwargs):
