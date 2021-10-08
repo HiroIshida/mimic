@@ -7,25 +7,24 @@ from typing import List
 from typing import NewType
 
 LossDict = NewType('LossDict', Dict[str, torch.Tensor])
-LossDictNoGrad = NewType('LossDictNoGrad', Dict[str, torch.Tensor])
+LossDictFloat = NewType('LossDictFloat', Dict[str, float])
 
-def detach_clone(ld: LossDict) -> LossDictNoGrad:
-    ld_new = LossDictNoGrad({})
+def to_scalar_values(ld: LossDict) -> LossDictFloat:
+    ld_new = LossDictFloat({})
     for key in ld.keys():
-        ld_new[key] = ld[key].detach().clone()
+        ld_new[key] = float(ld[key].detach().item())
     return ld_new
 
-def sum_loss_dict(loss_dict_list: List[LossDictNoGrad]) -> LossDictNoGrad:
-    out = LossDict({})
+def sum_loss_dict(loss_dict_list: List[LossDictFloat]) -> LossDictFloat:
+    out = LossDictFloat({})
     keys = loss_dict_list[0].keys()
     for loss_dict in loss_dict_list:
         for key in keys:
-            assert loss_dict[key].requires_grad == False # check if detached
             if key in out:
                 out[key] += loss_dict[key]
             else:
                 out[key] = loss_dict[key]
-    return LossDictNoGrad(out)
+    return out
 
 class _Model(nn.Module, ABC):
     device : torch.device
