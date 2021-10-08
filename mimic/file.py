@@ -2,6 +2,7 @@ import os
 import os.path as osp
 import pickle
 from typing import Any
+from typing import Optional
 
 def get_data_dir() -> str:
     dirname = osp.expanduser('~/.mimic')
@@ -21,7 +22,10 @@ def load_pickled_data(project_name: str, cls: type) -> Any:
         data = pickle.load(f)
     return data
 
-def dump_pickled_data(data: Any, project_name: str, cls: type) -> None:
-    filename = osp.join(get_project_dir(project_name), cls.__name__)
-    with open(filename, 'wb') as f:
+def dump_pickled_data(data: Any, project_name: str, post_fix: Optional[str] = None) -> None:
+    filename = data.__class__.__name__
+    if post_fix:
+        filename += ('_' + post_fix)
+    wholename = osp.join(get_project_dir(project_name), filename)
+    with open(wholename, 'wb') as f:
         pickle.dump(data, f)
