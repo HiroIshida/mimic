@@ -10,5 +10,6 @@ def test_train(reconstruction_dataset):
     ae = ImageAutoEncoder(16, torch.device('cpu'), image_shape=(3, 28, 28))
     n_total = len(reconstruction_dataset)
     train_set, val_set =  random_split(reconstruction_dataset, [n_total-2, 2])
+    tcache = TrainCache(project_name='test')
     config = Config(n_epoch=2)
-    train(ae, train_set, val_set, config=config)
+    train(ae, train_set, val_set, tcache=tcache, config=config)
