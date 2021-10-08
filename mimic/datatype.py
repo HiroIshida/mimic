@@ -6,6 +6,8 @@ import numpy.typing as npt
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
+from typing import TypeVar
 
 from torch.functional import Tensor
 
@@ -20,6 +22,7 @@ class AbstractDataSequence(ABC):
     @abstractmethod
     def to_featureseq(self) -> torch.Tensor: ...
 
+ChunkT = TypeVar('ChunkT', bound='AbstractDataChunk')
 class AbstractDataChunk(ABC):
     keys : List[type] = [] # override this
     seqdict_list : List[Dict[type, AbstractDataSequence]]
@@ -49,7 +52,7 @@ class AbstractDataChunk(ABC):
         return seqtorch_list
 
     @classmethod
-    def load(cls, project_name: str) -> 'AbstractDataChunk':
+    def load(cls: Type[ChunkT], project_name: str) -> ChunkT:
         return load_pickled_data(project_name, cls)
 
     def dump(self, project_name: str) -> None:
