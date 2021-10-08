@@ -1,6 +1,7 @@
 import sys
 import torch
 from mimic.models.common import LossDict
+from mimic.models.common import LossDictNoGrad
 from mimic.models.common import sum_loss_dict
 from mimic.models.common import detach_clone
 
@@ -26,8 +27,8 @@ def test_sum_loss_dict():
     loss_a2 = torch.tensor([3.0])
     loss_b2 = torch.tensor([4.0])
 
-    dict1 = LossDict({'lossa': loss_a1, 'lossb': loss_b1})
-    dict2 = LossDict({'lossa': loss_a2, 'lossb': loss_b2})
+    dict1 = LossDictNoGrad({'lossa': loss_a1, 'lossb': loss_b1})
+    dict2 = LossDictNoGrad({'lossa': loss_a2, 'lossb': loss_b2})
 
     dict_sum = sum_loss_dict([dict1, dict2])
     assert len(list(dict_sum.keys())) == 2
