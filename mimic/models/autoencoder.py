@@ -4,6 +4,7 @@ import torch.nn as nn
 from typing import Dict
 
 from .common import _Model
+from .common import LossDict
 
 class Reshape(nn.Module):
     def __init__(self, *args):
@@ -27,11 +28,11 @@ class AbstractEncoderDecoder(_Model, ABC):
         return self.decoder(self.encoder(inp))
 
 class AbstractAutoEncoder(AbstractEncoderDecoder):
-    def loss(self, sample : torch.Tensor) -> Dict[str, torch.Tensor]:
+    def loss(self, sample : torch.Tensor) -> LossDict:
         f_loss = nn.MSELoss()
         reconstructed = self.forward(sample)
         loss = f_loss(sample, reconstructed)
-        return {'reconstruction': loss}
+        return LossDict({'reconstruction': loss})
 
 class ImageAutoEncoder(AbstractAutoEncoder):
     def _create_layers(self, **kwargs):
