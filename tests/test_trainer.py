@@ -3,7 +3,7 @@ from torch.utils.data import random_split
 from mimic.models import ImageAutoEncoder
 from mimic.trainer import Config
 from mimic.trainer import train
-from mimic.trainer import TrainCallback
+from mimic.trainer import TrainCache
 from test_dataset import reconstruction_dataset
 
 def test_train(reconstruction_dataset):

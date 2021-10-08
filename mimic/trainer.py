@@ -17,6 +17,7 @@ from mimic.models.common import _Model
 from mimic.models.common import LossDictFloat
 from mimic.models.common import to_scalar_values
 from mimic.models.common import sum_loss_dict
+from mimic.file import dump_pickled_data
 
 @dataclass
 class Config:
@@ -24,12 +25,14 @@ class Config:
     learning_rate : float = 0.001
     n_epoch : int = 1000
 
-class TrainCallback:
+class TrainCache:
+    project_name: str
     train_loss_dict_seq: List[LossDictFloat]
     validate_loss_dict_seq: List[LossDictFloat]
     best_model: _Model
 
-    def __init__(self):
+    def __init__(self, project_name: str):
+        self.project_name = project_name
         self.train_loss_dict_seq = []
         self.validate_loss_dict_seq = []
 
@@ -43,12 +46,13 @@ class TrainCallback:
         wholes = [dic['whole'] for dic in self.validate_loss_dict_seq]
         if(wholes[-1] == min(wholes)):
             best_model = model
+        dump_pickled_data(self, self.project_name)
 
 def train(
         model: _Model, 
         dataset_train: Dataset,
         dataset_validate: Dataset,
-        callback: TrainCallback = TrainCallback(),
+        tcache: TrainCache,
         config: Config = Config()):
 
     train_loader = DataLoader(
@@ -71,7 +75,7 @@ def train(
             loss_dict['whole'] = loss
             train_ld_list.append(to_scalar_values(loss_dict))
         train_ld_sum = sum_loss_dict(train_ld_list)
-        callback.on_train_loss(train_ld_sum, epoch)
+        tcache.on_train_loss(train_ld_sum, epoch)
 
         model.eval()
         validate_ld_list : List[LossDictFloat] = []
@@ -81,6 +85,6 @@ def train(
             loss_dict['whole'] = reduce(operator.add, loss_dict.values())
             validate_ld_list.append(to_scalar_values(loss_dict))
         validate_ld_sum = sum_loss_dict(validate_ld_list)
-        callback.on_validate_loss(validate_ld_sum, epoch)
+        tcache.on_validate_loss(validate_ld_sum, epoch)
 
-        callback.on_endof_epoch(model, epoch)
+        tcache.on_endof_epoch(model, epoch)

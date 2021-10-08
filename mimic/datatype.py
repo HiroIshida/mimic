@@ -56,7 +56,7 @@ class AbstractDataChunk(ABC):
         return load_pickled_data(project_name, cls)
 
     def dump(self, project_name: str) -> None:
-        dump_pickled_data(self, project_name, self.__class__)
+        dump_pickled_data(self, project_name)
 
 class CommandDataSequence(AbstractDataSequence):
     def to_featureseq(self):
