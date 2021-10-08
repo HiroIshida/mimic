@@ -7,9 +7,11 @@ from typing import List
 from typing import NewType
 
 LossDict = NewType('LossDict', Dict[str, torch.Tensor])
-def detach(ld: LossDict) -> None:
+def detach_clone(ld: LossDict) -> LossDict:
+    ld_new = LossDict({})
     for key in ld.keys():
-        ld[key] = ld[key].detach()
+        ld_new[key] = ld[key].detach().clone()
+    return ld_new
 
 def sum_loss_dict(loss_dict_list: List[LossDict]) -> LossDict:
     out = LossDict({})
