@@ -22,7 +22,7 @@ jobs:
 
             - name: pip install this package
               run: |
-                  pip3 install . 
+                  pip3 install -e .[test]
 
             - name: pip install pytest and mypy
               run: |
@@ -35,4 +35,4 @@ jobs:
               run: pytest -v tests
 
             - name: Run pipeline
-              run: bash ./examples/run.sh
+              run: bash ./example/run.sh

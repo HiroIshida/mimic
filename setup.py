@@ -10,12 +10,9 @@ install_requires = [
         ]
 
 # for running demo
-extra_require = [
-        "pybullet",
-        "tinyfk",
-        "pybullet",
-        "moviepy"
-        ]
+extras_require = {
+        'test': ["pybullet", "tinyfk", "pybullet", "moviepy"]
+        }
 
 setup(
     name='mimic',
@@ -23,6 +20,6 @@ setup(
     description='',
     license=license,
     install_requires=install_requires,
-    extra_require=extra_require,
+    extras_require=extras_require,
     packages=find_packages(exclude=('tests', 'docs'))
 )
