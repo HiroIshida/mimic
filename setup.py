@@ -9,11 +9,20 @@ install_requires = [
         "tqdm",
         ]
 
+# for running demo
+extra_require = [
+        "pybullet",
+        "tinyfk",
+        "pybullet",
+        "moviepy"
+        ]
+
 setup(
     name='mimic',
     version='0.0.1',
     description='',
     license=license,
     install_requires=install_requires,
+    extra_require=extra_require,
     packages=find_packages(exclude=('tests', 'docs'))
 )

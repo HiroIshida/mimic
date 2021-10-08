@@ -33,3 +33,6 @@ jobs:
 
             - name: Run Pytest
               run: pytest -v tests
+
+            - name: Run pipeline
+              run: bash ./examples/run.sh

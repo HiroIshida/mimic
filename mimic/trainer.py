@@ -46,9 +46,9 @@ class TrainCallback:
 
 def train(
         model: _Model, 
-        callback: TrainCallback,
         dataset_train: Dataset,
         dataset_validate: Dataset,
+        callback: TrainCallback = TrainCallback(),
         config: Config = Config()):
 
     train_loader = DataLoader(

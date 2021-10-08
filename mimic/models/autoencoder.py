@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
+from torch._C import device
 from typing import Dict
 
 from .common import _Model
@@ -19,7 +20,7 @@ class AbstractEncoderDecoder(_Model, ABC):
     decoder : nn.Module
     n_bottleneck : int
 
-    def __init__(self, n_bottleneck, device, **kwargs):
+    def __init__(self, n_bottleneck: int, device: device, **kwargs):
         _Model.__init__(self, device)
         self.n_bottleneck = n_bottleneck
         self._create_layers(**kwargs)

@@ -11,4 +11,4 @@ def test_train(reconstruction_dataset):
     n_total = len(reconstruction_dataset)
     train_set, val_set =  random_split(reconstruction_dataset, [n_total-2, 2])
     config = Config(n_epoch=2)
-    train(ae, TrainCallback(), train_set, val_set, config)
+    train(ae, train_set, val_set, config=config)
