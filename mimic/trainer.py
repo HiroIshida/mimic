@@ -51,14 +51,14 @@ class TrainCache:
 
     @classmethod
     def load(cls, project_name: str, model_type: type) -> 'TrainCache':
-        load_pickled_data(project_name, cls, model_type.__name__)
+        return load_pickled_data(project_name, cls, model_type.__name__)
 
 def train(
         model: _Model, 
         dataset_train: Dataset,
         dataset_validate: Dataset,
         tcache: TrainCache,
-        config: Config = Config()):
+        config: Config = Config()) -> None:
 
     train_loader = DataLoader(
             dataset=dataset_train, batch_size=config.batch_size, shuffle=True)
