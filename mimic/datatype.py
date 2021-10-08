@@ -8,6 +8,7 @@ from typing import List
 from typing import Optional
 from typing import Type
 from typing import TypeVar
+from typing import NewType
 
 from torch.functional import Tensor
 
@@ -76,7 +77,7 @@ class ImageDataSequence(AbstractDataSequence):
 
     def to_featureseq(self) -> torch.Tensor:
         data_torch = torch.from_numpy(self.data).float()
-        out = self.encoder(data_torch).detach() if self.encoder else data_torch
+        out = self.encoder(data_torch).detach().clone() if self.encoder else data_torch
         return out
 
 class ImageDataChunk(AbstractDataChunk):

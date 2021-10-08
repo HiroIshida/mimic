@@ -4,21 +4,24 @@ from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.models import ImageAutoEncoder
 from mimic.dataset import ReconstructionDataset
+from mimic.dataset import AutoRegressiveDataset
 import pytest
 
-@pytest.fixture(scope='session')
-def reconstruction_dataset():
-    n_seq = 100
-    n_channel = 3
-    n_pixel = 28
-    ae = ImageAutoEncoder(16, torch.device('cpu'), image_shape=(n_channel, n_pixel, n_pixel))
-    chunk = ImageDataChunk()
-    for i in range(10):
-        imgseq = np.random.randn(n_seq, n_channel, n_pixel, n_pixel)
-        chunk.push_epoch(imgseq)
-    dataset = ReconstructionDataset.from_chunk(chunk)
-    return dataset
+from test_datatypes import cmd_datachunk
+from test_datatypes import image_datachunk
+from test_datatypes import image_datachunk_with_encoder
 
-def test_reconstruction_dataset_pipeline(reconstruction_dataset):
-    dataset = reconstruction_dataset
+def test_reconstruction_dataset_pipeline(image_datachunk):
+    dataset = ReconstructionDataset.from_chunk(image_datachunk)
     assert list(dataset.data.shape) == [10 * 100, 3, 28, 28]
+
+def test_autoregressive_dataset_pipeline1(image_datachunk_with_encoder):
+    dataset = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
+    for seq in dataset.data:
+        assert list(seq.shape) == [100, 16]
+
+def test_autoregressive_dataset_pipeline2(cmd_datachunk):
+    dataset = AutoRegressiveDataset.from_chunk(cmd_datachunk)
+    for seq in dataset.data:
+        assert list(seq.shape) == [20, 7]
+
