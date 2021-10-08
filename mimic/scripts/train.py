@@ -1,6 +1,6 @@
 import argparse
-import torch
 
+import torch
 from mimic.datatype import ImageDataChunk
 from mimic.dataset import ReconstructionDataset
 from mimic.models import ImageAutoEncoder
@@ -8,6 +8,7 @@ from mimic.trainer import train
 from mimic.trainer import Config
 from mimic.trainer import TrainCache
 from mimic.scripts.utils import split_with_ratio
+from mimic.scripts.utils import create_default_logger
 
 def train_auto_encoder(project_name: str, n_bottleneck: int, config: Config) -> None:
     chunk = ImageDataChunk.load(project_name)
@@ -28,6 +29,7 @@ if __name__=='__main__':
     project_name = args.pn
     n_epoch = args.n
     n_bottleneck = args.bottleneck
+
+    logger = create_default_logger(project_name)
     config = Config(n_epoch=n_epoch)
     train_auto_encoder(project_name, n_bottleneck, config)
-

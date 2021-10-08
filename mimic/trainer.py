@@ -12,6 +12,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 import logging
+logger = logging.getLogger(__name__)
 
 from mimic.models.common import _Model
 from mimic.models.common import LossDictFloat
@@ -37,16 +38,23 @@ class TrainCache:
         self.train_loss_dict_seq = []
         self.validate_loss_dict_seq = []
 
+    def on_startof_epoch(self, epoch: int):
+        logger.info('new epoch: {}'.format(epoch))
+
     def on_train_loss(self, loss_dict: LossDictFloat, epoch: int):
         self.train_loss_dict_seq.append(loss_dict)
+        logger.info('train_total_loss: {}'.format(loss_dict['total']))
 
     def on_validate_loss(self, loss_dict: LossDictFloat, epoch: int):
         self.validate_loss_dict_seq.append(loss_dict)
+        logger.info('validate_total_loss: {}'.format(loss_dict['total']))
 
     def on_endof_epoch(self, model: _Model, epoch: int):
-        wholes = [dic['whole'] for dic in self.validate_loss_dict_seq]
-        if(wholes[-1] == min(wholes)):
+        totals = [dic['total'] for dic in self.validate_loss_dict_seq]
+        min_loss = min(totals)
+        if(totals[-1] == min_loss):
             best_model = model
+            logger.info('model is updated')
         dump_pickled_data(self, self.project_name, model.__class__.__name__)
 
     @classmethod
@@ -77,7 +85,7 @@ def train(
             loss_dict = model.loss(samples)
             loss :torch.Tensor = reduce(operator.add, loss_dict.values())
             loss.backward()
-            loss_dict['whole'] = loss
+            loss_dict['total'] = loss
             train_ld_list.append(to_scalar_values(loss_dict))
         train_ld_sum = sum_loss_dict(train_ld_list)
         tcache.on_train_loss(train_ld_sum, epoch)
@@ -87,7 +95,7 @@ def train(
         for samples in validate_loader:
             samples.to(model.device)
             loss_dict = model.loss(samples)
-            loss_dict['whole'] = reduce(operator.add, loss_dict.values())
+            loss_dict['total'] = reduce(operator.add, loss_dict.values())
             validate_ld_list.append(to_scalar_values(loss_dict))
         validate_ld_sum = sum_loss_dict(validate_ld_list)
         tcache.on_validate_loss(validate_ld_sum, epoch)
