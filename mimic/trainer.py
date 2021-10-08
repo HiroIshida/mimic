@@ -14,8 +14,8 @@ from typing import Optional
 import logging
 
 from mimic.models.common import _Model
-from mimic.models.common import LossDictNoGrad
-from mimic.models.common import detach_clone
+from mimic.models.common import LossDictFloat
+from mimic.models.common import to_scalar_values
 from mimic.models.common import sum_loss_dict
 
 @dataclass
@@ -25,14 +25,24 @@ class Config:
     n_epoch : int = 1000
 
 class TrainCallback:
-    def on_train_loss(self, loss_dict: LossDictNoGrad, epoch: int):
-        pass # add logger
+    train_loss_dict_seq: List[LossDictFloat]
+    validate_loss_dict_seq: List[LossDictFloat]
+    best_model: _Model
 
-    def on_validate_loss(self, loss_dict: LossDictNoGrad, epoch: int):
-        pass # add logger
+    def __init__(self):
+        self.train_loss_dict_seq = []
+        self.validate_loss_dict_seq = []
+
+    def on_train_loss(self, loss_dict: LossDictFloat, epoch: int):
+        self.train_loss_dict_seq.append(loss_dict)
+
+    def on_validate_loss(self, loss_dict: LossDictFloat, epoch: int):
+        self.validate_loss_dict_seq.append(loss_dict)
 
     def on_endof_epoch(self, model: _Model, epoch: int):
-        pass
+        wholes = [dic['whole'] for dic in self.validate_loss_dict_seq]
+        if(wholes[-1] == min(wholes)):
+            best_model = model
 
 def train(
         model: _Model, 
@@ -51,23 +61,25 @@ def train(
     for epoch in tqdm(range(config.n_epoch)):
 
         model.train()
-        train_ld_list : List[LossDictNoGrad] = []
+        train_ld_list : List[LossDictFloat] = []
         for samples in train_loader:
             optimizer.zero_grad()
             samples.to(model.device)
             loss_dict = model.loss(samples)
             loss :torch.Tensor = reduce(operator.add, loss_dict.values())
             loss.backward()
-            train_ld_list.append(detach_clone(loss_dict))
+            loss_dict['whole'] = loss
+            train_ld_list.append(to_scalar_values(loss_dict))
         train_ld_sum = sum_loss_dict(train_ld_list)
         callback.on_train_loss(train_ld_sum, epoch)
 
         model.eval()
-        validate_ld_list : List[LossDictNoGrad] = []
+        validate_ld_list : List[LossDictFloat] = []
         for samples in validate_loader:
             samples.to(model.device)
             loss_dict = model.loss(samples)
-            validate_ld_list.append(detach_clone(loss_dict))
+            loss_dict['whole'] = reduce(operator.add, loss_dict.values())
+            validate_ld_list.append(to_scalar_values(loss_dict))
         validate_ld_sum = sum_loss_dict(validate_ld_list)
         callback.on_validate_loss(validate_ld_sum, epoch)
 
