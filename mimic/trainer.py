@@ -18,6 +18,7 @@ from mimic.models.common import LossDictFloat
 from mimic.models.common import to_scalar_values
 from mimic.models.common import sum_loss_dict
 from mimic.file import dump_pickled_data
+from mimic.file import load_pickled_data
 
 @dataclass
 class Config:
@@ -46,7 +47,11 @@ class TrainCache:
         wholes = [dic['whole'] for dic in self.validate_loss_dict_seq]
         if(wholes[-1] == min(wholes)):
             best_model = model
-        dump_pickled_data(self, self.project_name)
+        dump_pickled_data(self, self.project_name, model.__class__.__name__)
+
+    @classmethod
+    def load(cls, project_name: str, model_type: type) -> 'TrainCache':
+        load_pickled_data(project_name, cls, model_type.__name__)
 
 def train(
         model: _Model, 
