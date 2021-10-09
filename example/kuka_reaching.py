@@ -167,8 +167,6 @@ if __name__=='__main__':
         chunk.push_epoch(img)
     chunk.dump(project_name)
 
-    """
     filename = os.path.join(get_project_dir(project_name), "sample.gif")
-    clip = ImageSequenceClip(list(img_seqs[0]), fps=50)
+    clip = ImageSequenceClip([np.transpose(img, (1, 2, 0)) for img in img_seqs[0]], fps=50)
     clip.write_gif(filename, fps=50)
-    """
