@@ -89,7 +89,7 @@ def train(
         train_ld_list : List[LossDictFloat] = []
         for samples in train_loader:
             optimizer.zero_grad()
-            samples.to(model.device)
+            samples = samples.to(model.device)
             loss_dict = model.loss(samples)
             loss :torch.Tensor = reduce(operator.add, loss_dict.values())
             loss.backward()
@@ -101,7 +101,7 @@ def train(
         model.eval()
         validate_ld_list : List[LossDictFloat] = []
         for samples in validate_loader:
-            samples.to(model.device)
+            samples = samples.to(model.device)
             loss_dict = model.loss(samples)
             loss_dict['total'] = reduce(operator.add, loss_dict.values())
             validate_ld_list.append(to_scalar_values(loss_dict))
