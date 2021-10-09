@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from functools import reduce
 import operator
+import copy
 
 from tqdm import tqdm
 import torch.nn as nn
@@ -59,6 +60,8 @@ class TrainCache(Generic[ModelT]):
         totals = [dic['total'] for dic in self.validate_loss_dict_seq]
         min_loss = min(totals)
         if(totals[-1] == min_loss):
+            model = copy.deepcopy(model)
+            model.to(torch.device('cpu'))
             self.best_model = model
             logger.info('model is updated')
         dump_pickled_data(self, self.project_name, self.best_model.__class__.__name__)
