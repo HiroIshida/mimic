@@ -23,7 +23,7 @@ def image_datachunk():
     n_pixel = 28
     chunk = ImageDataChunk()
     for i in range(10):
-        imgseq = np.random.randn(n_seq, n_channel, n_pixel, n_pixel)
+        imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
         chunk.push_epoch(imgseq)
     return chunk
 
@@ -35,9 +35,9 @@ def image_datachunk_with_encoder():
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     chunk = ImageDataChunk(encoder=ae.encoder)
     for i in range(9):
-        imgseq = np.random.randn(n_seq, n_channel, n_pixel, n_pixel)
+        imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
         chunk.push_epoch(imgseq)
-    imgseq = np.random.randn(n_seq-2, n_channel, n_pixel, n_pixel) # to test autoregressive
+    imgseq = np.random.randn(n_seq-2, n_pixel, n_pixel, n_channel) # to test autoregressive
     chunk.push_epoch(imgseq)
     return chunk
 

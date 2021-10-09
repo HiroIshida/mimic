@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 import torch
 import torch.nn as nn
+import torchvision
 import numpy as np
-import numpy.typing as npt
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -16,8 +16,8 @@ from mimic.file import dump_pickled_data
 from mimic.file import load_pickled_data
 
 class AbstractDataSequence(ABC):
-    data : npt.ArrayLike
-    def __init__(self, data :npt.ArrayLike):
+    data : np.ndarray
+    def __init__(self, data: np.ndarray):
         self.data = data
 
     @abstractmethod
@@ -65,7 +65,7 @@ class CommandDataSequence(AbstractDataSequence):
 
 class CommandDataChunk(AbstractDataChunk):
     keys = [CommandDataSequence]
-    def push_epoch(self, seq: npt.ArrayLike) -> None:
+    def push_epoch(self, seq: np.ndarray) -> None:
         cmdseq = CommandDataSequence(seq)
         super()._push_epoch([cmdseq])
 
@@ -73,12 +73,14 @@ class ImageDataSequence(AbstractDataSequence):
     # the complex encoder_holder is due to lack of pointer-equivalent in python
     # if in C, I would wirite nn::Module* encoder_ptr;
     encoder_holder : Dict[str, Optional[nn.Module]]
-    def __init__(self, data: npt.ArrayLike, encoder_holder: Dict):
+    def __init__(self, data: np.ndarray, encoder_holder: Dict):
         super().__init__(data)
         self.encoder_holder = encoder_holder
 
     def to_featureseq(self) -> torch.Tensor:
-        data_torch = torch.from_numpy(self.data).float()
+        tf = torchvision.transforms.ToTensor()
+        img_list = [tf(img).float() for img in self.data]
+        data_torch = torch.stack(img_list)
         encoder = self.encoder_holder['encoder']
         out = encoder(data_torch).detach().clone() if encoder else data_torch
         return out
@@ -90,8 +92,7 @@ class ImageDataChunk(AbstractDataChunk):
         super().__init__()
         self.encoder_holder = {'encoder': encoder}
 
-    def push_epoch(self, seq: npt.ArrayLike) -> None:
-        # TODO check if pil image type
+    def push_epoch(self, seq: np.ndarray) -> None:
         imgseq = ImageDataSequence(seq, self.encoder_holder)
         super()._push_epoch([imgseq])
 

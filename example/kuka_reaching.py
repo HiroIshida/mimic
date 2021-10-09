@@ -117,7 +117,6 @@ class BulletManager(object):
                 image = np.concatenate((rgba[:, :, :3], depth), axis=2)
             else:
                 image = rgba[:, :, :3]
-            image = np.transpose(image, (2, 0, 1))
             img_list.append(image)
 
         for i in range(30): # augument the data (after reaching)
@@ -168,5 +167,5 @@ if __name__=='__main__':
     chunk.dump(project_name)
 
     filename = os.path.join(get_project_dir(project_name), "sample.gif")
-    clip = ImageSequenceClip([np.transpose(img, (1, 2, 0)) for img in img_seqs[0]], fps=50)
+    clip = ImageSequenceClip([img for img in img_seqs[0]], fps=50)
     clip.write_gif(filename, fps=50)
