@@ -11,6 +11,8 @@ from torch.optim import Adam
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Generic
+from typing import TypeVar
 import logging
 logger = logging.getLogger(__name__)
 
@@ -27,11 +29,12 @@ class Config:
     learning_rate : float = 0.001
     n_epoch : int = 1000
 
-class TrainCache:
+ModelT = TypeVar('ModelT', bound=_Model)
+class TrainCache(Generic[ModelT]):
     project_name: str
     train_loss_dict_seq: List[LossDictFloat]
     validate_loss_dict_seq: List[LossDictFloat]
-    best_model: _Model
+    best_model: ModelT
 
     def __init__(self, project_name: str):
         self.project_name = project_name
@@ -49,17 +52,17 @@ class TrainCache:
         self.validate_loss_dict_seq.append(loss_dict)
         logger.info('validate_total_loss: {}'.format(loss_dict['total']))
 
-    def on_endof_epoch(self, model: _Model, epoch: int):
+    def on_endof_epoch(self, model: ModelT, epoch: int):
         totals = [dic['total'] for dic in self.validate_loss_dict_seq]
         min_loss = min(totals)
         if(totals[-1] == min_loss):
-            best_model = model
+            self.best_model = model
             logger.info('model is updated')
-        dump_pickled_data(self, self.project_name, model.__class__.__name__)
+        dump_pickled_data(self, self.project_name, ModelT.__name__)
 
     @classmethod
-    def load(cls, project_name: str, model_type: type) -> 'TrainCache':
-        return load_pickled_data(project_name, cls, model_type.__name__)
+    def load(cls, project_name: str) -> 'TrainCache':
+        return load_pickled_data(project_name, cls, ModelT.__name__)
 
 def train(
         model: _Model, 
