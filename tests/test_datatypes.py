@@ -2,6 +2,7 @@ import hashlib
 import pytest
 import numpy as np
 import torch
+import copy
 
 from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
@@ -48,6 +49,19 @@ def test_featureseq_list_generation_pipeline(cmd_datachunk):
     fslist = cmd_datachunk.to_featureseq_list()
     assert len(fslist) == 10
     assert list(fslist[0].size()) == [20, 7]
+
+def test_set_encoder(image_datachunk):
+    chunk: ImageDataChunk = copy.deepcopy(image_datachunk)
+    flist = chunk.to_featureseq_list()
+    assert len(flist[0].shape) == 4
+
+    n_seq = 100
+    n_channel = 3
+    n_pixel = 28
+    ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
+    chunk.set_encoder(ae.encoder)
+    flist = chunk.to_featureseq_list()
+    assert len(flist[0].shape) == 2
 
 def test_image_featureseq_list_generateion_pipeline(image_datachunk, image_datachunk_with_encoder):
     fslist = image_datachunk_with_encoder.to_featureseq_list()

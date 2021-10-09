@@ -70,28 +70,35 @@ class CommandDataChunk(AbstractDataChunk):
         super()._push_epoch([cmdseq])
 
 class ImageDataSequence(AbstractDataSequence):
-    encoder : Optional[nn.Module] = None
-    def __init__(self, data: npt.ArrayLike, encoder : Optional[nn.Module] = None):
+    # the complex encoder_holder is due to lack of pointer-equivalent in python
+    # if in C, I would wirite nn::Module* encoder_ptr;
+    encoder_holder : Dict[str, Optional[nn.Module]]
+    def __init__(self, data: npt.ArrayLike, encoder_holder: Dict):
         super().__init__(data)
-        self.encoder = encoder
+        self.encoder_holder = encoder_holder
 
     def to_featureseq(self) -> torch.Tensor:
         data_torch = torch.from_numpy(self.data).float()
-        out = self.encoder(data_torch).detach().clone() if self.encoder else data_torch
+        encoder = self.encoder_holder['encoder']
+        out = encoder(data_torch).detach().clone() if encoder else data_torch
         return out
 
 class ImageDataChunk(AbstractDataChunk):
     keys = [ImageDataSequence]
-    encoder : Optional[nn.Module] = None
+    encoder_holder : Dict[str, Optional[nn.Module]] = {'encoder': None}
     def __init__(self, encoder: Optional[nn.Module] = None):
         super().__init__()
-        self.encoder = encoder
+        self.encoder_holder = {'encoder': encoder}
 
     def push_epoch(self, seq: npt.ArrayLike) -> None:
         # TODO check if pil image type
-        imgseq = ImageDataSequence(seq, self.encoder)
+        imgseq = ImageDataSequence(seq, self.encoder_holder)
         super()._push_epoch([imgseq])
+
+    def set_encoder(self, encoder: nn.Module):
+        self.encoder_holder['encoder'] = encoder
 
     @property
     def is_with_encode(self):
-        return (self.encoder != None)
+        return (self.encoder_holder['encoder'] != None)
+

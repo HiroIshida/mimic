@@ -13,6 +13,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Generic
+from typing import Type
 from typing import TypeVar
 import logging
 logger = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ class Config:
     learning_rate : float = 0.001
     n_epoch : int = 1000
 
+TrainCacheT = TypeVar('TrainCacheT', bound='TrainCache')
 ModelT = TypeVar('ModelT', bound=_Model)
 class TrainCache(Generic[ModelT]):
     project_name: str
@@ -62,7 +64,7 @@ class TrainCache(Generic[ModelT]):
         dump_pickled_data(self, self.project_name, self.best_model.__class__.__name__)
 
     @classmethod
-    def load(cls, project_name: str, model_type: type) -> 'TrainCache':
+    def load(cls: Type[TrainCacheT], project_name: str, model_type: type) -> TrainCacheT:
         # requiring "model_type" seems redundant but there is no way to 
         # use info of ModelT from @classmethod
         return load_pickled_data(project_name, cls, model_type.__name__)

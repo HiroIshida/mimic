@@ -49,6 +49,10 @@ class AutoRegressiveDataset(Dataset):
         featureseq_list = chunk.to_featureseq_list()
         return AutoRegressiveDataset(featureseq_list)
 
+    @property
+    def n_state(self) -> int:
+        return self.data[0].shape[1]
+
     def __len__(self) -> int:
         return len(self.data)
 
