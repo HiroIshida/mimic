@@ -13,14 +13,17 @@ from test_datatypes import image_datachunk_with_encoder
 def test_reconstruction_dataset_pipeline(image_datachunk):
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
     assert list(dataset.data.shape) == [10 * 100, 3, 28, 28]
+    assert len(dataset) == 10 * 100
+    assert list(dataset[0].shape) == [3, 28, 28]
 
 def test_autoregressive_dataset_pipeline1(image_datachunk_with_encoder):
     dataset = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     for seq in dataset.data:
         assert list(seq.shape) == [100, 16]
+    assert len(dataset) == 10
 
 def test_autoregressive_dataset_pipeline2(cmd_datachunk):
     dataset = AutoRegressiveDataset.from_chunk(cmd_datachunk)
     for seq in dataset.data:
         assert list(seq.shape) == [20, 7]
-
+    assert len(dataset) == 10

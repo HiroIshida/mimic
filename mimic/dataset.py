@@ -49,3 +49,8 @@ class AutoRegressiveDataset(Dataset):
         featureseq_list = chunk.to_featureseq_list()
         return AutoRegressiveDataset(featureseq_list)
 
+    def __len__(self) -> int:
+        return len(self.data)
+
+    def __getitem__(self, idx: int) -> torch.Tensor:
+        return self.data[idx]
