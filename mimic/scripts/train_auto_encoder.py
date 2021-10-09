@@ -30,6 +30,6 @@ if __name__=='__main__':
     n_epoch = args.n
     n_bottleneck = args.bottleneck
 
-    logger = create_default_logger(project_name)
+    logger = create_default_logger(project_name, 'autoencoder')
     config = Config(n_epoch=n_epoch)
     train_auto_encoder(project_name, n_bottleneck, config)

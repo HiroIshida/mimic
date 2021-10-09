@@ -36,6 +36,6 @@ if __name__=='__main__':
     project_name = args.pn
     n_epoch = args.n
 
-    logger = create_default_logger(project_name)
+    logger = create_default_logger(project_name, 'lstm')
     config = Config(n_epoch=n_epoch)
     train_lstm(project_name, config)

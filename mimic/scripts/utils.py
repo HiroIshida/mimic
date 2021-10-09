@@ -15,10 +15,11 @@ def split_with_ratio(dataset: Dataset, valid_raio: float=0.1):
     ds_train, ds_validate = random_split(dataset, [n_total-n_validate, n_validate])  
     return ds_train, ds_validate
 
-def create_default_logger(project_name: str) -> Logger:
-    timestr = time.strftime("%Y%m%d%H%M%S")
-    log_file_name = os.path.join(get_project_dir(project_name), (timestr + '.log'))
-    logging.basicConfig(filename=log_file_name)
+def create_default_logger(project_name: str, prefix: str="", file_time=False) -> Logger:
+    timestr = "_" + time.strftime("%Y%m%d%H%M%S") if file_time else ""
+    log_file_name = os.path.join(get_project_dir(project_name), (prefix + timestr + '.log'))
+    FORMAT = '[%(levelname)s] %(asctime)s %(name)s: %(message)s'
+    logging.basicConfig(filename=log_file_name, format=FORMAT)
     logger = logging.getLogger('mimic')
     logger.setLevel(level=logging.INFO)
     return logger
