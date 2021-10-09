@@ -15,7 +15,7 @@ def to_scalar_values(ld: LossDict) -> LossDictFloat:
         ld_new[key] = float(ld[key].detach().item())
     return ld_new
 
-def sum_loss_dict(loss_dict_list: List[LossDictFloat]) -> LossDictFloat:
+def average_loss_dict(loss_dict_list: List[LossDictFloat]) -> LossDictFloat:
     out = LossDictFloat({})
     keys = loss_dict_list[0].keys()
     for loss_dict in loss_dict_list:
@@ -24,6 +24,9 @@ def sum_loss_dict(loss_dict_list: List[LossDictFloat]) -> LossDictFloat:
                 out[key] += loss_dict[key]
             else:
                 out[key] = loss_dict[key]
+
+    for key in keys:
+        out[key] /= len(loss_dict_list)
     return out
 
 class _Model(nn.Module, ABC):

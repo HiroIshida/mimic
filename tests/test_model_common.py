@@ -1,7 +1,7 @@
 import torch
 from mimic.models.common import LossDict
 from mimic.models.common import LossDictFloat
-from mimic.models.common import sum_loss_dict
+from mimic.models.common import average_loss_dict
 from mimic.models.common import to_scalar_values
 
 def test_to_scalar_values():
@@ -24,7 +24,7 @@ def test_sum_loss_dict():
     dict1 = LossDictFloat({'lossa': loss_a1, 'lossb': loss_b1})
     dict2 = LossDictFloat({'lossa': loss_a2, 'lossb': loss_b2})
 
-    dict_sum = sum_loss_dict([dict1, dict2])
+    dict_sum = average_loss_dict([dict1, dict2])
     assert len(list(dict_sum.keys())) == 2
-    assert dict_sum['lossa'] == 4.0
-    assert dict_sum['lossb'] == 6.0
+    assert dict_sum['lossa'] == 2.0
+    assert dict_sum['lossb'] == 3.0

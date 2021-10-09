@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 from mimic.models.common import _Model
 from mimic.models.common import LossDictFloat
 from mimic.models.common import to_scalar_values
-from mimic.models.common import sum_loss_dict
+from mimic.models.common import average_loss_dict
 from mimic.file import dump_pickled_data
 from mimic.file import load_pickled_data
 
@@ -99,7 +99,7 @@ def train(
             loss_dict['total'] = loss
             train_ld_list.append(to_scalar_values(loss_dict))
             optimizer.step()
-        train_ld_sum = sum_loss_dict(train_ld_list)
+        train_ld_sum = average_loss_dict(train_ld_list)
         tcache.on_train_loss(train_ld_sum, epoch)
 
         model.eval()
@@ -109,7 +109,7 @@ def train(
             loss_dict = model.loss(samples)
             loss_dict['total'] = reduce(operator.add, loss_dict.values())
             validate_ld_list.append(to_scalar_values(loss_dict))
-        validate_ld_sum = sum_loss_dict(validate_ld_list)
+        validate_ld_sum = average_loss_dict(validate_ld_list)
         tcache.on_validate_loss(validate_ld_sum, epoch)
 
         tcache.on_endof_epoch(model, epoch)
