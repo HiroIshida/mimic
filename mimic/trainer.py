@@ -98,6 +98,7 @@ def train(
             loss.backward()
             loss_dict['total'] = loss
             train_ld_list.append(to_scalar_values(loss_dict))
+            optimizer.step()
         train_ld_sum = sum_loss_dict(train_ld_list)
         tcache.on_train_loss(train_ld_sum, epoch)
 
