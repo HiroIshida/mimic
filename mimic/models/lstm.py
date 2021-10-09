@@ -17,11 +17,11 @@ class LSTM(_Model):
         self.n_state = n_state
         self.n_hidden = n_hidden
         self.n_layer = n_layer
-        self._create_layers(n_state, n_hidden, n_layer)
+        self._create_layers()
 
-    def _create_layers(self, n_state, n_hidden, n_layer) -> None:
-        self.lstm_layer = nn.LSTM(n_state, n_hidden, n_layer, batch_first=True)
-        self.output_layer = nn.Linear(n_hidden, n_state)
+    def _create_layers(self, **kwargs) -> None:
+        self.lstm_layer = nn.LSTM(self.n_state, self.n_hidden, self.n_layer, batch_first=True)
+        self.output_layer = nn.Linear(self.n_hidden, self.n_state)
 
     def forward(self, sample: torch.Tensor) -> torch.Tensor:
         out, _ = self.lstm_layer(sample)
