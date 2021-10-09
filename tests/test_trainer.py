@@ -11,7 +11,7 @@ from test_datatypes import image_datachunk
 def test_train(image_datachunk):
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
     project_name = 'test'
-    ae = ImageAutoEncoder(16, torch.device('cpu'), image_shape=(3, 28, 28))
+    ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(3, 28, 28))
     n_total = len(dataset)
     train_set, val_set =  random_split(dataset, [n_total-2, 2])
     tcache = TrainCache(project_name=project_name)

@@ -2,7 +2,6 @@ import numpy as np
 import torch
 from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
-from mimic.models import ImageAutoEncoder
 from mimic.dataset import ReconstructionDataset
 from mimic.dataset import AutoRegressiveDataset
 import pytest

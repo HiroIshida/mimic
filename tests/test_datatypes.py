@@ -31,7 +31,7 @@ def image_datachunk_with_encoder():
     n_seq = 100
     n_channel = 3
     n_pixel = 28
-    ae = ImageAutoEncoder(16, torch.device('cpu'), image_shape=(n_channel, n_pixel, n_pixel))
+    ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     chunk = ImageDataChunk(encoder=ae.encoder)
     for i in range(9):
         imgseq = np.random.randn(n_seq, n_channel, n_pixel, n_pixel)

@@ -20,7 +20,7 @@ class AbstractEncoderDecoder(_Model, ABC):
     decoder : nn.Module
     n_bottleneck : int
 
-    def __init__(self, n_bottleneck: int, device: device, **kwargs):
+    def __init__(self, device: device, n_bottleneck: int, **kwargs):
         _Model.__init__(self, device)
         self.n_bottleneck = n_bottleneck
         self._create_layers(**kwargs)
@@ -32,8 +32,8 @@ class AbstractAutoEncoder(AbstractEncoderDecoder):
     def loss(self, sample : torch.Tensor) -> LossDict:
         f_loss = nn.MSELoss()
         reconstructed = self.forward(sample)
-        loss = f_loss(sample, reconstructed)
-        return LossDict({'reconstruction': loss})
+        loss_value = f_loss(sample, reconstructed)
+        return LossDict({'reconstruction': loss_value})
 
 class ImageAutoEncoder(AbstractAutoEncoder):
     def _create_layers(self, **kwargs):
