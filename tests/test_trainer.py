@@ -23,14 +23,14 @@ def test_train(image_datachunk, image_datachunk_with_encoder):
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
     model = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(3, 28, 28))
     _train(project_name, model, dataset, ImageAutoEncoder)
-    tcache = TrainCache[ImageAutoEncoder].load(project_name)
+    tcache = TrainCache.load(project_name, ImageAutoEncoder)
     assert isinstance(tcache.best_model, ImageAutoEncoder)
 
     dataset2 = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset2.data[0].shape 
     model2 = LSTM(torch.device('cpu'), n_state)
     _train(project_name, model2, dataset2, LSTM)
-    tcache = TrainCache[LSTM].load(project_name)
+    tcache = TrainCache.load(project_name, LSTM)
     assert isinstance(tcache.best_model, LSTM)
 
 

@@ -17,7 +17,7 @@ def train_auto_encoder(project_name: str, n_bottleneck: int, config: Config) -> 
     image_shape = dataset[0].shape
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = ImageAutoEncoder(device, n_bottleneck, image_shape=image_shape)
-    tcache = TrainCache(project_name)
+    tcache = TrainCache[ImageAutoEncoder](project_name)
     train(model, ds_train, ds_valid, tcache=tcache, config=config)
 
 if __name__=='__main__':

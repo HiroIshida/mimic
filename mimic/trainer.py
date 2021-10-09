@@ -8,6 +8,7 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.optim import Adam
+import typing
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -58,11 +59,13 @@ class TrainCache(Generic[ModelT]):
         if(totals[-1] == min_loss):
             self.best_model = model
             logger.info('model is updated')
-        dump_pickled_data(self, self.project_name, ModelT.__name__)
+        dump_pickled_data(self, self.project_name, self.best_model.__class__.__name__)
 
     @classmethod
-    def load(cls, project_name: str) -> 'TrainCache':
-        return load_pickled_data(project_name, cls, ModelT.__name__)
+    def load(cls, project_name: str, model_type: type) -> 'TrainCache':
+        # requiring "model_type" seems redundant but there is no way to 
+        # use info of ModelT from @classmethod
+        return load_pickled_data(project_name, cls, model_type.__name__)
 
 def train(
         model: _Model, 
