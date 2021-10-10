@@ -15,6 +15,8 @@ def test_lstm_with_image(image_datachunk_with_encoder):
     loss = model.loss(sample)
     assert len(list(loss.values())) == 1
     assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
-    model(torch.randn(1, 10, 16))
+
+    out = model(torch.randn(1, 10, 16))
+    assert list(out.shape) == [1, 10, 16] # flag info must be stripped
     with pytest.raises(AssertionError):
         model(torch.randn(2, 10, 16))

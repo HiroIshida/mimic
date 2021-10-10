@@ -42,8 +42,11 @@ class LSTM(_Model):
             flag_states = torch.zeros(1, n_seq, 1)
             sample = torch.cat((sample, flag_states), 2) 
 
-        out, _ = self.lstm_layer(sample)
-        return self.output_layer(out)
+        lstm_out, _ = self.lstm_layer(sample)
+        out = self.output_layer(lstm_out)
+        if is_predicting:
+            out = out[:, :, :-1]
+        return out
 
     def loss(self, sample: torch.Tensor) -> LossDict:
         seq_feed, seq_pred_gt = sample[:, :-1, :], sample[:, 1:, :]
