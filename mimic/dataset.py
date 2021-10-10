@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import List
 
 import torch
+from torch.functional import Tensor
 from torch.utils.data import Dataset
 
 from mimic.datatype import AbstractDataChunk
@@ -27,20 +28,35 @@ class ReconstructionDataset(Dataset):
     def __getitem__(self, idx: int) -> torch.Tensor:
         return self.data[idx]
 
-class AutoRegressiveDataset(Dataset):
-    data: List[torch.Tensor]
-    def __init__(self, featureseq_list_: List[torch.Tensor], val_padding:float =1.0):
-        featureseq_list = deepcopy(featureseq_list_)
-        n_state = len(featureseq_list[0][0])
-        n_max = max([len(seq) for seq in featureseq_list])
+def attach_flag_info(
+        seq_list: List[torch.Tensor], 
+        val_padding: float,
+        continue_flag: float, 
+        end_flag: float) -> List[torch.Tensor]:
+    n_state = len(seq_list[0][0])
+    n_max = max([len(seq) for seq in seq_list])
 
-        for i in range(len(featureseq_list)):
-            seq = featureseq_list[i]
-            n_seq = len(seq)
-            n_padding = n_max - n_seq
-            tensor_add = torch.ones(n_padding, n_state) * val_padding
-            featureseq_list[i] = torch.cat((seq, tensor_add), dim=0)
-        self.data = featureseq_list
+    for i in range(len(seq_list)):
+        seq = seq_list[i]
+        n_seq = len(seq)
+        n_padding = n_max - n_seq
+        tensor_flags = torch.cat((torch.ones(n_seq) * continue_flag, torch.ones(n_padding) * end_flag))
+        tensor_concat = torch.ones(n_padding, n_state) * val_padding
+        tmp = torch.cat((seq, tensor_concat), dim=0)
+        seq_list[i] = torch.cat((tmp, torch.unsqueeze(tensor_flags, 1)), dim=1)
+    return seq_list
+
+class AutoRegressiveDataset(Dataset):
+    """
+    Always come with end-of-epoch flags
+    """
+    data: List[torch.Tensor]
+    val_padding: float = 0.0
+    continue_flag: float = 0.0
+    end_flag: float = 1.0
+    def __init__(self, featureseq_list: List[torch.Tensor], val_padding:float =0.0):
+        seq_list = deepcopy(featureseq_list)
+        self.data = attach_flag_info(seq_list, self.val_padding, self.continue_flag, self.end_flag)
 
     @classmethod
     def from_chunk(cls, chunk: AbstractDataChunk) -> 'AutoRegressiveDataset':
