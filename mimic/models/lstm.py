@@ -1,11 +1,19 @@
+import logging
+logger = logging.getLogger(__name__)
+
 import torch
 from torch._C import device
 import torch.nn as nn
 
 from mimic.models.common import _Model
 from mimic.models.common import LossDict
+from mimic.dataset import AutoRegressiveDataset
 
 class LSTM(_Model):
+    """
+    Note that n_state 
+    """
+    n_flag: int = 1
     n_state: int
     n_hidden: int
     n_layer: int
@@ -24,6 +32,16 @@ class LSTM(_Model):
         self.output_layer = nn.Linear(self.n_hidden, self.n_state)
 
     def forward(self, sample: torch.Tensor) -> torch.Tensor:
+        n_batch, n_seq, n_state = sample.shape
+
+        is_predicting = (n_state == self.n_state - self.n_flag)
+        if is_predicting:
+            assert n_batch == 1, 'Are you sure that you are in prediction mode?'
+            logger.debug('attaching continue_flag automatically.')
+            continue_flag = AutoRegressiveDataset.continue_flag
+            flag_states = torch.zeros(1, n_seq, 1)
+            sample = torch.cat((sample, flag_states), 2) 
+
         out, _ = self.lstm_layer(sample)
         return self.output_layer(out)
 
