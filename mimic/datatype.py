@@ -6,6 +6,7 @@ import numpy as np
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Generic
 from typing import Type
 from typing import TypeVar
 from typing import NewType
@@ -23,10 +24,17 @@ class AbstractDataSequence(ABC):
     @abstractmethod
     def to_featureseq(self) -> torch.Tensor: ...
 
+
+# TODO is there neat way to define like NewType('SeqDict', Dict[Type[SeqT], SeqT]) ?
+SeqT = TypeVar('SeqT', bound=AbstractDataSequence)
+class SeqDict(Dict, Generic[SeqT]):
+    def __getitem__(self, key: Type[SeqT]) -> SeqT:
+        return super().__getitem__(key)
+
 ChunkT = TypeVar('ChunkT', bound='AbstractDataChunk')
 class AbstractDataChunk(ABC):
     keys : List[type] = [] # override this
-    seqdict_list : List[Dict[type, AbstractDataSequence]]
+    seqdict_list : List[SeqDict]
 
     def __init__(self):
         self.seqdict_list = []
@@ -36,7 +44,7 @@ class AbstractDataChunk(ABC):
 
     def _push_epoch(self, seqs :List[AbstractDataSequence]) -> None:
         assert set(self.keys) == set([type(e) for e in seqs])
-        seqdict : Dict[type, AbstractDataSequence] = {}
+        seqdict: SeqDict = SeqDict({})
         for seq in seqs:
             datatype = type(seq)
             seqdict[datatype] = seq
@@ -58,6 +66,9 @@ class AbstractDataChunk(ABC):
 
     def dump(self, project_name: str) -> None:
         dump_pickled_data(self, project_name)
+
+    def __getitem__(self, index: int) -> SeqDict:
+        return self.seqdict_list[index]
 
 class CommandDataSequence(AbstractDataSequence):
     def to_featureseq(self):
@@ -100,6 +111,6 @@ class ImageDataChunk(AbstractDataChunk):
         self.encoder_holder['encoder'] = encoder
 
     @property
-    def is_with_encode(self):
+    def has_encoder(self):
         return (self.encoder_holder['encoder'] != None)
-
+    
