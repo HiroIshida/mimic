@@ -16,7 +16,9 @@ def create_predictor(project_name: str) -> ImageLSTMPredictor:
 
 if __name__=='__main__':
     # only for demo
-    #import moviepy
+    import os
+    from moviepy.editor import ImageSequenceClip
+    from mimic.file import get_project_dir
     from mimic.datatype import ImageDataChunk
     from mimic.datatype import ImageDataSequence
     parser = argparse.ArgumentParser()
@@ -35,3 +37,7 @@ if __name__=='__main__':
     for i in range(20):
         predictor.feed(seq.data[i])
     imgs = predictor.predict(60)
+
+    filename = os.path.join(get_project_dir(project_name), "prediction_result.gif")
+    clip = ImageSequenceClip(imgs, fps=50)
+    clip.write_gif(filename, fps=50)

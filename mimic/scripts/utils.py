@@ -25,5 +25,7 @@ def create_default_logger(project_name: str, prefix: str) -> Logger:
 
     log_sym_name = os.path.join(get_project_dir(project_name), ('latest_' + prefix + '.log'))
     logger.info('create log symlink :{0} => {1}'.format(log_file_name, log_sym_name))
+    if os.path.islink(log_sym_name):
+        os.unlink(log_sym_name)
     os.symlink(log_file_name, log_sym_name)
     return logger
