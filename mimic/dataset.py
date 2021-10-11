@@ -15,7 +15,7 @@ class ReconstructionDataset(Dataset):
 
     @classmethod
     def from_chunk(cls, chunk: ImageDataChunk) -> 'ReconstructionDataset':
-        assert (not chunk.is_with_encode)
+        assert (not chunk.has_encoder)
         featureseq_list = chunk.to_featureseq_list()
         n_seq, n_channel, n_pixel1, n_pixel2 = featureseq_list[0].shape
         tmp = torch.stack(featureseq_list)
@@ -61,7 +61,7 @@ class AutoRegressiveDataset(Dataset):
     @classmethod
     def from_chunk(cls, chunk: AbstractDataChunk) -> 'AutoRegressiveDataset':
         if isinstance(chunk, ImageDataChunk):
-            assert chunk.is_with_encode
+            assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
         return AutoRegressiveDataset(featureseq_list)
 
