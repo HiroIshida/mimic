@@ -10,7 +10,7 @@ def test_ImageLSTMPredictor():
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     lstm = LSTM(torch.device('cpu'), 17)
-    predictor = ImageLSTMPredictor(ae, lstm)
+    predictor = ImageLSTMPredictor(lstm, ae)
 
     for _ in range(10):
         img = np.zeros((n_pixel, n_pixel, n_channel))

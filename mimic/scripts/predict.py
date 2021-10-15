@@ -12,7 +12,7 @@ from mimic.trainer import TrainCache
 def create_predictor(project_name: str) -> ImageLSTMPredictor:
     ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
     lstm_train_cache = TrainCache[LSTM].load(project_name, LSTM)
-    return ImageLSTMPredictor(ae_train_cache.best_model, lstm_train_cache.best_model)
+    return ImageLSTMPredictor(lstm_train_cache.best_model, ae_train_cache.best_model)
 
 if __name__=='__main__':
     # only for demo
@@ -32,11 +32,11 @@ if __name__=='__main__':
     project_name = args.pn
     predictor = create_predictor(project_name)
     chunk = ImageDataChunk.load(project_name)
-    seq: ImageDataSequence = chunk[-1][ImageDataSequence]
+    seq: ImageDataSequence = chunk[-2][ImageDataSequence]
     assert seq.data.ndim == 4
-    for i in range(20):
+    for i in range(30):
         predictor.feed(seq.data[i])
-    imgs = predictor.predict(60)
+    imgs = predictor.predict(300)
 
     filename = os.path.join(get_project_dir(project_name), "prediction_result.gif")
     clip = ImageSequenceClip(imgs, fps=50)
