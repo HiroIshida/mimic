@@ -2,8 +2,10 @@ import torch
 from torch.utils.data import random_split
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
+from mimic.datatype import CommandDataChunk
 from mimic.dataset import ReconstructionDataset
 from mimic.dataset import AutoRegressiveDataset
+from mimic.scripts.utils import split_with_ratio
 from mimic.trainer import Config
 from mimic.trainer import train
 from mimic.trainer import TrainCache
@@ -11,29 +13,40 @@ from mimic.trainer import TrainCache
 from test_datatypes import image_datachunk
 from test_datatypes import image_datachunk_with_encoder
 
-def _train(project_name, model, dataset, model_type):
+def _train(project_name, model, dataset, model_type, config):
     n_total = len(dataset)
     train_set, val_set =  random_split(dataset, [n_total-2, 2])
     tcache = TrainCache[model_type](project_name=project_name)
-    config = Config(n_epoch=2)
     train(model, train_set, val_set, tcache=tcache, config=config)
 
 def test_train(image_datachunk, image_datachunk_with_encoder):
+    config = Config(n_epoch=2)
     project_name = 'test'
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
     model = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(3, 28, 28))
-    _train(project_name, model, dataset, ImageAutoEncoder)
+    _train(project_name, model, dataset, ImageAutoEncoder, config)
     tcache = TrainCache.load(project_name, ImageAutoEncoder)
     assert isinstance(tcache.best_model, ImageAutoEncoder)
 
     dataset2 = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset2.data[0].shape 
     model2 = LSTM(torch.device('cpu'), n_state)
-    _train(project_name, model2, dataset2, LSTM)
+    _train(project_name, model2, dataset2, LSTM, config)
     tcache = TrainCache.load(project_name, LSTM)
     assert isinstance(tcache.best_model, LSTM)
 
+# this test uses not fake data;
+# before running this test, must run attractor2d.py
+def test_lstm_with_cmds():
+    project_name = 'attractor2d'
+    chunk = CommandDataChunk.load(project_name)
+    dataset = AutoRegressiveDataset.from_chunk(chunk)
+    n_seq, n_state = dataset.data[0].shape 
+    model = LSTM(torch.device('cpu'), n_state)
 
-
-
-
+    _train(project_name, model, dataset, LSTM, Config(n_epoch=10))
+    tcache = TrainCache.load(project_name, LSTM)
+    val_seq = [dic['total'] for dic in tcache.validate_loss_dict_seq]
+    train_seq = [dic['total'] for dic in tcache.train_loss_dict_seq]
+    assert val_seq[-1] < 0.6 * val_seq[0]
+    assert train_seq[-1] < 0.6 * train_seq[0]

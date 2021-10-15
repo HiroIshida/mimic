@@ -20,3 +20,4 @@ def test_lstm_with_image(image_datachunk_with_encoder):
     assert list(out.shape) == [1, 10, 16] # flag info must be stripped
     with pytest.raises(AssertionError):
         model(torch.randn(2, 10, 16))
+

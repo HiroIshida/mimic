@@ -12,7 +12,7 @@ install_requires = [
 
 # for running demo
 extras_require = {
-        'test': ["pybullet", "tinyfk", "pybullet", "moviepy"]
+        'test': ["pybullet", "tinyfk", "pybullet", "moviepy", "matplotlib"]
         }
 
 setup(

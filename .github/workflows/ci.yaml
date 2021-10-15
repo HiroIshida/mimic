@@ -32,7 +32,9 @@ jobs:
               run: mypy . --exclude setup.py --verbose
 
             - name: Run Pytest
-              run: pytest -v tests
+              run: |
+                  python3 example/attractor2d.py
+                  pytest -v tests
 
             - name: Run pipeline
               run: bash ./example/run.sh
