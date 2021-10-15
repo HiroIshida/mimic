@@ -25,7 +25,7 @@ class AbstractPredictor(ABC, Generic[StateT]):
         for _ in range(n_horizon):
             states = torch.stack(feeds)
             tmp = self.propagator(torch.unsqueeze(states, 0))
-            out = torch.squeeze(tmp)[-1].detach().clone()
+            out = torch.squeeze(tmp, dim=0)[-1].detach().clone()
             feeds.append(out)
             preds.append(out)
         return feeds if with_feeds else preds
