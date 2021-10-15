@@ -4,6 +4,7 @@ import operator
 import copy
 
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch
 from torch.utils.data import Dataset
@@ -15,6 +16,7 @@ from typing import List
 from typing import Optional
 from typing import Generic
 from typing import Type
+from typing import Tuple
 from typing import TypeVar
 import logging
 logger = logging.getLogger(__name__)
@@ -36,9 +38,11 @@ TrainCacheT = TypeVar('TrainCacheT', bound='TrainCache')
 ModelT = TypeVar('ModelT', bound=_Model)
 class TrainCache(Generic[ModelT]):
     project_name: str
+    epoch: int
     train_loss_dict_seq: List[LossDictFloat]
     validate_loss_dict_seq: List[LossDictFloat]
     best_model: ModelT
+    latest_model: ModelT
 
     def __init__(self, project_name: str):
         self.project_name = project_name
@@ -47,6 +51,7 @@ class TrainCache(Generic[ModelT]):
 
     def on_startof_epoch(self, epoch: int):
         logger.info('new epoch: {}'.format(epoch))
+        self.epoch = epoch
 
     def on_train_loss(self, loss_dict: LossDictFloat, epoch: int):
         self.train_loss_dict_seq.append(loss_dict)
@@ -57,14 +62,26 @@ class TrainCache(Generic[ModelT]):
         logger.info('validate_total_loss: {}'.format(loss_dict['total']))
 
     def on_endof_epoch(self, model: ModelT, epoch: int):
+        model = copy.deepcopy(model)
+        model.to(torch.device('cpu'))
+        self.latest_model = model
+
         totals = [dic['total'] for dic in self.validate_loss_dict_seq]
         min_loss = min(totals)
         if(totals[-1] == min_loss):
-            model = copy.deepcopy(model)
-            model.to(torch.device('cpu'))
             self.best_model = model
             logger.info('model is updated')
         dump_pickled_data(self, self.project_name, self.best_model.__class__.__name__)
+
+    def visualize(self, fax: Optional[Tuple]=None):
+        fax = plt.subplots() if fax is None else fax
+        fig, ax = fax
+        train_loss_seq = [dic['total'] for dic in self.train_loss_dict_seq]
+        valid_loss_seq = [dic['total'] for dic in self.validate_loss_dict_seq]
+        ax.plot(train_loss_seq)
+        ax.plot(valid_loss_seq)
+        ax.set_yscale('log')
+        ax.legend(['train', 'valid'])
 
     @classmethod
     def load(cls: Type[TrainCacheT], project_name: str, model_type: type) -> TrainCacheT:
