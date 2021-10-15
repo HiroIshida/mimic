@@ -21,3 +21,6 @@ def test_ImageLSTMPredictor():
     imgs = predictor.predict(5)
     assert len(imgs) == 5
     assert imgs[0].shape == (n_pixel, n_pixel, n_channel)
+
+    imgs_with_feeds = predictor.predict(5, with_feeds=True)
+    assert len(imgs_with_feeds) == (5 + 10)

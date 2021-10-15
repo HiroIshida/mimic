@@ -11,7 +11,7 @@ from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from abc import ABC, abstractmethod
 
-StateT = TypeVar('StateT')
+StateT = TypeVar('StateT') # TODO maybe this is unncessarly
 class AbstractPredictor(ABC, Generic[StateT]):
     propagator: LSTM
     states: List[torch.Tensor]
@@ -19,7 +19,7 @@ class AbstractPredictor(ABC, Generic[StateT]):
         self.propagator = propagator
         self.states = []
 
-    def _lstm_predict(self, n_horizon: int) -> List[torch.Tensor]:
+    def _lstm_predict(self, n_horizon: int, with_feeds: bool=False) -> List[torch.Tensor]:
         feeds = copy.deepcopy(self.states)
         preds: List[torch.Tensor] = []
         for _ in range(n_horizon):
@@ -28,12 +28,20 @@ class AbstractPredictor(ABC, Generic[StateT]):
             out = torch.squeeze(tmp)[-1]
             feeds.append(out)
             preds.append(out)
-        return preds
+        return feeds if with_feeds else preds
 
     @abstractmethod
     def feed(self, state: StateT) -> None: ...
     @abstractmethod
-    def predict(self, n_horizon: int) -> List[StateT]: ...
+    def predict(self, n_horizon: int, with_feeds: bool) -> List[StateT]: ...
+
+class SimplePredictor(AbstractPredictor[np.ndarray]):
+
+    def feed(self, cmd: np.ndarray) -> None: 
+        self.states.append(torch.from_numpy(cmd).float())
+
+    def predict(self, n_horizon: int, with_feeds: bool=False) -> List[np.ndarray]:
+        return [np.array(pred) for pred in self._lstm_predict(n_horizon, with_feeds)]
 
 class ImageLSTMPredictor(AbstractPredictor[np.ndarray]):
     auto_encoder: ImageAutoEncoder
@@ -50,8 +58,8 @@ class ImageLSTMPredictor(AbstractPredictor[np.ndarray]):
         feature = feature_.detach().clone()
         self.states.append(torch.squeeze(feature))
 
-    def predict(self, n_horizon: int) -> List[np.ndarray]:
-        preds = torch.stack(self._lstm_predict(n_horizon))
+    def predict(self, n_horizon: int, with_feeds: bool=False) -> List[np.ndarray]:
+        preds = torch.stack(self._lstm_predict(n_horizon, with_feeds))
         image_preds = self.auto_encoder.decoder(preds)
         lst = [np.array(torchvision.transforms.ToPILImage()(img)) for img in image_preds]
         return lst
