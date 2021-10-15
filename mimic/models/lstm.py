@@ -38,9 +38,8 @@ class LSTM(_Model):
         if is_predicting:
             assert n_batch == 1, 'Are you sure that you are in prediction mode?'
             logger.debug('attaching continue_flag automatically.')
-            continue_flag = AutoRegressiveDataset.continue_flag
-            flag_states = torch.zeros(1, n_seq, 1)
-            sample = torch.cat((sample, flag_states), 2) 
+            flag_states = torch.ones(1, n_seq, 1) * AutoRegressiveDataset.continue_flag
+            sample = torch.cat((sample, flag_states), dim=2)  
 
         lstm_out, _ = self.lstm_layer(sample)
         out = self.output_layer(lstm_out)
