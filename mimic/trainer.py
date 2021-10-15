@@ -87,6 +87,7 @@ def train(
 
     model.put_on_device()
     for epoch in tqdm(range(config.n_epoch)):
+        tcache.on_startof_epoch(epoch)
 
         model.train()
         train_ld_list : List[LossDictFloat] = []
