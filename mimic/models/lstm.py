@@ -41,5 +41,5 @@ class LSTM(_Model):
     def loss(self, sample: torch.Tensor) -> LossDict:
         seq_feed, seq_pred_gt = sample[:, :-1, :], sample[:, 1:, :]
         seq_pred = self.forward(seq_feed)
-        loss_value = nn.MSELoss()(seq_feed, seq_pred)
+        loss_value = nn.MSELoss()(seq_pred, seq_pred_gt)
         return LossDict({'prediction': loss_value})
