@@ -35,6 +35,7 @@ def test_train(image_datachunk, image_datachunk_with_encoder):
     tcache = TrainCache.load(project_name, LSTM)
     assert isinstance(tcache.best_model, LSTM)
 
+"""
 # this test uses not fake data;
 # before running this test, must run attractor2d.py
 def test_lstm_with_cmds():
@@ -50,3 +51,4 @@ def test_lstm_with_cmds():
     train_seq = [dic['total'] for dic in tcache.train_loss_dict_seq]
     assert val_seq[-1] < 0.6 * val_seq[0]
     assert train_seq[-1] < 0.6 * train_seq[0]
+"""

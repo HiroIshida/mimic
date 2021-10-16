@@ -33,7 +33,6 @@ jobs:
 
             - name: Run Pytest
               run: |
-                  python3 example/attractor2d.py
                   pytest -v tests
 
             - name: Run pipeline
