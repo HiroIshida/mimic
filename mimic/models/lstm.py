@@ -34,17 +34,8 @@ class LSTM(_Model):
     def forward(self, sample: torch.Tensor) -> torch.Tensor:
         n_batch, n_seq, n_state = sample.shape
 
-        is_predicting = (n_state == self.n_state - self.n_flag)
-        if is_predicting:
-            assert n_batch == 1, 'Are you sure that you are in prediction mode?'
-            logger.debug('attaching continue_flag automatically.')
-            flag_states = torch.ones(1, n_seq, 1) * AutoRegressiveDataset.continue_flag
-            sample = torch.cat((sample, flag_states), dim=2)  
-
         lstm_out, _ = self.lstm_layer(sample)
         out = self.output_layer(lstm_out)
-        if is_predicting:
-            out = out[:, :, :-1]
         return out
 
     def loss(self, sample: torch.Tensor) -> LossDict:

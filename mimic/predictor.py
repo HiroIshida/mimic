@@ -7,6 +7,7 @@ from typing import Tuple
 from typing import List
 from typing import TypeVar
 from typing import Generic
+from mimic.dataset import AutoRegressiveDataset
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from abc import ABC, abstractmethod
@@ -35,13 +36,25 @@ class AbstractPredictor(ABC, Generic[StateT]):
     @abstractmethod
     def predict(self, n_horizon: int, with_feeds: bool) -> List[StateT]: ...
 
-class SimplePredictor(AbstractPredictor[np.ndarray]):
+def attach_flag(vec: torch.Tensor) -> torch.Tensor: 
+    flag = torch.tensor([AutoRegressiveDataset.continue_flag])
+    return torch.cat((vec, flag))
+
+def strip_flag(vec: torch.Tensor) -> torch.Tensor: return vec[:-1]
+
+class LSTMPredictor(AbstractPredictor[np.ndarray]):
 
     def feed(self, cmd: np.ndarray) -> None: 
-        self.states.append(torch.from_numpy(cmd).float())
+        assert cmd.ndim == 1
+        cmd = torch.from_numpy(cmd).float()
+        cmd_with_flag = attach_flag(cmd)
+        self.states.append(cmd)
 
     def predict(self, n_horizon: int, with_feeds: bool=False) -> List[np.ndarray]:
-        return [np.array(pred) for pred in self._lstm_predict(n_horizon, with_feeds)]
+        raw_preds = self._lstm_predict(n_horizon, with_feeds)
+        raw_preds_stripped = [strip_flag(pred) for pred in raw_preds]
+        preds_np = [pred.detach().numpy() for pred in raw_preds_stripped]
+        return preds_np
 
 class ImageLSTMPredictor(AbstractPredictor[np.ndarray]):
     auto_encoder: ImageAutoEncoder
@@ -55,11 +68,13 @@ class ImageLSTMPredictor(AbstractPredictor[np.ndarray]):
         assert img.ndim == 3
         img_torch = torchvision.transforms.ToTensor()(img).float()
         feature_ = self.auto_encoder.encoder(torch.unsqueeze(img_torch, 0))
-        feature = feature_.detach().clone()
-        self.states.append(torch.squeeze(feature))
+        feature = torch.squeeze(feature_.detach().clone(), dim=0)
+        feature_with_flag = attach_flag(feature)
+        self.states.append(feature_with_flag)
 
     def predict(self, n_horizon: int, with_feeds: bool=False) -> List[np.ndarray]:
-        preds = torch.stack(self._lstm_predict(n_horizon, with_feeds))
-        image_preds = self.auto_encoder.decoder(preds)
+        raw_preds = self._lstm_predict(n_horizon, with_feeds)
+        raw_preds_stripped = [strip_flag(pred) for pred in raw_preds]
+        image_preds = self.auto_encoder.decoder(torch.stack(raw_preds_stripped))
         lst = [np.array(torchvision.transforms.ToPILImage()(img)) for img in image_preds]
         return lst
