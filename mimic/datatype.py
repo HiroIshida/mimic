@@ -56,7 +56,7 @@ class AbstractDataChunk(ABC):
         """
         seqtorch_list = []
         for seqdict in self.seqdict_list:
-            seqtorch = torch.cat([seqdict[key].to_featureseq() for key in self.keys])
+            seqtorch = torch.cat([seqdict[key].to_featureseq() for key in self.keys], dim=1)
             seqtorch_list.append(seqtorch)
         return seqtorch_list
 
@@ -114,3 +114,18 @@ class ImageDataChunk(AbstractDataChunk):
     def has_encoder(self):
         return (self.encoder_holder['encoder'] != None)
     
+
+class ImageCommandDataChunk(AbstractDataChunk):
+    keys = [ImageDataSequence, CommandDataSequence]
+    encoder_holder : Dict[str, Optional[nn.Module]] = {'encoder': None}
+    def __init__(self, encoder: Optional[nn.Module] = None):
+        super().__init__()
+        self.encoder_holder = {'encoder': encoder}
+
+    def push_epoch(self, imgseq: np.ndarray, cmdseq: np.ndarray) -> None:
+        img_data_seq = ImageDataSequence(imgseq, self.encoder_holder)
+        cmd_data_seq = CommandDataSequence(cmdseq)
+        super()._push_epoch([img_data_seq, cmd_data_seq])
+
+    def set_encoder(self, encoder: nn.Module):
+        self.encoder_holder['encoder'] = encoder
