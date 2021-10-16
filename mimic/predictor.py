@@ -12,6 +12,15 @@ from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from abc import ABC, abstractmethod
 
+def attach_flag(vec: torch.Tensor) -> torch.Tensor: 
+    flag = torch.tensor([AutoRegressiveDataset.continue_flag])
+    return torch.cat((vec, flag))
+
+def strip_flag(vec: torch.Tensor) -> torch.Tensor: return vec[:-1]
+
+def force_continue_flag(vec: torch.Tensor) -> None: 
+    vec[-1] = AutoRegressiveDataset.continue_flag
+
 StateT = TypeVar('StateT') # TODO maybe this is unncessarly
 class AbstractPredictor(ABC, Generic[StateT]):
     propagator: LSTM
@@ -27,6 +36,7 @@ class AbstractPredictor(ABC, Generic[StateT]):
             states = torch.stack(feeds)
             tmp = self.propagator(torch.unsqueeze(states, 0))
             out = torch.squeeze(tmp, dim=0)[-1].detach().clone()
+            force_continue_flag(out)
             feeds.append(out)
             preds.append(out)
         return feeds if with_feeds else preds
@@ -35,12 +45,6 @@ class AbstractPredictor(ABC, Generic[StateT]):
     def feed(self, state: StateT) -> None: ...
     @abstractmethod
     def predict(self, n_horizon: int, with_feeds: bool) -> List[StateT]: ...
-
-def attach_flag(vec: torch.Tensor) -> torch.Tensor: 
-    flag = torch.tensor([AutoRegressiveDataset.continue_flag])
-    return torch.cat((vec, flag))
-
-def strip_flag(vec: torch.Tensor) -> torch.Tensor: return vec[:-1]
 
 class LSTMPredictor(AbstractPredictor[np.ndarray]):
 
