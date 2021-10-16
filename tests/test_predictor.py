@@ -13,21 +13,19 @@ def test_predictor_core():
     for i in range(10):
         chunk.push_epoch(seq)
     dataset = AutoRegressiveDataset.from_chunk(chunk)
-    """
     seq = dataset[0][:29, :7]
 
     lstm = LSTM(torch.device('cpu'), 7 + 1)
     predictor = LSTMPredictor(lstm)
     for cmd in seq:
         predictor.feed(cmd.detach().numpy())
-    assert torch.all(torch.stack(predictor.states) == seq)
+    assert torch.all(torch.stack(predictor.states) == dataset[0][:29, :])
 
     cmd_pred = predictor.predict(n_horizon=1, with_feeds=False)
 
-    out = lstm(torch.unsqueeze(dataset[0][:30, :], dim=0))
+    out = lstm(torch.unsqueeze(dataset[0][:29, :], dim=0))
     cmd_pred_direct = out[0][-1, :-1].detach().numpy()
     assert np.all(cmd_pred == cmd_pred_direct)
-    """
 
 def test_ImageLSTMPredictor():
     n_seq = 100
