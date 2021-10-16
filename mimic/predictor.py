@@ -46,9 +46,9 @@ class LSTMPredictor(AbstractPredictor[np.ndarray]):
 
     def feed(self, cmd: np.ndarray) -> None: 
         assert cmd.ndim == 1
-        cmd = torch.from_numpy(cmd).float()
-        cmd_with_flag = attach_flag(cmd)
-        self.states.append(cmd)
+        cmd_torch = torch.from_numpy(cmd).float()
+        cmd_with_flag = attach_flag(cmd_torch)
+        self.states.append(cmd_with_flag)
 
     def predict(self, n_horizon: int, with_feeds: bool=False) -> List[np.ndarray]:
         raw_preds = self._lstm_predict(n_horizon, with_feeds)
