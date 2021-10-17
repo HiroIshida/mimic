@@ -1,5 +1,6 @@
 from copy import deepcopy
 from typing import List
+from typing import Tuple
 
 import torch
 from torch.functional import Tensor
@@ -66,11 +67,35 @@ class AutoRegressiveDataset(Dataset):
         return AutoRegressiveDataset(featureseq_list)
 
     @property
-    def n_state(self) -> int:
-        return self.data[0].shape[1]
+    def n_state(self) -> int: return self.data[0].shape[1]
 
-    def __len__(self) -> int:
-        return len(self.data)
+    def __len__(self) -> int: return len(self.data)
 
-    def __getitem__(self, idx: int) -> torch.Tensor:
-        return self.data[idx]
+    def __getitem__(self, idx: int) -> torch.Tensor: return self.data[idx]
+
+class FirstOrderARDataset(Dataset):
+    n_state: int
+    data_pre: torch.Tensor
+    data_post: torch.Tensor
+    def __init__(self, featureseq_list: List[torch.Tensor]):
+        seq_list = deepcopy(featureseq_list)
+        pre_list, post_list = [], []
+        for seq in seq_list:
+            pre, post = seq[:-1], seq[1:]
+            pre_list.append(pre)
+            post_list.append(post)
+        self.data_pre = torch.cat(pre_list, dim=0)
+        self.data_post = torch.cat(post_list, dim=0)
+        self.n_state = len(self.data_pre[0])
+
+    @classmethod
+    def from_chunk(cls, chunk: AbstractDataChunk) -> 'FirstOrderARDataset':
+        if isinstance(chunk, ImageDataChunk):
+            assert chunk.has_encoder
+        featureseq_list = chunk.to_featureseq_list()
+        return FirstOrderARDataset(featureseq_list)
+
+    def __len__(self) -> int: return len(self.data_pre)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]: 
+        return self.data_pre[idx], self.data_post[idx]

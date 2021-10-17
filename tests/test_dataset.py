@@ -5,11 +5,13 @@ from mimic.datatype import ImageDataChunk
 from mimic.dataset import ReconstructionDataset
 from mimic.dataset import attach_flag_info
 from mimic.dataset import AutoRegressiveDataset
+from mimic.dataset import FirstOrderARDataset
 import pytest
 
 from test_datatypes import cmd_datachunk
 from test_datatypes import image_datachunk
 from test_datatypes import image_datachunk_with_encoder
+from test_datatypes import image_command_datachunk_with_encoder
 
 def test_reconstruction_dataset_pipeline(image_datachunk):
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
@@ -45,3 +47,10 @@ def test_autoregressive_dataset_pipeline2(cmd_datachunk):
     for seq in dataset.data:
         assert list(seq.shape) == [20, 8]
     assert len(dataset) == 10
+
+def test_FirstOrderARDataset_pipeline(image_command_datachunk_with_encoder):
+    chunk = image_command_datachunk_with_encoder
+    dataset = FirstOrderARDataset.from_chunk(chunk)
+    assert dataset.data_pre.ndim == 2
+    assert list(dataset.data_pre.shape) == [10 * (100 - 1), 23]
+    assert list(dataset.data_pre.shape) == list(dataset.data_pre.shape)
