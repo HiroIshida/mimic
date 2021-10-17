@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torchvision
 import numpy as np
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -27,7 +28,7 @@ class AbstractDataSequence(ABC):
     @abstractmethod
     def to_featureseq(self) -> torch.Tensor: ...
 
-    def get_segment(self: SeqT, slicer: slice) -> SeqT:
+    def get_segment(self: SeqT, slicer: Any) -> SeqT:
         return self.__class__(self.data[slicer])
 
 DataT = TypeVar('DataT', bound=Tuple[AbstractDataSequence, ...])
