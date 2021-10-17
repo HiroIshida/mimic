@@ -10,7 +10,7 @@ import pybullet_data
 from moviepy.editor import ImageSequenceClip
 
 from mimic.file import get_project_dir
-from mimic.datatype import ImageDataChunk
+from mimic.datatype import ImageCommandDataChunk
 
 class BulletManager(object):
 
@@ -161,9 +161,9 @@ if __name__=='__main__':
         cmd_seqs.append(cmd_seq)
         img_seqs.append(img_seq)
 
-    chunk = ImageDataChunk()
-    for img in img_seqs:
-        chunk.push_epoch(img)
+    chunk = ImageCommandDataChunk()
+    for img_cmd_seq_tuple in zip(img_seqs, cmd_seqs):
+        chunk.push_epoch(img_cmd_seq_tuple)
     chunk.dump(project_name)
 
     filename = os.path.join(get_project_dir(project_name), "sample.gif")

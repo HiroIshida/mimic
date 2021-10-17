@@ -52,7 +52,7 @@ def image_command_datachunk_with_encoder():
     for i in range(10):
         imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
         cmdseq = np.random.randn(n_seq, 7)
-        chunk.push_epoch(imgseq, cmdseq)
+        chunk.push_epoch((imgseq, cmdseq))
     return chunk
 
 def test_dump_load(cmd_datachunk):
