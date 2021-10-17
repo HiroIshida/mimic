@@ -1,4 +1,5 @@
 import argparse
+from typing import Union
 
 import torch
 from mimic.models.autoencoder import ImageAutoEncoder
@@ -6,18 +7,23 @@ from mimic.models.autoencoder import ImageAutoEncoder
 from mimic.trainer import Config
 from mimic.trainer import TrainCache
 from mimic.trainer import train
+from mimic.datatype import AbstractDataChunk
 from mimic.datatype import ImageDataChunk
+from mimic.datatype import ImageCommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 from mimic.models import LSTM
 from mimic.scripts.utils import split_with_ratio
 from mimic.scripts.utils import create_default_logger
 
-def prepare_dataset(project_name: str, mode: str = 'image') -> AutoRegressiveDataset:
-    if mode == 'image':
-        tcache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
+def prepare_dataset(project_name: str) -> AutoRegressiveDataset:
+    tcache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
+    try:
+        chunk: Union[ImageDataChunk, ImageCommandDataChunk] \
+                = ImageCommandDataChunk.load(project_name)
+    except FileNotFoundError:
         chunk = ImageDataChunk.load(project_name)
-        chunk.set_encoder(tcache.best_model.encoder)
-        dataset = AutoRegressiveDataset.from_chunk(chunk)
+    chunk.set_encoder(tcache.best_model.encoder)
+    dataset = AutoRegressiveDataset.from_chunk(chunk)
     return dataset
 
 def train_lstm(project_name: str, config: Config) -> None:
