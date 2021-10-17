@@ -34,8 +34,7 @@ if __name__=='__main__':
     project_name = args.pn
     predictor = create_predictor(project_name)
     chunk = ImageCommandDataChunk.load(project_name)
-    imgseq: ImageDataSequence = chunk[-2][ImageDataSequence]
-    cmdseq: CommandDataSequence = chunk[-2][CommandDataSequence]
+    imgseq, cmdseq = chunk[-2]
     assert imgseq.data.ndim == 4
     for i in range(30):
         predictor.feed((imgseq.data[i], cmdseq.data[i]))
