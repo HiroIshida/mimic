@@ -4,10 +4,16 @@ import numpy as np
 import torch
 import copy
 
+from mimic.datatype import CommandDataSequence
 from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.datatype import ImageCommandDataChunk
 from mimic.models import ImageAutoEncoder
+
+def test_dataseq_slice():
+    seq = CommandDataSequence(np.zeros((10, 3)))
+    new_seq = seq.get_segment(slice(0, 3))
+    assert new_seq.data.shape == (3, 3)
 
 @pytest.fixture(scope='session')
 def cmd_datachunk():

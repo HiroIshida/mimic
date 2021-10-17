@@ -17,6 +17,7 @@ from torch.functional import Tensor
 from mimic.file import dump_pickled_data
 from mimic.file import load_pickled_data
 
+SeqT = TypeVar('SeqT', bound='AbstractDataSequence')
 class AbstractDataSequence(ABC):
     data : np.ndarray
     def __init__(self, data: np.ndarray):
@@ -25,8 +26,10 @@ class AbstractDataSequence(ABC):
     @abstractmethod
     def to_featureseq(self) -> torch.Tensor: ...
 
+    def get_segment(self: SeqT, slicer: slice) -> SeqT:
+        return self.__class__(self.data[slicer])
+
 # TODO is there neat way to define like NewType('SeqDict', Dict[Type[SeqT], SeqT]) ?
-SeqT = TypeVar('SeqT', bound=AbstractDataSequence)
 class SeqDict(Dict, Generic[SeqT]):
     def __getitem__(self, key: Type[SeqT]) -> SeqT:
         return super().__getitem__(key)
