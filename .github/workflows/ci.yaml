@@ -29,7 +29,7 @@ jobs:
                   pip3 install pytest mypy
 
             - name: Run mypy
-              run: mypy . --exclude setup.py --verbose
+              run: mypy . --exclude setup.py
 
             - name: Run Pytest
               run: |

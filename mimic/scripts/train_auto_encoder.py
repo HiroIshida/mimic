@@ -2,6 +2,7 @@ import argparse
 
 import torch
 from mimic.datatype import ImageDataChunk
+from mimic.datatype import ImageCommandDataChunk
 from mimic.dataset import ReconstructionDataset
 from mimic.models import ImageAutoEncoder
 from mimic.trainer import train
@@ -11,7 +12,11 @@ from mimic.scripts.utils import split_with_ratio
 from mimic.scripts.utils import create_default_logger
 
 def train_auto_encoder(project_name: str, n_bottleneck: int, config: Config) -> None:
-    chunk = ImageDataChunk.load(project_name)
+    try:
+        tmp = ImageCommandDataChunk.load(project_name)
+        chunk = ImageDataChunk.from_imgcmd_chunk(tmp)
+    except FileNotFoundError:
+        chunk = ImageDataChunk.load(project_name)
     dataset = ReconstructionDataset.from_chunk(chunk)
     ds_train, ds_valid = split_with_ratio(dataset)
     image_shape = dataset[0].shape

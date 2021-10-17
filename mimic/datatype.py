@@ -9,6 +9,7 @@ from typing import Optional
 from typing import Generic
 from typing import Type
 from typing import TypeVar
+from typing import Tuple
 from typing import NewType
 
 from torch.functional import Tensor
@@ -24,7 +25,6 @@ class AbstractDataSequence(ABC):
     @abstractmethod
     def to_featureseq(self) -> torch.Tensor: ...
 
-
 # TODO is there neat way to define like NewType('SeqDict', Dict[Type[SeqT], SeqT]) ?
 SeqT = TypeVar('SeqT', bound=AbstractDataSequence)
 class SeqDict(Dict, Generic[SeqT]):
@@ -33,11 +33,13 @@ class SeqDict(Dict, Generic[SeqT]):
 
 ChunkT = TypeVar('ChunkT', bound='AbstractDataChunk')
 class AbstractDataChunk(ABC):
-    keys : List[type] = [] # override this
+    keys : List[type]
     seqdict_list : List[SeqDict]
 
-    def __init__(self):
-        self.seqdict_list = []
+    def __init__(self, seqdict_list: Optional[List[SeqDict]]=None):
+        if seqdict_list is None:
+            seqdict_list = []
+        self.seqdict_list = seqdict_list
 
     @abstractmethod
     def push_epoch(self, seqs) -> None: ...
@@ -56,7 +58,7 @@ class AbstractDataChunk(ABC):
         """
         seqtorch_list = []
         for seqdict in self.seqdict_list:
-            seqtorch = torch.cat([seqdict[key].to_featureseq() for key in self.keys])
+            seqtorch = torch.cat([seqdict[key].to_featureseq() for key in self.keys], dim=1)
             seqtorch_list.append(seqtorch)
         return seqtorch_list
 
@@ -99,8 +101,12 @@ class ImageDataSequence(AbstractDataSequence):
 class ImageDataChunk(AbstractDataChunk):
     keys = [ImageDataSequence]
     encoder_holder : Dict[str, Optional[nn.Module]] = {'encoder': None}
-    def __init__(self, encoder: Optional[nn.Module] = None):
-        super().__init__()
+    def __init__(self, 
+            encoder: Optional[nn.Module] = None, 
+            seqdict_list: Optional[List[SeqDict]] = None):
+        if seqdict_list is None:
+            seqdict_list = []
+        super().__init__(seqdict_list)
         self.encoder_holder = {'encoder': encoder}
 
     def push_epoch(self, seq: np.ndarray) -> None:
@@ -113,4 +119,30 @@ class ImageDataChunk(AbstractDataChunk):
     @property
     def has_encoder(self):
         return (self.encoder_holder['encoder'] != None)
-    
+
+    @classmethod
+    def from_imgcmd_chunk(cls, chunk: 'ImageCommandDataChunk') -> 'ImageDataChunk':
+        seqdict_list_new: List[SeqDict] = []
+        for seqdict in chunk.seqdict_list:
+            val = seqdict[ImageDataSequence]
+            newdict: SeqDict = SeqDict({ImageDataSequence : val})
+            seqdict_list_new.append(newdict)
+        return ImageDataChunk(seqdict_list=seqdict_list_new)
+
+class ImageCommandDataChunk(AbstractDataChunk):
+    keys = [ImageDataSequence, CommandDataSequence]
+    encoder_holder : Dict[str, Optional[nn.Module]] = {'encoder': None}
+    def __init__(self, encoder: Optional[nn.Module] = None):
+        super().__init__()
+        self.encoder_holder = {'encoder': encoder}
+
+    def push_epoch(self, imgcmd_seq: Tuple[np.ndarray, np.ndarray]) -> None:
+        imgseq, cmdseq = imgcmd_seq
+        assert imgseq.ndim == 4
+        assert cmdseq.ndim == 2
+        img_data_seq = ImageDataSequence(imgseq, self.encoder_holder)
+        cmd_data_seq = CommandDataSequence(cmdseq)
+        super()._push_epoch([img_data_seq, cmd_data_seq])
+
+    def set_encoder(self, encoder: nn.Module):
+        self.encoder_holder['encoder'] = encoder

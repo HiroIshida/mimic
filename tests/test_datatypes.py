@@ -6,6 +6,7 @@ import copy
 
 from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
+from mimic.datatype import ImageCommandDataChunk
 from mimic.models import ImageAutoEncoder
 
 @pytest.fixture(scope='session')
@@ -41,6 +42,19 @@ def image_datachunk_with_encoder():
     chunk.push_epoch(imgseq)
     return chunk
 
+@pytest.fixture(scope='session')
+def image_command_datachunk_with_encoder():
+    n_seq = 100
+    n_channel = 3
+    n_pixel = 28
+    ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
+    chunk = ImageCommandDataChunk(encoder=ae.encoder)
+    for i in range(10):
+        imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
+        cmdseq = np.random.randn(n_seq, 7)
+        chunk.push_epoch((imgseq, cmdseq))
+    return chunk
+
 def test_dump_load(cmd_datachunk):
     cmd_datachunk.dump("test")
     chunk = CommandDataChunk.load("test")
@@ -71,3 +85,7 @@ def test_image_featureseq_list_generateion_pipeline(image_datachunk, image_datac
     fslist = image_datachunk.to_featureseq_list()
     assert len(fslist[0].size()) == 4
     assert list(fslist[0].size()) == [100, 3, 28, 28]
+
+def test_image_command_datachunk_with_encoder_pipeline(image_command_datachunk_with_encoder):
+    fslist = image_command_datachunk_with_encoder.to_featureseq_list()
+    assert list(fslist[0].size()) == [100, 16 + 7]
