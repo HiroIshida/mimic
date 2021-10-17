@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from functools import reduce
 import operator
 import copy
+from torch._C import device
 
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -13,6 +14,7 @@ from torch.optim import Adam
 import typing
 from typing import Dict
 from typing import List
+from typing import Union
 from typing import Optional
 from typing import Generic
 from typing import Type
@@ -96,6 +98,14 @@ def train(
         tcache: TrainCache,
         config: Config = Config()) -> None:
 
+    def move_to_device(sample):
+        if isinstance(sample, torch.Tensor):
+            return sample.to(model.device)
+        elif isinstance(sample, list): # NOTE datalodaer return list type not tuple
+            return tuple([e.to(model.device) for e in sample])
+        else:
+            raise RuntimeError
+
     train_loader = DataLoader(
             dataset=dataset_train, batch_size=config.batch_size, shuffle=True)
     validate_loader = DataLoader(
@@ -110,8 +120,7 @@ def train(
         train_ld_list : List[LossDictFloat] = []
         for samples in train_loader:
             optimizer.zero_grad()
-            # TODO make function of sample.to to compat with Tuple(torch)
-            samples = samples.to(model.device)
+            samples = move_to_device(samples)
             loss_dict = model.loss(samples)
             loss :torch.Tensor = reduce(operator.add, loss_dict.values())
             loss.backward()
@@ -124,7 +133,7 @@ def train(
         model.eval()
         validate_ld_list : List[LossDictFloat] = []
         for samples in validate_loader:
-            samples = samples.to(model.device)
+            samples = move_to_device(samples)
             loss_dict = model.loss(samples)
             loss_dict['total'] = reduce(operator.add, loss_dict.values())
             validate_ld_list.append(to_scalar_values(loss_dict))

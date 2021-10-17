@@ -98,4 +98,4 @@ class FirstOrderARDataset(Dataset):
     def __len__(self) -> int: return len(self.data_pre)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]: 
-        return self.data_pre[idx], self.data_post[idx]
+        return (self.data_pre[idx], self.data_post[idx])
