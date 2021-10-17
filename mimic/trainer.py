@@ -110,6 +110,7 @@ def train(
         train_ld_list : List[LossDictFloat] = []
         for samples in train_loader:
             optimizer.zero_grad()
+            # TODO make function of sample.to to compat with Tuple(torch)
             samples = samples.to(model.device)
             loss_dict = model.loss(samples)
             loss :torch.Tensor = reduce(operator.add, loss_dict.values())

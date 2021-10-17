@@ -3,9 +3,12 @@ import torch
 
 from mimic.models import ImageAutoEncoder
 from mimic.dataset import AutoRegressiveDataset
+from mimic.dataset import FirstOrderARDataset
 from mimic.models import LSTM
-from test_datatypes import image_datachunk_with_encoder
+from mimic.models import DenseProp
 from test_datatypes import cmd_datachunk
+from test_datatypes import image_datachunk_with_encoder
+from test_datatypes import image_command_datachunk_with_encoder
 
 def test_image_auto_encoder():
     n_batch = 100
@@ -28,3 +31,12 @@ def test_lstm_with_image(image_datachunk_with_encoder):
     loss = model.loss(sample)
     assert len(list(loss.values())) == 1
     assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
+
+def test_densedrop_pipeline(image_command_datachunk_with_encoder):
+    chunk = image_command_datachunk_with_encoder
+    dataset = FirstOrderARDataset.from_chunk(chunk)
+    n_state = 16 + 7
+    model = DenseProp(torch.device('cpu'), n_state)
+    pre, post = dataset[0]
+    sample = (pre.unsqueeze(0), post.unsqueeze(0))
+    loss_dict = model.loss(sample)
