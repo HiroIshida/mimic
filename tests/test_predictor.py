@@ -2,8 +2,9 @@ import numpy as np
 import torch
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
-from mimic.predictor import ImageLSTMPredictor
 from mimic.predictor import LSTMPredictor
+from mimic.predictor import ImageLSTMPredictor
+from mimic.predictor import ImageCommandLSTMPredictor
 from mimic.datatype import CommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 
@@ -47,3 +48,21 @@ def test_ImageLSTMPredictor():
 
     imgs_with_feeds = predictor.predict(5, with_feeds=True)
     assert len(imgs_with_feeds) == (5 + 10)
+
+def test_ImageCommandLSTMPredictor():
+    n_seq = 100
+    n_channel = 3
+    n_pixel = 28
+    ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
+    lstm = LSTM(torch.device('cpu'), 16 + 7 + 1)
+    predictor = ImageCommandLSTMPredictor(lstm, ae)
+
+    for _ in range(10):
+        img = np.zeros((n_pixel, n_pixel, n_channel))
+        cmd = np.zeros(7)
+        predictor.feed((img, cmd))
+    assert list(predictor.states[0].shape) == [16 + 7 + 1]
+
+    imgs, cmds = zip(*predictor.predict(5))
+    assert imgs[0].shape == (n_pixel, n_pixel, n_channel)
+    assert cmds[0].shape == (7,)
