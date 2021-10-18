@@ -2,6 +2,8 @@ import os
 import os.path as osp
 import pickle
 from typing import Any
+from typing import Type
+from typing import TypeVar
 from typing import Optional
 
 def get_data_dir() -> str:
@@ -16,7 +18,8 @@ def get_project_dir(project_name: str) ->str:
         os.makedirs(dirname)
     return dirname
 
-def load_pickled_data(project_name: str, cls: type, prefix: Optional[str] = None) -> Any:
+DataT = TypeVar('DataT') 
+def load_pickled_data(project_name: str, cls: Type[DataT], prefix: Optional[str] = None) -> DataT:
     filename = cls.__name__
     if prefix:
         filename = prefix + filename
@@ -24,7 +27,6 @@ def load_pickled_data(project_name: str, cls: type, prefix: Optional[str] = None
     with open(wholename, 'rb') as f:
         data = pickle.load(f)
     return data
-
 
 def dump_pickled_data(data: Any, project_name: str, prefix: Optional[str] = None) -> None:
     filename = data.__class__.__name__
