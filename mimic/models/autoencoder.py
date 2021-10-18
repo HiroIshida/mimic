@@ -28,14 +28,14 @@ class AbstractEncoderDecoder(_Model, ABC):
     def forward(self, inp : torch.Tensor) -> torch.Tensor:
         return self.decoder(self.encoder(inp))
 
-class AbstractAutoEncoder(AbstractEncoderDecoder):
+class ImageAutoEncoder(AbstractEncoderDecoder):
+
     def loss(self, sample : torch.Tensor) -> LossDict:
         f_loss = nn.MSELoss()
         reconstructed = self.forward(sample)
         loss_value = f_loss(sample, reconstructed)
         return LossDict({'reconstruction': loss_value})
 
-class ImageAutoEncoder(AbstractAutoEncoder):
     def _create_layers(self, **kwargs):
         channel, n_pixel, m_pixel = kwargs['image_shape']
         assert n_pixel == m_pixel
