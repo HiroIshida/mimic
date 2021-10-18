@@ -130,6 +130,7 @@ if __name__=='__main__':
     parser.add_argument('--depth', action='store_true', help='with depth channel')
     parser.add_argument('--predict', action='store_true', help='prediction mode')
     parser.add_argument('--action', action='store_true', help='')
+    parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
     parser.add_argument('-n', type=int, default=300, help='epoch num')
     parser.add_argument('-m', type=int, default=112, help='pixel num') # same as mnist
     args = parser.parse_args()
@@ -138,8 +139,7 @@ if __name__=='__main__':
     with_depth = args.depth
     prediction_mode = args.predict
     with_action = args.action
-
-    project_name = 'kuka_reaching' + ('_action' if with_action else '')
+    project_name = args.pn
 
     pbdata_path = pybullet_data.getDataPath()
     urdf_path = os.path.join(pbdata_path, 'kuka_iiwa', 'model.urdf')
