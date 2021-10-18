@@ -10,13 +10,14 @@ import pytest
 
 from test_datatypes import cmd_datachunk
 from test_datatypes import image_datachunk
+from test_datatypes import _img_chunk_uneven_n
 from test_datatypes import image_datachunk_with_encoder
 from test_datatypes import image_command_datachunk_with_encoder
 
 def test_reconstruction_dataset_pipeline(image_datachunk):
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
-    assert list(dataset.data.shape) == [10 * 100, 3, 28, 28]
-    assert len(dataset) == 10 * 100
+    assert list(dataset.data.shape) == [10 * 100 + _img_chunk_uneven_n, 3, 28, 28]
+    assert len(dataset) == 10 * 100 + _img_chunk_uneven_n
     assert list(dataset[0].shape) == [3, 28, 28]
 
 def test_attach_flag_info():

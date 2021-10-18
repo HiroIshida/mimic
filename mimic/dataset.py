@@ -19,7 +19,7 @@ class ReconstructionDataset(Dataset):
         assert (not chunk.has_encoder)
         featureseq_list = chunk.to_featureseq_list()
         n_seq, n_channel, n_pixel1, n_pixel2 = featureseq_list[0].shape
-        tmp = torch.stack(featureseq_list)
+        tmp = torch.cat(featureseq_list, dim=0)
         data = torch.reshape(tmp, (-1, n_channel, n_pixel1, n_pixel2))
         return ReconstructionDataset(data)
 
