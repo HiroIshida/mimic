@@ -36,10 +36,10 @@ ChunkT = TypeVar('ChunkT', bound='AbstractDataChunk')
 class AbstractDataChunk(ABC, Generic[DataT]):
     seqs_list : List[DataT]
 
-    def __init__(self, seqdict_list: Optional[List[DataT]]=None):
-        if seqdict_list is None:
-            seqdict_list = []
-        self.seqs_list = seqdict_list
+    def __init__(self, seqs_list: Optional[List[DataT]]=None):
+        if seqs_list is None:
+            seqs_list = []
+        self.seqs_list = seqs_list
 
     @abstractmethod
     def push_epoch(self, seqs) -> None: ...
@@ -94,27 +94,31 @@ class ImageDataSequence(AbstractDataSequence):
         out = encoder(data_torch).detach().clone() if encoder else data_torch
         return out
 
+class ImageDataChunkBase:
+    encoder_holder : Dict[str, Optional[nn.Module]]
+    def __init__(self, encoder: Optional[nn.Module]):
+        self.encoder_holder = {'encoder': encoder}
+
+    def set_encoder(self, encoder: Optional[nn.Module]) -> None:
+        self.encoder_holder['encoder'] = encoder
+
+    @property
+    def has_encoder(self) -> bool:
+        return (self.encoder_holder['encoder'] != None)
+
 _ImageDataSequence = Tuple[ImageDataSequence]
-class ImageDataChunk(AbstractDataChunk[_ImageDataSequence]):
-    encoder_holder : Dict[str, Optional[nn.Module]] = {'encoder': None}
+class ImageDataChunk(AbstractDataChunk[_ImageDataSequence], ImageDataChunkBase):
     def __init__(self, 
             encoder: Optional[nn.Module] = None, 
             seqs_list: Optional[List[_ImageDataSequence]] = None):
         if seqs_list is None:
             seqs_list = []
-        super().__init__(seqs_list)
-        self.encoder_holder = {'encoder': encoder}
+        AbstractDataChunk.__init__(self, seqs_list)
+        ImageDataChunkBase.__init__(self, encoder)
 
     def push_epoch(self, seq: np.ndarray) -> None:
         imgseq = ImageDataSequence(seq, self.encoder_holder)
         super()._push_epoch((imgseq,))
-
-    def set_encoder(self, encoder: nn.Module):
-        self.encoder_holder['encoder'] = encoder
-
-    @property
-    def has_encoder(self):
-        return (self.encoder_holder['encoder'] != None)
 
     @classmethod
     def from_imgcmd_chunk(cls, chunk: 'ImageCommandDataChunk') -> 'ImageDataChunk':
@@ -126,11 +130,10 @@ class ImageDataChunk(AbstractDataChunk[_ImageDataSequence]):
         return ImageDataChunk(seqs_list=seqs_list_new)
 
 _ImageCommandDataSequence = Tuple[ImageDataSequence, CommandDataSequence]
-class ImageCommandDataChunk(AbstractDataChunk[_ImageCommandDataSequence]):
-    encoder_holder : Dict[str, Optional[nn.Module]] = {'encoder': None}
+class ImageCommandDataChunk(AbstractDataChunk[_ImageCommandDataSequence], ImageDataChunkBase):
     def __init__(self, encoder: Optional[nn.Module] = None):
-        super().__init__()
-        self.encoder_holder = {'encoder': encoder}
+        super().__init__([]) # TODO enable optional seq input??
+        ImageDataChunkBase.__init__(self, encoder)
 
     def push_epoch(self, imgcmd_seq: Tuple[np.ndarray, np.ndarray]) -> None:
         imgseq, cmdseq = imgcmd_seq
@@ -138,6 +141,3 @@ class ImageCommandDataChunk(AbstractDataChunk[_ImageCommandDataSequence]):
         img_data_seq = ImageDataSequence(imgseq, self.encoder_holder)
         cmd_data_seq = CommandDataSequence(cmdseq)
         super()._push_epoch((img_data_seq, cmd_data_seq))
-
-    def set_encoder(self, encoder: nn.Module):
-        self.encoder_holder['encoder'] = encoder
