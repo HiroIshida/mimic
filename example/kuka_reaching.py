@@ -105,9 +105,10 @@ class BulletManager(object):
         return rgbImg, depthImg
 
     def kinematic_simulate(self, joint_angles_target, N=100, n_pixel=112, with_depth=False):
+        N_rand = N + np.random.randint(10)
         angles_now = np.array(self.joint_angles())
-        step = (np.array(joint_angles_target) - angles_now)/(N-1)
-        angles_seq = [angles_now + step * i for i in range(N)]
+        step = (np.array(joint_angles_target) - angles_now)/(N_rand-1)
+        angles_seq = [angles_now + step * i for i in range(N_rand)]
         img_list = []
         for angles in angles_seq:
             self.set_joint_angles(angles)

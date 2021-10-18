@@ -30,6 +30,8 @@ def image_datachunk():
     n_pixel = 28
     chunk = ImageDataChunk()
     for i in range(10):
+        if i==9:
+            n_seq = n_seq + np.random.randint(10)
         imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
         chunk.push_epoch(imgseq)
     return chunk
