@@ -50,3 +50,8 @@ def test_segmentation_pipeline(dummy_chunk, segmentation_raw_ordered):
     assert len(c2.seqs_list[1][0].data) == 6
     assert len(c3.seqs_list[0][0].data) == 3
     assert len(c3.seqs_list[1][0].data) == 0
+
+def test_dump_load(segmentation_raw_ordered):
+    seg = Segmentor(segmentation_raw_ordered)
+    seg.dump('test')
+    seg_loaded = Segmentor.load('test')

@@ -4,6 +4,8 @@ from copy import deepcopy
 from typing import List
 from typing import TypeVar
 import numpy as np
+from mimic.file import dump_pickled_data
+from mimic.file import load_pickled_data
 from mimic.datatype import AbstractDataChunk
 
 ChunkT = TypeVar('ChunkT', bound=AbstractDataChunk)
@@ -15,6 +17,13 @@ class Segmentor:
         n_seq, n_phase = data[0].shape
         self.n_phase = n_phase
         self.data = data
+
+    def dump(self, project_name: str) -> None:
+        dump_pickled_data(self, project_name)
+
+    @classmethod
+    def load(cls, project_name: str) -> 'Segmentor':
+        return load_pickled_data(project_name, Segmentor)
 
     @lru_cache
     def to_labelseq_list(self) -> List[np.ndarray]:
