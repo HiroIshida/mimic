@@ -23,6 +23,7 @@ def cmd_datachunk():
         chunk.push_epoch(seq)
     return chunk
 
+_img_chunk_uneven_n = 2
 @pytest.fixture(scope='session')
 def image_datachunk():
     n_seq = 100
@@ -30,6 +31,8 @@ def image_datachunk():
     n_pixel = 28
     chunk = ImageDataChunk()
     for i in range(10):
+        if i==9:
+            n_seq = n_seq + _img_chunk_uneven_n # to test uneven dataset 
         imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
         chunk.push_epoch(imgseq)
     return chunk
