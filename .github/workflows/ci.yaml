@@ -36,4 +36,4 @@ jobs:
                   pytest -v tests
 
             - name: Run pipeline
-              run: bash ./example/run.sh
+              run: ./example/run.py --dryrun
