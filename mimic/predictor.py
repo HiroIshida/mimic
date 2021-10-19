@@ -152,10 +152,26 @@ class FFImageCommandPredictor(AbstractPredictor[MaybeNoneImageCommandPair, FFPro
             img_feature = self.img_torch_one_shot
 
         cmd_torch = torch.from_numpy(cmd).float()
-        feature = torch.cat((img_feature, cmd_torch))
-        self._feed(feature)
+        self._feed(cmd_torch)
 
     def predict(self, n_horizon: int, with_feeds: bool=False) -> List[MaybeNoneImageCommandPair]:
         preds = self._predict(n_horizon, with_feeds)
         cmd_list = [e.detach().numpy() for e in preds]
         return [(None, cmd) for cmd in cmd_list]
+
+    # override!
+    def _predict(self, n_horizon: int, with_feeds: bool=False) -> List[torch.Tensor]:
+        feeds = copy.deepcopy(self.states)
+        preds: List[torch.Tensor] = []
+        for _ in range(n_horizon):
+            states = torch.stack(feeds)
+            assert self.img_torch_one_shot is not None # this required for mypy check
+            bias = self.img_torch_one_shot.unsqueeze(0)
+            bias_repeated = bias.expand(len(states), -1)
+            tmp = self.propagator(states, bias_repeated)
+            out = torch.squeeze(tmp, dim=0)[-1].detach().clone()
+            self._force_continue_flag_if_necessary(out)
+            feeds.append(out)
+            preds.append(out)
+        raw_preds = feeds if with_feeds else preds
+        return [self._strip_flag_if_necessary(e) for e in raw_preds]
