@@ -32,7 +32,10 @@ class AbstractDataSequence(ABC):
     def to_featureseq(self) -> torch.Tensor: ...
 
     def get_segment(self: SeqT, slicer: Any) -> SeqT:
-        return self.__class__(self.data[slicer])
+        # TODO(HiroIshida) too dirty. there must be a sane way...
+        obj = copy.deepcopy(self)
+        obj.data = self.data[slicer]
+        return obj
 
 DataT = TypeVar('DataT', bound=Tuple[AbstractDataSequence, ...])
 ChunkT = TypeVar('ChunkT', bound='AbstractDataChunk')
