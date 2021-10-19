@@ -9,14 +9,24 @@ import torch
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.models import DenseProp
+from mimic.models import BiasedDenseProp
+from mimic.predictor import AbstractPredictor
 from mimic.predictor import ImageCommandPredictor
+from mimic.predictor import FFImageCommandPredictor
 from mimic.trainer import TrainCache
 
 @typing.no_type_check 
-def create_predictor(project_name: str, ModelT) -> ImageCommandPredictor:
+def create_predictor(project_name: str, model_name: str) -> \
+        Union[ImageCommandPredictor, FFImageCommandPredictor]:
+    dispatch_dict = {
+            'lstm': [LSTM, ImageCommandPredictor],
+            'dense_prop': [DenseProp, ImageCommandPredictor],
+            'biased_dense_prop': [BiasedDenseProp, FFImageCommandPredictor]
+            }
+    ModelT, PredictorT = dispatch_dict[model_name]
     ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
     prop_train_cache = TrainCache[ModelT].load(project_name, ModelT)
-    return ImageCommandPredictor[ModelT](prop_train_cache.best_model, ae_train_cache.best_model)
+    return PredictorT[ModelT](prop_train_cache.best_model, ae_train_cache.best_model)
 
 if __name__=='__main__':
     # only for demo
@@ -32,18 +42,11 @@ if __name__=='__main__':
     parser.add_argument('-model', type=str, default='lstm', help='propagator model name')
     parser.add_argument('-bottleneck', type=int, default=16, help='latent dimension')
 
-    print('supposed to be used only in testing or debugging...')
-    dispatch_dict = {
-            'lstm': LSTM,
-            'dense_prop': DenseProp
-            }
-
     args = parser.parse_args()
     project_name = args.pn
     model_name = args.model
 
-    model_type = dispatch_dict[model_name]
-    predictor = create_predictor(project_name, DenseProp)
+    predictor = create_predictor(project_name, model_name)
     chunk = ImageCommandDataChunk.load(project_name)
     imgseq, cmdseq = chunk[-2]
     assert imgseq.data.ndim == 4
@@ -51,5 +54,8 @@ if __name__=='__main__':
         predictor.feed((imgseq.data[i], cmdseq.data[i]))
     imgseq_pred, cmdseq_pred = map(list, zip(*predictor.predict(30)))
     filename = os.path.join(get_project_dir(project_name), 'prediction_result_{}.gif'.format(model_name))
-    clip = ImageSequenceClip(imgseq_pred, fps=50)
-    clip.write_gif(filename, fps=50)
+    if model_name == 'biased_dense_prop':
+        print('images are not predicted by biased_dense_prop') 
+    else:
+        clip = ImageSequenceClip(imgseq_pred, fps=50)
+        clip.write_gif(filename, fps=50)
