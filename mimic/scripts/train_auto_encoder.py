@@ -23,7 +23,7 @@ def train_auto_encoder(project_name: str, n_bottleneck: int, config: Config) -> 
     image_shape = dataset[0].shape
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = ImageAutoEncoder(device, n_bottleneck, image_shape=image_shape)
-    tcache = TrainCache[ImageAutoEncoder](project_name)
+    tcache = TrainCache[ImageAutoEncoder](project_name, ImageAutoEncoder)
     if tcache.exists_cache():
         if not query_yes_no('tcach exists. do you want to overwrite?'):
             raise RuntimeError('execution interrupt')
