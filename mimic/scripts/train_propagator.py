@@ -20,6 +20,7 @@ from mimic.models import LSTM
 from mimic.models import DenseProp
 from mimic.scripts.utils import split_with_ratio
 from mimic.scripts.utils import create_default_logger
+from mimic.scripts.utils import query_yes_no
 
 def prepare_chunk(project_name: str) -> AbstractDataChunk:
     tcache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
@@ -49,6 +50,9 @@ def train_propagator(project_name: str, model_type, config: Config) -> None:
     else:
         raise RuntimeError
     tcache = TrainCache[model_type](project_name)
+    if tcache.exists_cache():
+        if not query_yes_no('tcach exists. do you want to overwrite?'):
+            raise RuntimeError('execution interrupt')
     ds_train, ds_valid = split_with_ratio(dataset)
     train(prop_model, ds_train, ds_valid, tcache=tcache, config=config)
 

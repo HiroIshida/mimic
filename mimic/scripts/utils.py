@@ -1,6 +1,7 @@
 # note: Dataset doesn't have default __len__, but user must implement in any case (type ignore)
 import time
 import os
+import sys
 import logging
 from logging import Logger
 
@@ -29,3 +30,25 @@ def create_default_logger(project_name: str, prefix: str) -> Logger:
         os.unlink(log_sym_name)
     os.symlink(log_file_name, log_sym_name)
     return logger
+
+def query_yes_no(question, default="yes"):
+    # https://stackoverflow.com/questions/3041986/apt-command-line-interface-like-yes-no-input/3041990
+    valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
+    if default is None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = input().lower()
+        if default is not None and choice == "":
+            return valid[default]
+        elif choice in valid:
+            return valid[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' " "(or 'y' or 'n').\n")
