@@ -103,9 +103,9 @@ class FirstOrderARDataset(Dataset):
 class BiasedFirstOrderARDataset(Dataset):
     n_state: int
     n_bias: int
-    bias_list: List[torch.Tensor]
-    data_pre: torch.Tensor
-    data_post: torch.Tensor
+    bias_list: List[torch.Tensor] # list of 1-dim tensor
+    data_pre: torch.Tensor # 2-dim tensor
+    data_post: torch.Tensor # 2-dim tensor
     def __init__(self, featureseq_list: List[torch.Tensor], n_encoder_output):
         seq_list = deepcopy(featureseq_list)
         pre_list, post_list = [], []
@@ -114,6 +114,7 @@ class BiasedFirstOrderARDataset(Dataset):
             n_seq, n_whole = seq.shape
             bias_image_feature_idx = 0
             bias = seq[bias_image_feature_idx, :n_encoder_output]
+            assert bias.ndim == 1
             bias_list.append(bias)
 
             seq_state = seq[:, n_encoder_output:]
@@ -132,3 +133,8 @@ class BiasedFirstOrderARDataset(Dataset):
         assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
         return BiasedFirstOrderARDataset(featureseq_list, chunk.n_encoder_output())
+
+    def __len__(self) -> int: return len(self.data_pre)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
+        return (self.data_pre[idx], self.data_post[idx], self.bias_list[idx])
