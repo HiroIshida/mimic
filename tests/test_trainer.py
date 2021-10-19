@@ -1,4 +1,5 @@
 import os
+import shutil
 import torch
 from torch.utils.data import random_split
 from mimic.file import get_project_dir
@@ -15,14 +16,17 @@ from mimic.trainer import TrainCache
 from test_datatypes import image_datachunk
 from test_datatypes import image_datachunk_with_encoder
 
-def _train(project_name, model, dataset, model_type, config):
+def _train(project_name, model, dataset, model_type, config, postfix=""):
     n_total = len(dataset)
     train_set, val_set =  random_split(dataset, [n_total-2, 2])
-    tcache = TrainCache[model_type](project_name=project_name)
+    tcache = TrainCache[model_type](project_name=project_name, cache_postfix=postfix)
 
     assert not tcache.exists_cache()
     train(model, train_set, val_set, tcache=tcache, config=config)
     assert tcache.exists_cache()
+
+    tcache = TrainCache.load(project_name, model.__class__, postfix)
+    assert isinstance(tcache.best_model, model.__class__)
 
 def test_train(image_datachunk, image_datachunk_with_encoder):
     config = Config(n_epoch=2)
@@ -30,20 +34,17 @@ def test_train(image_datachunk, image_datachunk_with_encoder):
 
     project_cache_path = get_project_dir(project_name)
     if os.path.exists(project_cache_path):
-        os.rmdir(project_cache_path)
+        shutil.rmtree(project_cache_path)
 
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
     model = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(3, 28, 28))
     _train(project_name, model, dataset, ImageAutoEncoder, config)
-    tcache = TrainCache.load(project_name, ImageAutoEncoder)
-    assert isinstance(tcache.best_model, ImageAutoEncoder)
 
+    postfix = "_hogehoge"
     dataset2 = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset2.data[0].shape 
     model2 = LSTM(torch.device('cpu'), n_state)
-    _train(project_name, model2, dataset2, LSTM, config)
-    tcache = TrainCache.load(project_name, LSTM)
-    assert isinstance(tcache.best_model, LSTM)
+    _train(project_name, model2, dataset2, LSTM, config, postfix)
 
 """
 # this test uses not fake data;

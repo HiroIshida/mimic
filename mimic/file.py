@@ -18,21 +18,26 @@ def get_project_dir(project_name: str) ->str:
         os.makedirs(dirname)
     return dirname
 
-def _cache_name(project_name: str, cls: type, prefix: Optional[str] = None) -> str:
+def _cache_name(project_name: str, cls: type, 
+        prefix: Optional[str] = None, postfix: Optional[str] = None) -> str:
     filename = cls.__name__
     if prefix:
         filename = prefix + filename
+    if postfix: 
+        filename = filename + postfix
     wholename = osp.join(get_project_dir(project_name), filename)
     return wholename
 
 DataT = TypeVar('DataT') 
-def load_pickled_data(project_name: str, cls: Type[DataT], prefix: Optional[str] = None) -> DataT:
-    wholename = _cache_name(project_name, cls, prefix)
+def load_pickled_data(project_name: str, cls: Type[DataT], 
+        prefix: Optional[str] = None, postfix: Optional[str] = None) -> DataT:
+    wholename = _cache_name(project_name, cls, prefix, postfix)
     with open(wholename, 'rb') as f:
         data = pickle.load(f)
     return data
 
-def dump_pickled_data(data: Any, project_name: str, prefix: Optional[str] = None) -> None:
-    wholename = _cache_name(project_name, data.__class__, prefix)
+def dump_pickled_data(data: Any, project_name: str, 
+        prefix: Optional[str] = None, postfix: Optional[str] = None) -> None:
+    wholename = _cache_name(project_name, data.__class__, prefix, postfix)
     with open(wholename, 'wb') as f:
         pickle.dump(data, f)

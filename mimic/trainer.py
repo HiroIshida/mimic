@@ -47,16 +47,19 @@ class TrainCache(Generic[ModelT]):
     validate_loss_dict_seq: List[LossDictFloat]
     best_model: ModelT
     latest_model: ModelT
+    cache_postfix: Optional[str]
 
-    def __init__(self, project_name: str):
+    def __init__(self, project_name: str, cache_postfix: Optional[str]=None):
         self.project_name = project_name
         self.train_loss_dict_seq = []
         self.validate_loss_dict_seq = []
+        self.cache_postfix = cache_postfix
 
     @typing.no_type_check
     def exists_cache(self) -> bool:
         model_type = typing.get_args(self.__orig_class__)[0].__name__
-        filename = _cache_name(self.project_name, self.__class__, model_type)
+        filename = _cache_name(self.project_name, 
+                self.__class__, model_type, self.cache_postfix)
         return os.path.exists(filename)
 
     def on_startof_epoch(self, epoch: int):
@@ -81,7 +84,8 @@ class TrainCache(Generic[ModelT]):
         if(totals[-1] == min_loss):
             self.best_model = model
             logger.info('model is updated')
-        dump_pickled_data(self, self.project_name, self.best_model.__class__.__name__)
+        dump_pickled_data(self, self.project_name, 
+                self.best_model.__class__.__name__, self.cache_postfix)
 
     def visualize(self, fax: Optional[Tuple]=None):
         fax = plt.subplots() if fax is None else fax
@@ -94,10 +98,11 @@ class TrainCache(Generic[ModelT]):
         ax.legend(['train', 'valid'])
 
     @classmethod
-    def load(cls: Type[TrainCacheT], project_name: str, model_type: type) -> TrainCacheT:
+    def load(cls: Type[TrainCacheT], project_name: str, model_type: type, 
+            cache_postfix: Optional[str]=None) -> TrainCacheT:
         # requiring "model_type" seems redundant but there is no way to 
         # use info of ModelT from @classmethod
-        return load_pickled_data(project_name, cls, model_type.__name__)
+        return load_pickled_data(project_name, cls, model_type.__name__, cache_postfix)
 
 def train(
         model: _Model, 
