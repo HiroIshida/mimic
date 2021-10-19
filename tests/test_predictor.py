@@ -3,9 +3,9 @@ import torch
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.models import DenseProp
-from mimic.predictor import LSTMPredictor
-from mimic.predictor import ImageLSTMPredictor
-from mimic.predictor import ImageCommandLSTMPredictor
+from mimic.predictor import SimplePredictor
+from mimic.predictor import ImagePredictor
+from mimic.predictor import ImageCommandPredictor
 from mimic.datatype import CommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 
@@ -18,7 +18,7 @@ def test_predictor_core():
     seq = dataset[0][:29, :7]
 
     lstm = LSTM(torch.device('cpu'), 7 + 1)
-    predictor = LSTMPredictor(lstm)
+    predictor = SimplePredictor(lstm)
     for cmd in seq:
         predictor.feed(cmd.detach().numpy())
     assert torch.all(torch.stack(predictor.states) == dataset[0][:29, :])
@@ -39,7 +39,7 @@ def test_ImageLSTMPredictor():
 
     for propagator in [lstm, denseprop]:
         print('testing : {}'.format(propagator.__class__.__name__))
-        predictor = ImageLSTMPredictor(propagator, ae)
+        predictor = ImagePredictor(propagator, ae)
 
         for _ in range(10):
             img = np.zeros((n_pixel, n_pixel, n_channel))
@@ -67,7 +67,7 @@ def test_ImageCommandLSTMPredictor():
 
     for propagator in [lstm, denseprop]:
         print('testing : {}'.format(propagator.__class__.__name__))
-        predictor = ImageCommandLSTMPredictor(propagator, ae)
+        predictor = ImageCommandPredictor(propagator, ae)
 
         for _ in range(10):
             img = np.zeros((n_pixel, n_pixel, n_channel))

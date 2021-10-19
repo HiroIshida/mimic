@@ -9,14 +9,14 @@ import torch
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.models import DenseProp
-from mimic.predictor import ImageCommandLSTMPredictor
+from mimic.predictor import ImageCommandPredictor
 from mimic.trainer import TrainCache
 
 @typing.no_type_check 
-def create_predictor(project_name: str, ModelT) -> ImageCommandLSTMPredictor:
+def create_predictor(project_name: str, ModelT) -> ImageCommandPredictor:
     ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
     prop_train_cache = TrainCache[ModelT].load(project_name, ModelT)
-    return ImageCommandLSTMPredictor[ModelT](prop_train_cache.best_model, ae_train_cache.best_model)
+    return ImageCommandPredictor[ModelT](prop_train_cache.best_model, ae_train_cache.best_model)
 
 if __name__=='__main__':
     # only for demo

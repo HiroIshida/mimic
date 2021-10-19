@@ -62,7 +62,7 @@ class AbstractPredictor(ABC, Generic[StateT, FBPropT]):
     @abstractmethod
     def predict(self, n_horizon: int, with_feeds: bool) -> List[StateT]: ...
 
-class LSTMPredictor(AbstractPredictor[np.ndarray, FBPropT]):
+class SimplePredictor(AbstractPredictor[np.ndarray, FBPropT]):
 
     def feed(self, cmd: np.ndarray) -> None: 
         assert cmd.ndim == 1
@@ -74,7 +74,7 @@ class LSTMPredictor(AbstractPredictor[np.ndarray, FBPropT]):
         preds_np = [pred.detach().numpy() for pred in preds]
         return preds_np
 
-class ImageLSTMPredictor(AbstractPredictor[np.ndarray, FBPropT]):
+class ImagePredictor(AbstractPredictor[np.ndarray, FBPropT]):
     auto_encoder: ImageAutoEncoder
 
     def __init__(self, propagator: FBPropT, auto_encoder: ImageAutoEncoder):
@@ -95,7 +95,7 @@ class ImageLSTMPredictor(AbstractPredictor[np.ndarray, FBPropT]):
         return lst
 
 ImageCommandPair = Tuple[np.ndarray, np.ndarray]
-class ImageCommandLSTMPredictor(AbstractPredictor[ImageCommandPair, FBPropT]):
+class ImageCommandPredictor(AbstractPredictor[ImageCommandPair, FBPropT]):
     auto_encoder: ImageAutoEncoder
 
     def __init__(self, propagator: FBPropT, auto_encoder: ImageAutoEncoder):
