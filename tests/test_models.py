@@ -23,6 +23,9 @@ def test_image_auto_encoder():
         assert len(list(loss.values())) == 1
         assert float(loss['reconstruction'].item()) > 0.0 # check if positive scalar
 
+        encoder = ae.get_encoder()
+        encoder(sample)
+
 def test_lstm_with_image(image_datachunk_with_encoder): 
     dataset = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset.data[0].shape 
