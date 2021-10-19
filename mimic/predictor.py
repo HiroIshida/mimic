@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torchvision
 from typing import Tuple
+from typing import Union
 from typing import List
 from typing import TypeVar
 from typing import Generic
@@ -11,6 +12,7 @@ from typing import NewType
 from mimic.dataset import AutoRegressiveDataset
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
+from mimic.models import DenseProp
 from abc import ABC, abstractmethod
 
 def attach_flag(vec: torch.Tensor) -> torch.Tensor: 
@@ -22,11 +24,12 @@ def strip_flag(vec: torch.Tensor) -> torch.Tensor: return vec[:-1]
 def force_continue_flag(vec: torch.Tensor) -> None: 
     vec[-1] = AutoRegressiveDataset.continue_flag
 
+FBPropT = TypeVar('FBPropT', bound=Union[LSTM, DenseProp]) # Feedback propagator type
 StateT = TypeVar('StateT') # TODO maybe this is unncessarly
-class AbstractPredictor(ABC, Generic[StateT]):
-    propagator: LSTM
+class AbstractPredictor(ABC, Generic[StateT, FBPropT]):
+    propagator: FBPropT
     states: List[torch.Tensor]
-    def __init__(self, propagator: LSTM):
+    def __init__(self, propagator: FBPropT):
         self.propagator = propagator
         self.states = []
 
@@ -47,7 +50,7 @@ class AbstractPredictor(ABC, Generic[StateT]):
     @abstractmethod
     def predict(self, n_horizon: int, with_feeds: bool) -> List[StateT]: ...
 
-class LSTMPredictor(AbstractPredictor[np.ndarray]):
+class LSTMPredictor(AbstractPredictor[np.ndarray, FBPropT]):
 
     def feed(self, cmd: np.ndarray) -> None: 
         assert cmd.ndim == 1
@@ -61,11 +64,10 @@ class LSTMPredictor(AbstractPredictor[np.ndarray]):
         preds_np = [pred.detach().numpy() for pred in raw_preds_stripped]
         return preds_np
 
-class ImageLSTMPredictor(AbstractPredictor[np.ndarray]):
+class ImageLSTMPredictor(AbstractPredictor[np.ndarray, FBPropT]):
     auto_encoder: ImageAutoEncoder
 
-    def __init__(self, propagator: LSTM, auto_encoder: ImageAutoEncoder):
-        assert auto_encoder.n_bottleneck == propagator.n_state - propagator.n_flag
+    def __init__(self, propagator: FBPropT, auto_encoder: ImageAutoEncoder):
         self.auto_encoder = auto_encoder
         super().__init__(propagator)
 
@@ -85,10 +87,10 @@ class ImageLSTMPredictor(AbstractPredictor[np.ndarray]):
         return lst
 
 ImageCommandPair = Tuple[np.ndarray, np.ndarray]
-class ImageCommandLSTMPredictor(AbstractPredictor[ImageCommandPair]):
+class ImageCommandLSTMPredictor(AbstractPredictor[ImageCommandPair, FBPropT]):
     auto_encoder: ImageAutoEncoder
 
-    def __init__(self, propagator: LSTM, auto_encoder: ImageAutoEncoder):
+    def __init__(self, propagator: FBPropT, auto_encoder: ImageAutoEncoder):
         self.auto_encoder = auto_encoder
         super().__init__(propagator)
 
