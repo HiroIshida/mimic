@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from functools import reduce
 import operator
@@ -28,6 +29,7 @@ from mimic.models.common import LossDictFloat
 from mimic.models.common import to_scalar_values
 from mimic.models.common import average_loss_dict
 from mimic.file import dump_pickled_data
+from mimic.file import _cache_name
 from mimic.file import load_pickled_data
 
 @dataclass
@@ -50,6 +52,12 @@ class TrainCache(Generic[ModelT]):
         self.project_name = project_name
         self.train_loss_dict_seq = []
         self.validate_loss_dict_seq = []
+
+    @typing.no_type_check
+    def exists_cache(self) -> bool:
+        model_type = typing.get_args(self.__orig_class__)[0].__name__
+        filename = _cache_name(self.project_name, self.__class__, model_type)
+        return os.path.exists(filename)
 
     def on_startof_epoch(self, epoch: int):
         logger.info('new epoch: {}'.format(epoch))

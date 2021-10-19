@@ -1,5 +1,7 @@
+import os
 import torch
 from torch.utils.data import random_split
+from mimic.file import get_project_dir
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.datatype import CommandDataChunk
@@ -17,11 +19,19 @@ def _train(project_name, model, dataset, model_type, config):
     n_total = len(dataset)
     train_set, val_set =  random_split(dataset, [n_total-2, 2])
     tcache = TrainCache[model_type](project_name=project_name)
+
+    assert not tcache.exists_cache()
     train(model, train_set, val_set, tcache=tcache, config=config)
+    assert tcache.exists_cache()
 
 def test_train(image_datachunk, image_datachunk_with_encoder):
     config = Config(n_epoch=2)
-    project_name = 'test'
+    project_name = '__pytest'
+
+    project_cache_path = get_project_dir(project_name)
+    if os.path.exists(project_cache_path):
+        os.rmdir(project_cache_path)
+
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
     model = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(3, 28, 28))
     _train(project_name, model, dataset, ImageAutoEncoder, config)
