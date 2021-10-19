@@ -1,5 +1,4 @@
 from functools import lru_cache
-from functools import cached_property
 from copy import deepcopy
 from typing import List
 from typing import TypeVar
@@ -25,11 +24,11 @@ class Segmentor:
     def load(cls, project_name: str) -> 'Segmentor':
         return load_pickled_data(project_name, Segmentor)
 
-    @lru_cache
+    @lru_cache(maxsize=None)
     def to_labelseq_list(self) -> List[np.ndarray]:
         return [np.array([np.argmax(vec) for vec in seq]) for seq in self.data]
 
-    @cached_property
+    @lru_cache(maxsize=None)
     def is_ordered(self) -> bool:
         for labels in self.to_labelseq_list():
             for i in range(len(labels)-1):
