@@ -25,7 +25,7 @@ def prepare_chunk(project_name: str) -> AbstractDataChunk:
                 = ImageCommandDataChunk.load(project_name)
     except FileNotFoundError:
         chunk = ImageDataChunk.load(project_name)
-    chunk.set_encoder(tcache.best_model.encoder)
+    chunk.set_encoder(tcache.best_model.get_encoder())
     return chunk
 
 # TODO what is type of model_type. how to specify 'class' type??

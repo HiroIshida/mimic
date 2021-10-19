@@ -18,6 +18,8 @@ from torch.functional import Tensor
 
 from mimic.file import dump_pickled_data
 from mimic.file import load_pickled_data
+from mimic.primitives import AbstractEncoder
+
 
 SeqT = TypeVar('SeqT', bound='AbstractDataSequence')
 class AbstractDataSequence(ABC):
@@ -81,7 +83,7 @@ class CommandDataChunk(AbstractDataChunk[_CommandDataSequence]):
 class ImageDataSequence(AbstractDataSequence):
     # the complex encoder_holder is due to lack of pointer-equivalent in python
     # if in C, I would wirite nn::Module* encoder_ptr;
-    encoder_holder : Dict[str, Optional[nn.Module]]
+    encoder_holder : Dict[str, Optional[AbstractEncoder]]
     def __init__(self, data: np.ndarray, encoder_holder: Dict):
         super().__init__(data)
         self.encoder_holder = encoder_holder
@@ -95,11 +97,11 @@ class ImageDataSequence(AbstractDataSequence):
         return out
 
 class ImageDataChunkBase:
-    encoder_holder : Dict[str, Optional[nn.Module]]
-    def __init__(self, encoder: Optional[nn.Module]):
+    encoder_holder : Dict[str, Optional[AbstractEncoder]]
+    def __init__(self, encoder: Optional[AbstractEncoder]):
         self.encoder_holder = {'encoder': encoder}
 
-    def set_encoder(self, encoder: Optional[nn.Module]) -> None:
+    def set_encoder(self, encoder: Optional[AbstractEncoder]) -> None:
         self.encoder_holder['encoder'] = encoder
 
     @property
@@ -109,7 +111,7 @@ class ImageDataChunkBase:
 _ImageDataSequence = Tuple[ImageDataSequence]
 class ImageDataChunk(AbstractDataChunk[_ImageDataSequence], ImageDataChunkBase):
     def __init__(self, 
-            encoder: Optional[nn.Module] = None, 
+            encoder: Optional[AbstractEncoder] = None, 
             seqs_list: Optional[List[_ImageDataSequence]] = None):
         if seqs_list is None:
             seqs_list = []
@@ -131,7 +133,7 @@ class ImageDataChunk(AbstractDataChunk[_ImageDataSequence], ImageDataChunkBase):
 
 _ImageCommandDataSequence = Tuple[ImageDataSequence, CommandDataSequence]
 class ImageCommandDataChunk(AbstractDataChunk[_ImageCommandDataSequence], ImageDataChunkBase):
-    def __init__(self, encoder: Optional[nn.Module] = None):
+    def __init__(self, encoder: Optional[AbstractEncoder] = None):
         super().__init__([]) # TODO enable optional seq input??
         ImageDataChunkBase.__init__(self, encoder)
 

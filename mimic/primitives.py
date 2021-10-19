@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import torch
 
-class AbstractImageEncoder(ABC):
+class AbstractEncoder(ABC):
     size_input: tuple
     n_output: int
     def __init__(self, size_input, n_output): 

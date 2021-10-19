@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch._C import device
 from typing import Dict
 
-from mimic.primitives import AbstractImageEncoder
+from mimic.primitives import AbstractEncoder
 from .common import _Model
 from .common import LossDict
 
@@ -16,7 +16,7 @@ class Reshape(nn.Module):
     def forward(self, x):
         return x.view(self.shape)
 
-class DeepEncoder(AbstractImageEncoder):
+class DeepEncoder(AbstractEncoder):
     encoder: nn.Module
     def __init__(self, encoder, size_input, n_output):
         super().__init__(size_input, n_output)

@@ -43,7 +43,7 @@ def image_datachunk_with_encoder():
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    chunk = ImageDataChunk(encoder=ae.encoder)
+    chunk = ImageDataChunk(encoder=ae.get_encoder())
     for i in range(9):
         imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
         chunk.push_epoch(imgseq)
@@ -57,7 +57,7 @@ def image_command_datachunk_with_encoder():
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    chunk = ImageCommandDataChunk(encoder=ae.encoder)
+    chunk = ImageCommandDataChunk(encoder=ae.get_encoder())
     for i in range(10):
         imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
         cmdseq = np.random.randn(n_seq, 7)
@@ -82,7 +82,7 @@ def test_set_encoder(image_datachunk):
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    chunk.set_encoder(ae.encoder)
+    chunk.set_encoder(ae.get_encoder())
     flist = chunk.to_featureseq_list()
     assert len(flist[0].shape) == 2
 
