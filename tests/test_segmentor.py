@@ -48,10 +48,10 @@ def segmentation_raw_unordered():
 
 def test_ordered(segmentation_raw_ordered, segmentation_raw_unordered):
     seg1 = Segmentor(segmentation_raw_ordered)
-    assert seg1.is_ordered
+    assert seg1.is_ordered()
 
     seg2 = Segmentor(segmentation_raw_unordered)
-    assert ~seg2.is_ordered
+    assert ~seg2.is_ordered()
 
 def test_segmentation_pipeline(dummy_cmd_chunk, segmentation_raw_ordered):
     chunk: CommandDataChunk = dummy_cmd_chunk

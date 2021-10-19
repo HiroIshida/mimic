@@ -49,7 +49,7 @@ def train_propagator(project_name: str, model_type, config: Config) -> None:
         prop_model = model_type(device, dataset.n_state, dataset.n_bias)
     else:
         raise RuntimeError
-    tcache = TrainCache[model_type](project_name)
+    tcache = TrainCache[model_type](project_name, model_type)
     if tcache.exists_cache():
         if not query_yes_no('tcach exists. do you want to overwrite?'):
             raise RuntimeError('execution interrupt')

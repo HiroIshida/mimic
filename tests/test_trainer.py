@@ -19,7 +19,7 @@ from test_datatypes import image_datachunk_with_encoder
 def _train(project_name, model, dataset, model_type, config, postfix=""):
     n_total = len(dataset)
     train_set, val_set =  random_split(dataset, [n_total-2, 2])
-    tcache = TrainCache[model_type](project_name=project_name, cache_postfix=postfix)
+    tcache = TrainCache[model_type](project_name, model.__class__, cache_postfix=postfix)
 
     assert not tcache.exists_cache()
     train(model, train_set, val_set, tcache=tcache, config=config)

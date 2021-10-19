@@ -42,6 +42,7 @@ TrainCacheT = TypeVar('TrainCacheT', bound='TrainCache')
 ModelT = TypeVar('ModelT', bound=_Model)
 class TrainCache(Generic[ModelT]):
     project_name: str
+    model_type: Type[ModelT] # TODO workaround. because python is not julia
     epoch: int
     train_loss_dict_seq: List[LossDictFloat]
     validate_loss_dict_seq: List[LossDictFloat]
@@ -49,17 +50,17 @@ class TrainCache(Generic[ModelT]):
     latest_model: ModelT
     cache_postfix: Optional[str]
 
-    def __init__(self, project_name: str, cache_postfix: Optional[str]=None):
+    def __init__(self, project_name: str, model_type: Type[ModelT], cache_postfix: Optional[str]=None):
         self.project_name = project_name
         self.train_loss_dict_seq = []
         self.validate_loss_dict_seq = []
         self.cache_postfix = cache_postfix
+        self.model_type = model_type
 
     @typing.no_type_check
     def exists_cache(self) -> bool:
-        model_type = typing.get_args(self.__orig_class__)[0].__name__
         filename = _cache_name(self.project_name, 
-                self.__class__, model_type, self.cache_postfix)
+                self.__class__, self.model_type.__name__, self.cache_postfix)
         return os.path.exists(filename)
 
     def on_startof_epoch(self, epoch: int):
