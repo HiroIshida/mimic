@@ -6,7 +6,7 @@ import torch
 from torch.functional import Tensor
 from torch.utils.data import Dataset
 
-from mimic.datatype import AbstractDataChunk
+from mimic.datatype import AbstractDataChunk, ImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
 
 class ReconstructionDataset(Dataset):
@@ -90,7 +90,7 @@ class FirstOrderARDataset(Dataset):
 
     @classmethod
     def from_chunk(cls, chunk: AbstractDataChunk) -> 'FirstOrderARDataset':
-        if isinstance(chunk, ImageDataChunk):
+        if isinstance(chunk, (ImageDataChunk, ImageCommandDataChunk)):
             assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
         return FirstOrderARDataset(featureseq_list)
@@ -99,3 +99,36 @@ class FirstOrderARDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]: 
         return (self.data_pre[idx], self.data_post[idx])
+
+class BiasedFirstOrderARDataset(Dataset):
+    n_state: int
+    n_bias: int
+    bias_list: List[torch.Tensor]
+    data_pre: torch.Tensor
+    data_post: torch.Tensor
+    def __init__(self, featureseq_list: List[torch.Tensor], n_encoder_output):
+        seq_list = deepcopy(featureseq_list)
+        pre_list, post_list = [], []
+        bias_list = []
+        for seq in seq_list:
+            n_seq, n_whole = seq.shape
+            bias_image_feature_idx = 0
+            bias = seq[bias_image_feature_idx, :n_encoder_output]
+            bias_list.append(bias)
+
+            seq_state = seq[:, n_encoder_output:]
+            pre, post = seq_state[:-1], seq_state[1:]
+            pre_list.append(pre)
+            post_list.append(post)
+
+        self.data_pre = torch.cat(pre_list, dim=0)
+        self.data_post = torch.cat(post_list, dim=0)
+        self.bias_list = bias_list
+        self.n_bias = n_encoder_output
+        self.n_state = len(self.data_pre[0] - n_encoder_output)
+
+    @classmethod
+    def from_chunk(cls, chunk: ImageCommandDataChunk) -> 'BiasedFirstOrderARDataset':
+        assert chunk.has_encoder
+        featureseq_list = chunk.to_featureseq_list()
+        return BiasedFirstOrderARDataset(featureseq_list, chunk.n_encoder_output())

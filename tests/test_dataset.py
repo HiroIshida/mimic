@@ -6,6 +6,7 @@ from mimic.dataset import ReconstructionDataset
 from mimic.dataset import attach_flag_info
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
+from mimic.dataset import BiasedFirstOrderARDataset
 import pytest
 
 from test_datatypes import cmd_datachunk
@@ -55,3 +56,7 @@ def test_FirstOrderARDataset_pipeline(image_command_datachunk_with_encoder):
     assert dataset.data_pre.ndim == 2
     assert list(dataset.data_pre.shape) == [10 * (100 - 1), 23]
     assert list(dataset.data_pre.shape) == list(dataset.data_pre.shape)
+
+def test_BiasedFirstOrderARDataset_pipeline(image_command_datachunk_with_encoder):
+    chunk = image_command_datachunk_with_encoder
+    dataset = BiasedFirstOrderARDataset.from_chunk(chunk)

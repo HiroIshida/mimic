@@ -82,7 +82,9 @@ def test_set_encoder(image_datachunk):
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
+    assert not chunk.has_encoder
     chunk.set_encoder(ae.get_encoder())
+    assert chunk.has_encoder
     flist = chunk.to_featureseq_list()
     assert len(flist[0].shape) == 2
 
