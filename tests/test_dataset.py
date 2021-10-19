@@ -62,9 +62,9 @@ def test_BiasedFirstOrderARDataset_pipeline(image_command_datachunk_with_encoder
     dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
     assert dataset.data_pre.ndim == 2
     assert dataset.data_post.ndim == 2
-    assert dataset.bias_list[0].ndim == 1
+    assert dataset.biases.ndim == 2
     assert len(dataset) == 10 * (100 -1)
-    assert list(dataset.bias_list[0].shape) == [16]
+    assert list(dataset.biases.shape) == [10 * (100 - 1), 16]
     assert list(dataset.data_pre.shape) == [10 * (100 - 1), 7]
     assert list(dataset.data_pre.shape) == list(dataset.data_pre.shape)
 
