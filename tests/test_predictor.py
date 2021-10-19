@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
+from mimic.models import DenseProp
 from mimic.predictor import LSTMPredictor
 from mimic.predictor import ImageLSTMPredictor
 from mimic.predictor import ImageCommandLSTMPredictor
@@ -34,20 +35,27 @@ def test_ImageLSTMPredictor():
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     lstm = LSTM(torch.device('cpu'), 17)
-    predictor = ImageLSTMPredictor(lstm, ae)
+    denseprop = DenseProp(torch.device('cpu'), 16)
 
-    for _ in range(10):
-        img = np.zeros((n_pixel, n_pixel, n_channel))
-        predictor.feed(img)
-    assert len(predictor.states) == 10
-    assert list(predictor.states[0].shape) == [16 + 1] # flag must be attached
+    for propagator in [lstm, denseprop]:
+        print('testing : {}'.format(propagator.__class__.__name__))
+        predictor = ImageLSTMPredictor(propagator, ae)
 
-    imgs = predictor.predict(5)
-    assert len(imgs) == 5
-    assert imgs[0].shape == (n_pixel, n_pixel, n_channel)
+        for _ in range(10):
+            img = np.zeros((n_pixel, n_pixel, n_channel))
+            predictor.feed(img)
+        assert len(predictor.states) == 10
+        if isinstance(propagator, LSTM):
+            assert list(predictor.states[0].shape) == [16 + 1] # flag must be attached
+        else:
+            assert list(predictor.states[0].shape) == [16] # flag must be attached
 
-    imgs_with_feeds = predictor.predict(5, with_feeds=True)
-    assert len(imgs_with_feeds) == (5 + 10)
+        imgs = predictor.predict(5)
+        assert len(imgs) == 5
+        assert imgs[0].shape == (n_pixel, n_pixel, n_channel)
+
+        imgs_with_feeds = predictor.predict(5, with_feeds=True)
+        assert len(imgs_with_feeds) == (5 + 10)
 
 def test_ImageCommandLSTMPredictor():
     n_seq = 100
@@ -55,14 +63,21 @@ def test_ImageCommandLSTMPredictor():
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     lstm = LSTM(torch.device('cpu'), 16 + 7 + 1)
-    predictor = ImageCommandLSTMPredictor(lstm, ae)
+    denseprop = DenseProp(torch.device('cpu'), 16 + 7)
 
-    for _ in range(10):
-        img = np.zeros((n_pixel, n_pixel, n_channel))
-        cmd = np.zeros(7)
-        predictor.feed((img, cmd))
-    assert list(predictor.states[0].shape) == [16 + 7 + 1]
+    for propagator in [lstm, denseprop]:
+        print('testing : {}'.format(propagator.__class__.__name__))
+        predictor = ImageCommandLSTMPredictor(propagator, ae)
 
-    imgs, cmds = zip(*predictor.predict(5))
-    assert imgs[0].shape == (n_pixel, n_pixel, n_channel)
-    assert cmds[0].shape == (7,)
+        for _ in range(10):
+            img = np.zeros((n_pixel, n_pixel, n_channel))
+            cmd = np.zeros(7)
+            predictor.feed((img, cmd))
+        if isinstance(propagator, LSTM):
+            assert list(predictor.states[0].shape) == [16 + 7 + 1]
+        else:
+            assert list(predictor.states[0].shape) == [16 + 7]
+
+        imgs, cmds = zip(*predictor.predict(5))
+        assert imgs[0].shape == (n_pixel, n_pixel, n_channel)
+        assert cmds[0].shape == (7,)
