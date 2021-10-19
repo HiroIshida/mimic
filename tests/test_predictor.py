@@ -29,7 +29,7 @@ def test_predictor_core():
     cmd_pred_direct = out[0][-1, :-1].detach().numpy()
     assert np.all(cmd_pred == cmd_pred_direct)
 
-def test_ImageLSTMPredictor():
+def test_ImagePredictor():
     n_seq = 100
     n_channel = 3
     n_pixel = 28
@@ -57,7 +57,7 @@ def test_ImageLSTMPredictor():
         imgs_with_feeds = predictor.predict(5, with_feeds=True)
         assert len(imgs_with_feeds) == (5 + 10)
 
-def test_ImageCommandLSTMPredictor():
+def test_ImageCommandPredictor():
     n_seq = 100
     n_channel = 3
     n_pixel = 28
