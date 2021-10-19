@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torchvision
-from typing import Tuple
+from typing import Optional, Tuple
 from typing import Union
 from typing import List
 from typing import TypeVar
@@ -13,14 +13,18 @@ from mimic.dataset import AutoRegressiveDataset
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.models import DenseProp
+from mimic.models import BiasedDenseProp
 from abc import ABC, abstractmethod
 
 StateT = TypeVar('StateT') # TODO maybe this is unncessarly
-FBPropT = TypeVar('FBPropT', bound=Union[LSTM, DenseProp]) # Feedback propagator type
-class AbstractPredictor(ABC, Generic[StateT, FBPropT]):
-    propagator: FBPropT
+FBPropT = TypeVar('FBPropT', bound=Union[LSTM, DenseProp])
+FFPropT = TypeVar('FFPropT', bound=Union[BiasedDenseProp])
+PropT = TypeVar('PropT', bound=Union[LSTM, DenseProp, BiasedDenseProp])
+
+class AbstractPredictor(ABC, Generic[StateT, PropT]):
+    propagator: PropT
     states: List[torch.Tensor]
-    def __init__(self, propagator: FBPropT):
+    def __init__(self, propagator: PropT):
         self.propagator = propagator
         self.states = []
 
@@ -122,3 +126,36 @@ class ImageCommandPredictor(AbstractPredictor[ImageCommandPair, FBPropT]):
         img_list = [np.array(torchvision.transforms.ToPILImage()(img)) for img in image_preds]
         cmd_list = [e.detach().numpy() for e in cmd_features]
         return list(zip(img_list, cmd_list))
+
+MaybeNoneImageCommandPair = Tuple[Optional[np.ndarray], np.ndarray]
+class FFImageCommandPredictor(AbstractPredictor[MaybeNoneImageCommandPair, FFPropT]):
+    # TODO(HiroIShida) this class is so similar to ImageCommandPredictor, maybe we should make base class?
+    auto_encoder: ImageAutoEncoder
+    img_torch_one_shot: Optional[torch.Tensor]
+
+    def __init__(self, propagator: FFPropT, auto_encoder: ImageAutoEncoder):
+        super().__init__(propagator)
+        self.auto_encoder = auto_encoder
+        self.img_torch_one_shot = None
+
+    def feed(self, imgcmd: MaybeNoneImageCommandPair) -> None:
+        img, cmd = imgcmd
+        assert cmd.ndim == 1
+        if self.img_torch_one_shot is None:
+            assert img is not None
+            assert img.ndim == 3
+            img_torch = torchvision.transforms.ToTensor()(img).float()
+            img_feature_ = self.auto_encoder.encoder(torch.unsqueeze(img_torch, 0))
+            img_feature = torch.squeeze(img_feature_.detach().clone(), dim=0)
+            self.img_torch_one_shot = img_feature
+        else:
+            img_feature = self.img_torch_one_shot
+
+        cmd_torch = torch.from_numpy(cmd).float()
+        feature = torch.cat((img_feature, cmd_torch))
+        self._feed(feature)
+
+    def predict(self, n_horizon: int, with_feeds: bool=False) -> List[MaybeNoneImageCommandPair]:
+        preds = self._predict(n_horizon, with_feeds)
+        cmd_list = [e.detach().numpy() for e in preds]
+        return [(None, cmd) for cmd in cmd_list]
