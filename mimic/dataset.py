@@ -114,7 +114,6 @@ class BiasedFirstOrderARDataset(Dataset):
             n_seq, n_whole = seq.shape
             bias_image_feature_idx = 0
             bias = seq[bias_image_feature_idx, :n_encoder_output]
-            assert bias.ndim == 1
             bias_list.append(bias)
 
             seq_state = seq[:, n_encoder_output:]

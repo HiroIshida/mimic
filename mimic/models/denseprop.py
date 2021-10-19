@@ -8,17 +8,16 @@ from mimic.models.common import _Model
 from mimic.models.common import LossDict
 from mimic.dataset import FirstOrderARDataset
 
-def create_linear_layer(n_input, n_output, n_hidden, n_layer) -> nn.Module:
+def create_linear_layers(n_input, n_output, n_hidden, n_layer) -> List[nn.Linear]:
     layers = []
     input_layer = nn.Linear(n_input, n_hidden)
     layers.append(input_layer)
-    for _ in range(n_layer - 1):
+    for _ in range(n_layer):
         middle_layer = nn.Linear(n_hidden, n_hidden)
         layers.append(middle_layer)
     output_layer = nn.Linear(n_hidden, n_output)
     layers.append(output_layer)
-    layer = nn.Sequential(*layers)
-    return layer
+    return layers
 
 class DenseProp(_Model):
     n_state: int
@@ -38,8 +37,9 @@ class DenseProp(_Model):
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
-        self.layer = create_linear_layer(
+        layers = create_linear_layers(
                 self.n_state, self.n_state, self.n_hidden, self.n_layer)
+        self.layer = nn.Sequential(*layers)
 
     def forward(self, sample_pre: torch.Tensor):
         return self.layer(sample_pre)
@@ -70,17 +70,16 @@ class BiasedDenseProp(_Model):
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
-        self.layer = create_linear_layer(
+        layers = create_linear_layers(
                 self.n_state + self.n_bias, self.n_state, self.n_hidden, self.n_layer)
+        self.layer = nn.Sequential(*layers)
 
     def forward(self, sample_pre: torch.Tensor, bias: torch.Tensor):
-        assert sample_pre.ndim == 2 and bias.ndim == 2
-        assert sample_pre.shape[0] == bias.shape[0]
         sample_pre_cat = torch.cat((sample_pre, bias), dim=1)
         return self.layer(sample_pre_cat)
 
     def loss(self, sample: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> LossDict:
-        sample_pre, bias, sample_post = sample
+        sample_pre, sample_post, bias = sample
         post_pred = self.forward(sample_pre, bias)
-        loss_value = nn.MSELoss()(post_pred, sample_post)
+        loss_value = nn.MSELoss()(post_pred, post_pred)
         return LossDict({'prediction': loss_value})

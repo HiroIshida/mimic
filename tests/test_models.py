@@ -4,8 +4,10 @@ import torch
 from mimic.models import ImageAutoEncoder
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
+from mimic.dataset import BiasedFirstOrderARDataset
 from mimic.models import LSTM
 from mimic.models import DenseProp
+from mimic.models import BiasedDenseProp
 from test_datatypes import cmd_datachunk
 from test_datatypes import image_datachunk_with_encoder
 from test_datatypes import image_command_datachunk_with_encoder
@@ -42,4 +44,13 @@ def test_densedrop_pipeline(image_command_datachunk_with_encoder):
     model = DenseProp(torch.device('cpu'), n_state)
     pre, post = dataset[0]
     sample = (pre.unsqueeze(0), post.unsqueeze(0))
+    loss_dict = model.loss(sample)
+
+def test_biaseddensedrop_pipeline(image_command_datachunk_with_encoder):
+    chunk = image_command_datachunk_with_encoder
+    dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
+    n_state, n_bias = 7, 16
+    model = BiasedDenseProp(torch.device('cpu'), n_state, n_bias)
+    pre, post, bias = dataset[0]
+    sample = (pre.unsqueeze(0), post.unsqueeze(0), bias.unsqueeze(0))
     loss_dict = model.loss(sample)
