@@ -3,9 +3,11 @@ import torch
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.models import DenseProp
+from mimic.models import BiasedDenseProp
 from mimic.predictor import SimplePredictor
 from mimic.predictor import ImagePredictor
 from mimic.predictor import ImageCommandPredictor
+from mimic.predictor import FFImageCommandPredictor
 from mimic.datatype import CommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 
@@ -81,3 +83,21 @@ def test_ImageCommandPredictor():
         imgs, cmds = zip(*predictor.predict(5))
         assert imgs[0].shape == (n_pixel, n_pixel, n_channel)
         assert cmds[0].shape == (7,)
+
+def test_FFImageCommandPredictor():
+    n_seq = 100
+    n_channel = 3
+    n_pixel = 28
+    ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
+    prop = BiasedDenseProp(torch.device('cpu'), 7, 16)
+    predictor = FFImageCommandPredictor(prop, ae)
+
+    assert predictor.img_torch_one_shot is None
+    for _ in range(10):
+        img = np.zeros((n_pixel, n_pixel, n_channel))
+        cmd = np.zeros(7)
+        predictor.feed((img, cmd))
+    assert predictor.img_torch_one_shot is not None
+    assert list(predictor.img_torch_one_shot.shape) == [16]
+    assert list(predictor.states[0].shape) == [7]
+    imgs, cmds = zip(*predictor.predict(5))
