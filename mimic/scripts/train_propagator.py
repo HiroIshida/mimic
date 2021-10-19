@@ -3,7 +3,9 @@ import typing
 from typing import Union
 
 import torch
-from mimic.models.autoencoder import ImageAutoEncoder
+from mimic.models import ImageAutoEncoder
+from mimic.models import DenseProp
+from mimic.models import BiasedDenseProp
 
 from mimic.trainer import Config
 from mimic.trainer import TrainCache
@@ -13,6 +15,7 @@ from mimic.datatype import ImageDataChunk
 from mimic.datatype import ImageCommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
+from mimic.dataset import BiasedFirstOrderARDataset
 from mimic.models import LSTM
 from mimic.models import DenseProp
 from mimic.scripts.utils import split_with_ratio
@@ -32,30 +35,43 @@ def prepare_chunk(project_name: str) -> AbstractDataChunk:
 # TODO Do type check! but this function is type-wise tricky...
 @typing.no_type_check 
 def train_propagator(project_name: str, model_type, config: Config) -> None:
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     chunk = prepare_chunk(project_name)
     if model_type is LSTM:
         dataset = AutoRegressiveDataset.from_chunk(chunk)
+        prop_model = model_type(device, dataset.n_state)
     elif model_type is DenseProp:
         dataset = FirstOrderARDataset.from_chunk(chunk)
+        prop_model = model_type(device, dataset.n_state)
+    elif model_type is BiasedDenseProp:
+        dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
+        prop_model = model_type(device, dataset.n_state, dataset.n_bias)
     else:
         raise RuntimeError
-    ds_train, ds_valid = split_with_ratio(dataset)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    prop_model = model_type(device, dataset.n_state)
     tcache = TrainCache[model_type](project_name)
+    ds_train, ds_valid = split_with_ratio(dataset)
     train(prop_model, ds_train, ds_valid, tcache=tcache, config=config)
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
     parser.add_argument('-n', type=int, default=1000, help='training epoch')
-    parser.add_argument('--dense', action='store_true', help='use DenseProp instead of LSTM')
+    parser.add_argument('-model', type=str, default="lstm", help='model name')
     args = parser.parse_args()
     project_name = args.pn
+    model_name = args.model
     n_epoch = args.n
-    use_dense = args.dense
 
-    logger = create_default_logger(project_name, 'propagator')
+    prop_model: type
+    if model_name == 'lstm':
+        prop_model = LSTM
+    elif model_name == 'dense_prop':
+        prop_model = DenseProp
+    elif model_name == 'biased_dense_prop':
+        prop_model = BiasedDenseProp
+    else:
+        raise RuntimeError
+
+    logger = create_default_logger(project_name, 'propagator_{}'.format(model_name))
     config = Config(n_epoch=n_epoch)
-    prop_model = DenseProp if use_dense else LSTM
     train_propagator(project_name, prop_model, config)

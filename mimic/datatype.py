@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torchvision
 import numpy as np
+import typing
 from typing import Any
 from typing import Dict
 from typing import List
@@ -107,6 +108,12 @@ class ImageDataChunkBase:
     @property
     def has_encoder(self) -> bool:
         return (self.encoder_holder['encoder'] != None)
+
+    @typing.no_type_check 
+    def n_encoder_output(self) -> Optional[int]:
+        if self.encoder_holder['encoder']: # because mypy is dumb, cannot use has_encoder
+            return self.encoder_holder['encoder'].n_output
+        return None
 
 _ImageDataSequence = Tuple[ImageDataSequence]
 class ImageDataChunk(AbstractDataChunk[_ImageDataSequence], ImageDataChunkBase):
