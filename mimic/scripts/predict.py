@@ -38,21 +38,22 @@ if __name__=='__main__':
     from mimic.datatype import ImageCommandDataChunk
     parser = argparse.ArgumentParser()
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
-    parser.add_argument('-n', type=int, default=1000, help='training epoch')
+    parser.add_argument('-n', type=int, default=50, help='prediction length')
     parser.add_argument('-model', type=str, default='lstm', help='propagator model name')
     parser.add_argument('-bottleneck', type=int, default=16, help='latent dimension')
 
     args = parser.parse_args()
     project_name = args.pn
     model_name = args.model
+    n_prediction = args.n
 
     predictor = create_predictor(project_name, model_name)
     chunk = ImageCommandDataChunk.load(project_name)
     imgseq, cmdseq = chunk[-2]
     assert imgseq.data.ndim == 4
-    for i in range(30):
+    for i in range(n_prediction):
         predictor.feed((imgseq.data[i], cmdseq.data[i]))
-    imgseq_pred, cmdseq_pred = map(list, zip(*predictor.predict(30)))
+    imgseq_pred, cmdseq_pred = map(list, zip(*predictor.predict(n_prediction)))
     filename = os.path.join(get_project_dir(project_name), 'prediction_result_{}.gif'.format(model_name))
     if model_name == 'biased_dense_prop':
         print('images are not predicted by biased_dense_prop') 
