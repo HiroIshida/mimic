@@ -81,5 +81,5 @@ class BiasedDenseProp(_Model):
     def loss(self, sample: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> LossDict:
         sample_pre, sample_post, bias = sample
         post_pred = self.forward(sample_pre, bias)
-        loss_value = nn.MSELoss()(post_pred, post_pred)
+        loss_value = nn.MSELoss()(post_pred, sample_post)
         return LossDict({'prediction': loss_value})

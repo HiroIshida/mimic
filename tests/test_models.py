@@ -44,7 +44,9 @@ def test_densedrop_pipeline(image_command_datachunk_with_encoder):
     model = DenseProp(torch.device('cpu'), n_state)
     pre, post = dataset[0]
     sample = (pre.unsqueeze(0), post.unsqueeze(0))
-    loss_dict = model.loss(sample)
+    loss = model.loss(sample)
+    assert len(list(loss.values())) == 1
+    assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
 
 def test_biaseddensedrop_pipeline(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder
@@ -53,4 +55,6 @@ def test_biaseddensedrop_pipeline(image_command_datachunk_with_encoder):
     model = BiasedDenseProp(torch.device('cpu'), n_state, n_bias)
     pre, post, bias = dataset[0]
     sample = (pre.unsqueeze(0), post.unsqueeze(0), bias.unsqueeze(0))
-    loss_dict = model.loss(sample)
+    loss = model.loss(sample)
+    assert len(list(loss.values())) == 1
+    assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
