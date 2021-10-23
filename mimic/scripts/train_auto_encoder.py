@@ -15,9 +15,11 @@ from mimic.scripts.utils import query_yes_no
 def train_auto_encoder(project_name: str, n_bottleneck: int, config: Config) -> None:
     try:
         tmp = ImageCommandDataChunk.load(project_name)
-        chunk = ImageDataChunk.from_imgcmd_chunk(tmp)
+        chunk_ = ImageDataChunk.from_imgcmd_chunk(tmp)
     except FileNotFoundError:
-        chunk = ImageDataChunk.load(project_name)
+        chunk_ = ImageDataChunk.load(project_name)
+    n_intact = 5
+    _, chunk = chunk_.split(n_intact)
     dataset = ReconstructionDataset.from_chunk(chunk)
     ds_train, ds_valid = split_with_ratio(dataset)
     image_shape = dataset[0].shape
