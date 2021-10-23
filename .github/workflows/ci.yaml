@@ -26,7 +26,8 @@ jobs:
 
             - name: pip install pytest and mypy
               run: |
-                  pip3 install pytest mypy
+                  pip3 install pytest
+                  pip3 install mypy==0.910
 
             - name: Run mypy
               run: mypy . --exclude setup.py
