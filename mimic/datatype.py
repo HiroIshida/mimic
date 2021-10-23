@@ -71,6 +71,15 @@ class AbstractDataChunk(ABC, Generic[DataT]):
         obj = copy.deepcopy(self)
         dump_pickled_data(obj, project_name)
 
+    def split(self: ChunkT, n_first) -> Tuple[ChunkT, ChunkT]:
+        first = copy.copy(self)
+        second = copy.copy(self)
+        first.seqs_list = self.seqs_list[:n_first]
+        second.seqs_list = self.seqs_list[n_first:]
+        return first, second
+
+    def __len__(self) -> int: return len(self.seqs_list)
+
     def __getitem__(self, index: int) -> DataT:
         return self.seqs_list[index]
 

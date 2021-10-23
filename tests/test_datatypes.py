@@ -23,6 +23,12 @@ def cmd_datachunk():
         chunk.push_epoch(seq)
     return chunk
 
+def test_datasplit(cmd_datachunk):
+    chunk: CommandDataChunk = cmd_datachunk
+    chunk1, chunk2 = chunk.split(2)
+    assert len(chunk1) == 2
+    assert len(chunk2) == 8
+
 _img_chunk_uneven_n = 2
 @pytest.fixture(scope='session')
 def image_datachunk():
