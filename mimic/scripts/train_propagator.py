@@ -25,10 +25,12 @@ from mimic.scripts.utils import query_yes_no
 def prepare_chunk(project_name: str) -> AbstractDataChunk:
     tcache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
     try:
-        chunk: Union[ImageDataChunk, ImageCommandDataChunk] \
+        chunk_: Union[ImageDataChunk, ImageCommandDataChunk] \
                 = ImageCommandDataChunk.load(project_name)
     except FileNotFoundError:
-        chunk = ImageDataChunk.load(project_name)
+        chunk_ = ImageDataChunk.load(project_name)
+    n_intact = 5
+    _, chunk = chunk_.split(n_first=n_intact)
     chunk.set_encoder(tcache.best_model.get_encoder())
     return chunk
 

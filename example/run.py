@@ -20,7 +20,7 @@ args = parser.parse_args()
 
 dryrun = args.dryrun
 if dryrun:
-    cfg = Config('kuka_reaching_test', 10, 3, 3, 3, 3)
+    cfg = Config('kuka_reaching_test', 15, 3, 3, 3, 3)
 else:
     cfg = Config('kuka_reaching', 300, 1000, 4000, 2000, 2000)
 

@@ -49,7 +49,9 @@ if __name__=='__main__':
 
     predictor = create_predictor(project_name, model_name)
     chunk = ImageCommandDataChunk.load(project_name)
-    imgseq, cmdseq = chunk[-2]
+    n_intact = 5
+    chunk_intact, _ = chunk.split(n_intact)
+    imgseq, cmdseq = chunk_intact[0]
     assert imgseq.data.ndim == 4
     for i in range(n_prediction):
         predictor.feed((imgseq.data[i], cmdseq.data[i]))
