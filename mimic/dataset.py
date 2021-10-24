@@ -1,6 +1,9 @@
 from copy import deepcopy
 from typing import List
 from typing import Tuple
+from typing import Type
+from typing import Generic
+from typing import TypeVar
 
 import torch
 from torch.functional import Tensor
@@ -9,6 +12,12 @@ from torch.utils.data import Dataset
 from mimic.datatype import AbstractDataChunk
 from mimic.datatype import ImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
+
+DatasetT = TypeVar('DatasetT', bound='_Dataset')
+class _Dataset(Dataset):
+    @classmethod
+    def from_chunk(cls: Type[DatasetT], chunk: AbstractDataChunk) -> DatasetT: ...
+    def __len__(self) -> int: ...
 
 class ReconstructionDataset(Dataset):
     data: torch.Tensor

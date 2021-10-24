@@ -6,6 +6,7 @@ from mimic.models import LSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 
+from mimic.dataset import _Dataset
 from mimic.dataset import ReconstructionDataset
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
@@ -30,7 +31,7 @@ _dataset_compat_table = {
         BiasedDenseProp.__name__: BiasedFirstOrderARDataset
         }
 
-def compatible_dataset(model: _Model) -> Type[Dataset]:
+def compatible_dataset(model: _Model) -> Type[_Dataset]:
     model_type_name = model.__class__.__name__
     return _dataset_compat_table[model_type_name]
 
