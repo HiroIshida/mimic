@@ -5,12 +5,17 @@ from mimic.models import LSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 from mimic.predictor import SimplePredictor
+from mimic.predictor import evaluate_command_prediction_error
 from mimic.predictor import ImagePredictor
 from mimic.predictor import ImageCommandPredictor
 from mimic.predictor import FFImageCommandPredictor
 from mimic.predictor import get_model_specific_state_slice
 from mimic.datatype import CommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
+from mimic.dataset import FirstOrderARDataset
+from mimic.dataset import BiasedFirstOrderARDataset
+
+from test_datatypes import image_command_datachunk_with_encoder
 
 def test_predictor_core():
     chunk = CommandDataChunk()
@@ -103,12 +108,13 @@ def test_FFImageCommandPredictor():
     assert list(predictor.states[0].shape) == [7]
     imgs, cmds = zip(*predictor.predict(5))
 
-def test_evaluate_command_prop():
+def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     n_seq = 100
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     biased_prop = BiasedDenseProp(torch.device('cpu'), 7, 16)
+    dense_prop = DenseProp(torch.device('cpu'), 16 + 7)
     lstm = LSTM(torch.device('cpu'), 16 + 7 + 1)
 
     slice1 = get_model_specific_state_slice(ae, biased_prop)
@@ -120,3 +126,14 @@ def test_evaluate_command_prop():
     assert slice2.start == 16
     assert slice2.stop == -1
     assert slice2.step == None
+
+    chunk = image_command_datachunk_with_encoder
+
+    dataset = AutoRegressiveDataset.from_chunk(chunk)
+    error = evaluate_command_prediction_error(ae, lstm, dataset)
+
+    dataset = FirstOrderARDataset.from_chunk(chunk)
+    error = evaluate_command_prediction_error(ae, dense_prop, dataset)
+
+    dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
+    error = evaluate_command_prediction_error(ae, biased_prop, dataset)

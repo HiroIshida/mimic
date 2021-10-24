@@ -45,10 +45,14 @@ class DenseProp(_Model):
     def forward(self, sample_pre: torch.Tensor):
         return self.layer(sample_pre)
 
-    def loss(self, sample: Tuple[torch.Tensor, torch.Tensor]) -> LossDict:
+    def loss(self, sample: Tuple[torch.Tensor, torch.Tensor], 
+            state_slicer: Optional[slice]=None) -> LossDict:
+        if state_slicer is None:
+            state_slicer = slice(None)
+        assert state_slicer.step == None
         sample_pre, sample_post = sample
         post_pred = self.forward(sample_pre)
-        loss_value = nn.MSELoss()(post_pred, sample_post)
+        loss_value = nn.MSELoss()(post_pred[:, state_slicer], sample_post[:, state_slicer])
         return LossDict({'prediction': loss_value})
 
 class BiasedDenseProp(_Model):

@@ -2,6 +2,7 @@ import copy
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 import torchvision
 from typing import Optional, Tuple
 from typing import Union
@@ -182,3 +183,20 @@ def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: Pr
     if isinstance(propagator, LSTM): 
         idx_end = -1
     return slice(idx_start, idx_end)
+
+def evaluate_command_prediction_error(autoencoder: ImageAutoEncoder, propagator: PropT, 
+        dataset, batch_size: Optional[int] = None) -> float:
+    if batch_size is None:
+        batch_size = len(dataset)
+
+    #TODO check if dataset is compatible with propagator model
+    slicer = get_model_specific_state_slice(autoencoder, propagator)
+    train_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
+
+    propagator.eval()
+    loss_means: List[float] = [] # note that loss returns MSELoss with mean reduction
+    for samples in train_loader:
+        # TODO ? move to device?
+        loss_dict = propagator.loss(samples, state_slicer=slicer)
+        loss_means.append(float(loss_dict['prediction'].item()))
+    return np.mean(loss_means)
