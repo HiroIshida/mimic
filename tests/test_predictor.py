@@ -130,14 +130,14 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder
     error = evaluate_command_prediction_error(ae, lstm, chunk)
     error2 = evaluate_command_prediction_error(ae, lstm, chunk, batch_size=2)
-    assert abs(error - error2) < 1e-5
+    assert abs(error2 - error) < 1e-3
 
     dataset = FirstOrderARDataset.from_chunk(chunk)
     error = evaluate_command_prediction_error(ae, dense_prop, chunk)
     error2 = evaluate_command_prediction_error(ae, dense_prop, chunk, batch_size=2)
-    assert abs(error - error2) < 1e-5
+    assert abs(error2 - error) < 1e-3
 
     dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
     error = evaluate_command_prediction_error(ae, biased_prop, chunk)
     error2 = evaluate_command_prediction_error(ae, biased_prop, chunk, batch_size=2)
-    assert abs(error - error2) < 1e-5
+    assert abs(error2 - error) < 1e-3

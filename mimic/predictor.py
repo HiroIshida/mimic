@@ -201,9 +201,9 @@ def evaluate_command_prediction_error(autoencoder: ImageAutoEncoder, propagator:
     loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
 
     propagator.eval()
-    loss_means: List[float] = [] # note that loss returns MSELoss with mean reduction
+    loss_sum = 0.0
     for samples in loader:
         # TODO ? move to device?
-        loss_dict = propagator.loss(samples, state_slicer=slicer)
-        loss_means.append(float(loss_dict['prediction'].item()))
-    return np.mean(loss_means)
+        loss_dict = propagator.loss(samples, state_slicer=slicer, reduction='sum')
+        loss_sum += float(loss_dict['prediction'].item())
+    return loss_sum
