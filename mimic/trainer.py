@@ -31,6 +31,7 @@ from mimic.models.common import average_loss_dict
 from mimic.file import dump_pickled_data
 from mimic.file import _cache_name
 from mimic.file import load_pickled_data
+from mimic.compat import is_compatible
 
 @dataclass
 class Config:
@@ -111,6 +112,9 @@ def train(
         dataset_validate: Dataset,
         tcache: TrainCache,
         config: Config = Config()) -> None:
+
+    assert is_compatible(model, dataset_train)
+    assert is_compatible(model, dataset_validate)
 
     def move_to_device(sample):
         if isinstance(sample, torch.Tensor):

@@ -6,7 +6,8 @@ import torch
 from torch.functional import Tensor
 from torch.utils.data import Dataset
 
-from mimic.datatype import AbstractDataChunk, ImageCommandDataChunk
+from mimic.datatype import AbstractDataChunk
+from mimic.datatype import ImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
 
 class ReconstructionDataset(Dataset):
