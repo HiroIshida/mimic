@@ -118,7 +118,7 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     lstm = LSTM(torch.device('cpu'), 16 + 7 + 1)
 
     slice1 = get_model_specific_state_slice(ae, biased_prop)
-    assert slice1.start == 16
+    assert slice1.start == None
     assert slice1.stop == None
     assert slice1.step == None
 
@@ -131,9 +131,15 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
 
     dataset = AutoRegressiveDataset.from_chunk(chunk)
     error = evaluate_command_prediction_error(ae, lstm, dataset)
+    error2 = evaluate_command_prediction_error(ae, lstm, dataset, batch_size=2)
+    assert abs(error - error2) < 1e-5
 
     dataset = FirstOrderARDataset.from_chunk(chunk)
     error = evaluate_command_prediction_error(ae, dense_prop, dataset)
+    error2 = evaluate_command_prediction_error(ae, dense_prop, dataset, batch_size=2)
+    assert abs(error - error2) < 1e-5
 
     dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
     error = evaluate_command_prediction_error(ae, biased_prop, dataset)
+    error2 = evaluate_command_prediction_error(ae, biased_prop, dataset, batch_size=2)
+    assert abs(error - error2) < 1e-5
