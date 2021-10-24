@@ -39,11 +39,11 @@ class LSTM(_Model):
         out = self.output_layer(lstm_out)
         return out
 
-    def loss(self, sample: torch.Tensor, state_slicer: Optional[slice] = None) -> LossDict:
+    def loss(self, sample: torch.Tensor, state_slicer: Optional[slice] = None, reduction='mean') -> LossDict:
         if state_slicer is None:
             state_slicer = slice(None)
         assert state_slicer.step == None
         seq_feed, seq_pred_gt = sample[:, :-1, :], sample[:, 1:, :]
         seq_pred = self.forward(seq_feed)
-        loss_value = nn.MSELoss()(seq_pred[:, state_slicer], seq_pred_gt[:, state_slicer])
+        loss_value = nn.MSELoss(reduction=reduction)(seq_pred[:, state_slicer], seq_pred_gt[:, state_slicer])
         return LossDict({'prediction': loss_value})
