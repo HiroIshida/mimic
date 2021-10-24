@@ -23,15 +23,15 @@ from typing import Type
 
 # TODO(HiroIshida) maybe values are list
 _dataset_compat_table = {
-        ImageAutoEncoder.__name__: ReconstructionDataset.__name__,
-        LSTM.__name__: AutoRegressiveDataset.__name__,
-        DenseProp.__name__: FirstOrderARDataset.__name__,
-        BiasedDenseProp.__name__: BiasedFirstOrderARDataset.__name__
+        ImageAutoEncoder.__name__: ReconstructionDataset,
+        LSTM.__name__: AutoRegressiveDataset,
+        DenseProp.__name__: FirstOrderARDataset,
+        BiasedDenseProp.__name__: BiasedFirstOrderARDataset
         }
 
 def compatible_dataset(model: _Model) -> str:
     model_type_name = model.__class__.__name__
-    return _dataset_compat_table[model_type_name]
+    return _dataset_compat_table[model_type_name].__name__
 
 def is_compatible(model: _Model, dataset: Dataset) -> bool:
     if isinstance(dataset, Subset):
