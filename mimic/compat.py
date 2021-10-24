@@ -11,6 +11,7 @@ from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
 
+import typing
 from typing import Type
 
 # The reason why compatibility is not written as a class variable of a model is that 
@@ -29,11 +30,12 @@ _dataset_compat_table = {
         BiasedDenseProp.__name__: BiasedFirstOrderARDataset
         }
 
-def compatible_dataset(model: _Model) -> str:
+def compatible_dataset(model: _Model) -> Type[Dataset]:
     model_type_name = model.__class__.__name__
-    return _dataset_compat_table[model_type_name].__name__
+    return _dataset_compat_table[model_type_name]
 
+@typing.no_type_check 
 def is_compatible(model: _Model, dataset: Dataset) -> bool:
     if isinstance(dataset, Subset):
-        return compatible_dataset(model) == dataset.dataset.__class__.__name__ 
+        return compatible_dataset(model).__name__ == dataset.dataset.__class__.__name__ 
     return compatible_dataset(model) == dataset.__class__.__name__

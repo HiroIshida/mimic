@@ -10,11 +10,13 @@ from typing import List
 from typing import TypeVar
 from typing import Generic
 from typing import NewType
+from mimic.datatype import AbstractDataChunk
 from mimic.dataset import AutoRegressiveDataset
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
+from mimic.compat import compatible_dataset
 from abc import ABC, abstractmethod
 
 StateT = TypeVar('StateT') # TODO maybe this is unncessarly
@@ -187,17 +189,20 @@ def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: Pr
     return slice(idx_start, idx_end)
 
 def evaluate_command_prediction_error(autoencoder: ImageAutoEncoder, propagator: PropT, 
-        dataset, batch_size: Optional[int] = None) -> float:
-    if batch_size is None:
-        batch_size = len(dataset)
+        chunk: AbstractDataChunk, batch_size: Optional[int] = None) -> float:
 
     #TODO check if dataset is compatible with propagator model
     slicer = get_model_specific_state_slice(autoencoder, propagator)
-    train_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
+    dataset = compatible_dataset(propagator).from_chunk(chunk)
+
+    if batch_size is None:
+        batch_size = len(dataset)
+
+    loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=False)
 
     propagator.eval()
     loss_means: List[float] = [] # note that loss returns MSELoss with mean reduction
-    for samples in train_loader:
+    for samples in loader:
         # TODO ? move to device?
         loss_dict = propagator.loss(samples, state_slicer=slicer)
         loss_means.append(float(loss_dict['prediction'].item()))

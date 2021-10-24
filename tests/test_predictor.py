@@ -128,18 +128,16 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     assert slice2.step == None
 
     chunk = image_command_datachunk_with_encoder
-
-    dataset = AutoRegressiveDataset.from_chunk(chunk)
-    error = evaluate_command_prediction_error(ae, lstm, dataset)
-    error2 = evaluate_command_prediction_error(ae, lstm, dataset, batch_size=2)
+    error = evaluate_command_prediction_error(ae, lstm, chunk)
+    error2 = evaluate_command_prediction_error(ae, lstm, chunk, batch_size=2)
     assert abs(error - error2) < 1e-5
 
     dataset = FirstOrderARDataset.from_chunk(chunk)
-    error = evaluate_command_prediction_error(ae, dense_prop, dataset)
-    error2 = evaluate_command_prediction_error(ae, dense_prop, dataset, batch_size=2)
+    error = evaluate_command_prediction_error(ae, dense_prop, chunk)
+    error2 = evaluate_command_prediction_error(ae, dense_prop, chunk, batch_size=2)
     assert abs(error - error2) < 1e-5
 
     dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
-    error = evaluate_command_prediction_error(ae, biased_prop, dataset)
-    error2 = evaluate_command_prediction_error(ae, biased_prop, dataset, batch_size=2)
+    error = evaluate_command_prediction_error(ae, biased_prop, chunk)
+    error2 = evaluate_command_prediction_error(ae, biased_prop, chunk, batch_size=2)
     assert abs(error - error2) < 1e-5
