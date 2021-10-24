@@ -8,6 +8,7 @@ from mimic.predictor import SimplePredictor
 from mimic.predictor import ImagePredictor
 from mimic.predictor import ImageCommandPredictor
 from mimic.predictor import FFImageCommandPredictor
+from mimic.predictor import get_model_specific_state_slice
 from mimic.datatype import CommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 
@@ -101,3 +102,21 @@ def test_FFImageCommandPredictor():
     assert list(predictor.img_torch_one_shot.shape) == [16]
     assert list(predictor.states[0].shape) == [7]
     imgs, cmds = zip(*predictor.predict(5))
+
+def test_evaluate_command_prop():
+    n_seq = 100
+    n_channel = 3
+    n_pixel = 28
+    ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
+    biased_prop = BiasedDenseProp(torch.device('cpu'), 7, 16)
+    lstm = LSTM(torch.device('cpu'), 16 + 7 + 1)
+
+    slice1 = get_model_specific_state_slice(ae, biased_prop)
+    assert slice1.start == 16
+    assert slice1.stop == None
+    assert slice1.step == None
+
+    slice2 = get_model_specific_state_slice(ae, lstm)
+    assert slice2.start == 16
+    assert slice2.stop == -1
+    assert slice2.step == None

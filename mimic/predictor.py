@@ -175,3 +175,10 @@ class FFImageCommandPredictor(AbstractPredictor[MaybeNoneImageCommandPair, FFPro
             preds.append(out)
         raw_preds = feeds if with_feeds else preds
         return [self._strip_flag_if_necessary(e) for e in raw_preds]
+
+def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: PropT) -> slice:
+    idx_start = autoencoder.n_bottleneck
+    idx_end = None
+    if isinstance(propagator, LSTM): 
+        idx_end = -1
+    return slice(idx_start, idx_end)
