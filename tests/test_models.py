@@ -37,6 +37,8 @@ def test_lstm_with_image(image_datachunk_with_encoder):
     assert len(list(loss.values())) == 1
     assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
 
+    loss_sliced = model.loss(sample, slice(5, None))
+
 def test_densedrop_pipeline(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder
     dataset = FirstOrderARDataset.from_chunk(chunk)
