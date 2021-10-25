@@ -103,10 +103,14 @@ def test_FFImageCommandPredictor():
         img = np.zeros((n_pixel, n_pixel, n_channel))
         cmd = np.zeros(7)
         predictor.feed((img, cmd))
-    assert predictor.img_torch_one_shot is not None
-    assert list(predictor.img_torch_one_shot.shape) == [16]
-    assert list(predictor.states[0].shape) == [7]
-    imgs, cmds = zip(*predictor.predict(5))
+
+        assert predictor.img_torch_one_shot is not None
+        assert list(predictor.img_torch_one_shot.shape) == [16]
+        assert list(predictor.states[0].shape) == [7]
+
+        imgs, cmds = zip(*predictor.predict(5))
+        assert imgs[0] == None
+        assert list(cmds[0].shape) == [7]
 
 def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     n_seq = 100
