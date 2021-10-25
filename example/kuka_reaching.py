@@ -7,10 +7,16 @@ import tinyfk
 import pybullet as pb
 import pybullet_data 
 
+from typing import Union
+
 from moviepy.editor import ImageSequenceClip
 
 from mimic.file import get_project_dir
 from mimic.datatype import ImageCommandDataChunk
+from mimic.predictor import FFImageCommandPredictor
+from mimic.predictor import ImageCommandPredictor
+from mimic.trainer import TrainCache
+from mimic.models import ImageAutoEncoder, LSTM, BiasedDenseProp
 
 class BulletManager(object):
 
@@ -20,7 +26,6 @@ class BulletManager(object):
         robot_id = pb.loadURDF(urdf_path)
         pbdata_path = pybullet_data.getDataPath()
         pb.loadURDF(os.path.join(pbdata_path, "samurai.urdf"))
-
 
         link_table = {pb.getBodyInfo(robot_id, physicsClientId=client)[0].decode('UTF-8'):-1}
         joint_table = {}
@@ -126,11 +131,30 @@ class BulletManager(object):
 
         return np.array(img_list), np.array(angles_seq)
 
+    def prediction_simulate(self, 
+            predictor: Union[FFImageCommandPredictor, ImageCommandPredictor],
+            n_pixel=112
+            ):
+        def angles_now(): return np.array(self.joint_angles())
+        self.set_joint_angles(angles_now())
+
+        img_list = []
+        for i in range(300):
+            cmd = angles_now()
+            rgba, _ = self.take_photo(n_pixel)
+            image = rgba[:, :, :3]
+            img_list.append(image)
+            predictor.feed((image, cmd))
+
+            _, cmd = predictor.predict(n_horizon=1)[0]
+            self.set_joint_angles(cmd)
+
+        return np.array(img_list)
+
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--depth', action='store_true', help='with depth channel')
     parser.add_argument('--predict', action='store_true', help='prediction mode')
-    parser.add_argument('--action', action='store_true', help='')
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
     parser.add_argument('-n', type=int, default=300, help='epoch num')
     parser.add_argument('-m', type=int, default=112, help='pixel num') # same as mnist
@@ -139,34 +163,46 @@ if __name__=='__main__':
     n_pixel = args.m
     with_depth = args.depth
     prediction_mode = args.predict
-    with_action = args.action
     project_name = args.pn
 
     pbdata_path = pybullet_data.getDataPath()
     urdf_path = os.path.join(pbdata_path, 'kuka_iiwa', 'model.urdf')
     bm = BulletManager(False, urdf_path, 'lbr_iiwa_link_7')
 
-    cmd_seqs = []
-    img_seqs = []
-    for i in tqdm.tqdm(range(n_epoch)):
-        bm.set_joint_angles([0.2 for _ in range(7)])
-        while True:
-            try:
-                target_pos = np.array([0.5, 0.0, 0.3]) + np.random.randn(3) * np.array([0.2, 0.5, 0.1])
-                angles_solved = bm.solve_ik(target_pos)
-                break
-            except tinyfk._inverse_kinematics.IKFail:
-                pass
+    if prediction_mode:
+        tcache_ae = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
+        tcache_lstm = TrainCache[LSTM].load(project_name, LSTM)
+        predictor = ImageCommandPredictor(tcache_lstm.best_model, tcache_ae.best_model)
+
+        target_pos = np.array([0.5, 0.0, 0.3]) + np.random.randn(3) * np.array([0.2, 0.5, 0.1])
         bm.set_box(target_pos)
-        img_seq, cmd_seq = bm.kinematic_simulate(angles_solved, n_pixel=n_pixel, with_depth=with_depth)
-        cmd_seqs.append(cmd_seq)
-        img_seqs.append(img_seq)
+        img_seq = bm.prediction_simulate(predictor, n_pixel)
 
-    chunk = ImageCommandDataChunk()
-    for img_cmd_seq_tuple in zip(img_seqs, cmd_seqs):
-        chunk.push_epoch(img_cmd_seq_tuple)
-    chunk.dump(project_name)
+        filename = os.path.join(get_project_dir(project_name), "prediction.gif")
+        clip = ImageSequenceClip([img for img in img_seq], fps=50)
+        clip.write_gif(filename, fps=50)
+    else:
+        cmd_seqs = []
+        img_seqs = []
+        for i in tqdm.tqdm(range(n_epoch)):
+            bm.set_joint_angles([0.2 for _ in range(7)])
+            while True:
+                try:
+                    target_pos = np.array([0.5, 0.0, 0.3]) + np.random.randn(3) * np.array([0.2, 0.5, 0.1])
+                    angles_solved = bm.solve_ik(target_pos)
+                    break
+                except tinyfk._inverse_kinematics.IKFail:
+                    pass
+            bm.set_box(target_pos)
+            img_seq, cmd_seq = bm.kinematic_simulate(angles_solved, n_pixel=n_pixel, with_depth=with_depth)
+            cmd_seqs.append(cmd_seq)
+            img_seqs.append(img_seq)
 
-    filename = os.path.join(get_project_dir(project_name), "sample.gif")
-    clip = ImageSequenceClip([img for img in img_seqs[0]], fps=50)
-    clip.write_gif(filename, fps=50)
+        chunk = ImageCommandDataChunk()
+        for img_cmd_seq_tuple in zip(img_seqs, cmd_seqs):
+            chunk.push_epoch(img_cmd_seq_tuple)
+        chunk.dump(project_name)
+
+        filename = os.path.join(get_project_dir(project_name), "sample.gif")
+        clip = ImageSequenceClip([img for img in img_seqs[0]], fps=50)
+        clip.write_gif(filename, fps=50)
