@@ -172,7 +172,7 @@ class FFImageCommandPredictor(AbstractPredictor[MaybeNoneImageCommandPair, FFPro
             bias = self.img_torch_one_shot.unsqueeze(0)
             bias_repeated = bias.expand(len(states), -1)
             tmp = self.propagator(states, bias_repeated)
-            out = torch.squeeze(tmp, dim=0)[-1].detach().clone()
+            out = tmp[-1].detach().clone()
             self._force_continue_flag_if_necessary(out)
             feeds.append(out)
             preds.append(out)
