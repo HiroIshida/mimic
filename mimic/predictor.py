@@ -13,6 +13,7 @@ from typing import NewType
 from mimic.datatype import AbstractDataChunk
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import _Dataset
+from mimic.dataset import _continue_flag
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.models import DenseProp
@@ -47,7 +48,7 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
 
     def _attach_flag_if_necessary(self, vec: torch.Tensor) -> torch.Tensor:
         if isinstance(self.propagator, LSTM):
-            flag = torch.tensor([AutoRegressiveDataset.continue_flag])
+            flag = torch.tensor([_continue_flag])
             return torch.cat((vec, flag))
         return vec
 
@@ -58,7 +59,7 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
 
     def _force_continue_flag_if_necessary(self, vec: torch.Tensor) -> None: 
         if isinstance(self.propagator, LSTM):
-            vec[-1] = AutoRegressiveDataset.continue_flag
+            vec[-1] = _continue_flag
 
     def _feed(self, state: torch.Tensor) -> None:
         state_maybe_with_flag = self._attach_flag_if_necessary(state)

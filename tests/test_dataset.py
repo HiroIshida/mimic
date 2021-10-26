@@ -3,6 +3,7 @@ import torch
 from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.dataset import ReconstructionDataset
+import mimic.dataset
 from mimic.dataset import attach_flag_info
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
@@ -27,14 +28,16 @@ def test_attach_flag_info():
     seq2 = torch.randn((12, 3))
     seq3 = torch.randn((14, 3))
     seq_list = [seq1, seq2, seq3]
-    val_padding = 0.0
-    seq_list_with_flag = attach_flag_info(seq_list, val_padding, 0., 1.)
+    seq_list_with_flag = attach_flag_info(seq_list)
 
-    assert seq_list_with_flag[0][9, 3] == 0.0
-    assert seq_list_with_flag[0][10, 3] == 1.0
-    assert seq_list_with_flag[1][11, 3] == 0.0
-    assert seq_list_with_flag[1][12, 3] == 1.0
-    assert seq_list_with_flag[2][13, 3] == 0.0
+    continue_flag = mimic.dataset._continue_flag
+    end_flag = mimic.dataset._end_flag
+    val_padding = mimic. dataset._val_padding
+    assert seq_list_with_flag[0][9, 3] == continue_flag
+    assert seq_list_with_flag[0][10, 3] == end_flag
+    assert seq_list_with_flag[1][11, 3] == continue_flag
+    assert seq_list_with_flag[1][12, 3] == end_flag
+    assert seq_list_with_flag[2][13, 3] == continue_flag
 
     assert seq_list_with_flag[0][10:, :3].sum() == 0.0
     assert seq_list_with_flag[0][12:, :3].sum() == 0.0

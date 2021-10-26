@@ -14,6 +14,7 @@ from mimic.datatype import CommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
+from mimic.dataset import _continue_flag
 
 from test_datatypes import image_command_datachunk_with_encoder
 
@@ -31,7 +32,7 @@ def test_predictor_core():
     for cmd in seq:
         predictor.feed(cmd.detach().numpy())
     seq_with_flag = torch.cat(
-            (seq, torch.ones(29, 1) * AutoRegressiveDataset.continue_flag), dim=1)
+            (seq, torch.ones(29, 1) * _continue_flag), dim=1)
     assert torch.all(torch.stack(predictor.states) == seq_with_flag)
 
     cmd_pred = predictor.predict(n_horizon=1, with_feeds=False)

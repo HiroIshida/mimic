@@ -13,6 +13,10 @@ from mimic.datatype import AbstractDataChunk
 from mimic.datatype import ImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
 
+_continue_flag = 0.0
+_end_flag = 1.0
+_val_padding = 0.0
+
 DatasetT = TypeVar('DatasetT', bound='_Dataset')
 class _Dataset(Dataset):
     @classmethod
@@ -39,11 +43,7 @@ class ReconstructionDataset(Dataset):
     def __getitem__(self, idx: int) -> torch.Tensor:
         return self.data[idx]
 
-def attach_flag_info(
-        seq_list: List[torch.Tensor], 
-        val_padding: float,
-        continue_flag: float, 
-        end_flag: float) -> List[torch.Tensor]:
+def attach_flag_info(seq_list: List[torch.Tensor]) -> List[torch.Tensor]:
     n_state = len(seq_list[0][0])
     n_max = max([len(seq) for seq in seq_list])
 
@@ -51,8 +51,8 @@ def attach_flag_info(
         seq = seq_list[i]
         n_seq = len(seq)
         n_padding = n_max - n_seq
-        tensor_flags = torch.cat((torch.ones(n_seq) * continue_flag, torch.ones(n_padding) * end_flag))
-        tensor_concat = torch.ones(n_padding, n_state) * val_padding
+        tensor_flags = torch.cat((torch.ones(n_seq) * _continue_flag, torch.ones(n_padding) * _end_flag))
+        tensor_concat = torch.ones(n_padding, n_state) * _val_padding
         tmp = torch.cat((seq, tensor_concat), dim=0)
         seq_list[i] = torch.cat((tmp, torch.unsqueeze(tensor_flags, 1)), dim=1)
     return seq_list
@@ -62,12 +62,9 @@ class AutoRegressiveDataset(Dataset):
     Always come with end-of-epoch flags
     """
     data: List[torch.Tensor]
-    val_padding: float = 0.0
-    continue_flag: float = 0.0
-    end_flag: float = 1.0
-    def __init__(self, featureseq_list: List[torch.Tensor], val_padding:float =0.0):
+    def __init__(self, featureseq_list: List[torch.Tensor]):
         seq_list = deepcopy(featureseq_list)
-        self.data = attach_flag_info(seq_list, self.val_padding, self.continue_flag, self.end_flag)
+        self.data = attach_flag_info(seq_list)
 
     @classmethod
     def from_chunk(cls, chunk: AbstractDataChunk) -> 'AutoRegressiveDataset':
@@ -88,14 +85,11 @@ class AutoRegressiveDataset(Dataset):
 
 class BiasedAutoRegressiveDataset(Dataset):
     data: List[torch.Tensor]
-    val_padding: float = 0.0
-    continue_flag: float = 0.0
-    end_flag: float = 1.0
     n_bias: int
-    def __init__(self, featureseq_list: List[torch.Tensor], n_bias: int, val_padding:float =0.0):
+    def __init__(self, featureseq_list: List[torch.Tensor], n_bias: int):
         self.n_bias = n_bias
         seq_list = deepcopy(featureseq_list)
-        self.data = attach_flag_info(seq_list, self.val_padding, self.continue_flag, self.end_flag)
+        self.data = attach_flag_info(seq_list)
 
     @classmethod
     def from_chunk(cls, chunk: ImageCommandDataChunk) -> 'BiasedAutoRegressiveDataset':
