@@ -170,6 +170,7 @@ class FFImageCommandPredictor(AbstractPredictor[MaybeNoneImageCommandPair, FFPro
     def _predict(self, n_horizon: int, with_feeds: bool=False) -> List[torch.Tensor]:
         feeds = copy.deepcopy(self.states) # cat with (img, cmd) which is different of super class's _predict
         preds: List[torch.Tensor] = [] # (cmd,) only
+        assert self.img_torch_one_shot is not None
         for _ in range(n_horizon):
             states = torch.stack(feeds)
             tmp = self.propagator(torch.unsqueeze(states, 0))
