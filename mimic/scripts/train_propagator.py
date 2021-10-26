@@ -3,9 +3,6 @@ import typing
 from typing import Union
 
 import torch
-from mimic.models import ImageAutoEncoder
-from mimic.models import DenseProp
-from mimic.models import BiasedDenseProp
 
 from mimic.trainer import Config
 from mimic.trainer import TrainCache
@@ -18,7 +15,11 @@ from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
 from mimic.models import LSTM
+from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
+from mimic.models import ImageAutoEncoder
+from mimic.models import BiasedDenseProp
+
 from mimic.scripts.utils import split_with_ratio
 from mimic.scripts.utils import create_default_logger
 from mimic.scripts.utils import query_yes_no
@@ -38,22 +39,21 @@ def prepare_chunk(project_name: str) -> AbstractDataChunk:
 # TODO what is type of model_type. how to specify 'class' type??
 # TODO Do type check! but this function is type-wise tricky...
 @typing.no_type_check 
-def train_propagator(project_name: str, model_type, config: Config, use_bias=False) -> None:
+def train_propagator(project_name: str, model_type, config: Config) -> None:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     chunk = prepare_chunk(project_name)
     if model_type is LSTM:
-        if use_bias:
-            dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
-            prop_model = LSTM(device, dataset.n_state, dataset.n_bias)
-        else:
-            dataset = AutoRegressiveDataset.from_chunk(chunk)
-            prop_model = model_type(device, dataset.n_state)
+        dataset = AutoRegressiveDataset.from_chunk(chunk)
+        prop_model = LSTM(device, dataset.n_state)
+    elif model_type is BiasedLSTM:
+        dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
+        prop_model = BiasedLSTM(device, dataset.n_state, dataset.n_bias)
     elif model_type is DenseProp:
         dataset = FirstOrderARDataset.from_chunk(chunk)
-        prop_model = model_type(device, dataset.n_state)
+        prop_model = DenseProp(device, dataset.n_state)
     elif model_type is BiasedDenseProp:
         dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
-        prop_model = model_type(device, dataset.n_state, dataset.n_bias)
+        prop_model = BiasedDenseProp(device, dataset.n_state, dataset.n_bias)
     else:
         raise RuntimeError
     tcache = TrainCache[model_type](project_name, model_type)
@@ -68,24 +68,24 @@ if __name__=='__main__':
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
     parser.add_argument('-n', type=int, default=1000, help='training epoch')
     parser.add_argument('-model', type=str, default="lstm", help='model name')
-    parser.add_argument('--bias', action='store_true', help='prediction mode')
 
     args = parser.parse_args()
     project_name = args.pn
     model_name = args.model
     n_epoch = args.n
-    use_bias = args.bias
 
     prop_model: type
     if model_name == 'lstm':
         prop_model = LSTM
+    elif model_name == 'biased_lstm':
+        prop_model = BiasedLSTM
     elif model_name == 'dense_prop':
         prop_model = DenseProp
     elif model_name == 'biased_dense_prop':
         prop_model = BiasedDenseProp
     else:
-        raise RuntimeError
+        raise RuntimeError('No such prop model named {} exists'.format(model_name))
 
     logger = create_default_logger(project_name, 'propagator_{}'.format(model_name))
     config = Config(n_epoch=n_epoch)
-    train_propagator(project_name, prop_model, config, use_bias=use_bias)
+    train_propagator(project_name, prop_model, config)
