@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
+from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 from mimic.predictor import SimplePredictor
@@ -99,7 +100,7 @@ def test_FFImageCommandPredictor():
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    prop = BiasedDenseProp(torch.device('cpu'), 7, 16)
+    prop = BiasedLSTM(torch.device('cpu'), 7 + 1, 16)
     predictor = FFImageCommandPredictor(prop, ae)
 
     assert predictor.img_torch_one_shot is None
@@ -110,9 +111,13 @@ def test_FFImageCommandPredictor():
 
         assert predictor.img_torch_one_shot is not None
         assert list(predictor.img_torch_one_shot.shape) == [16]
-        assert list(predictor.states[0].shape) == [7]
+        assert list(predictor.states[0].shape) == [7 + 16 + 1]
 
         imgs, cmds = zip(*predictor.predict(5))
+        assert imgs[0] == None
+        assert list(cmds[0].shape) == [7]
+
+        imgs, cmds = zip(*predictor.predict(5, with_feeds=True))
         assert imgs[0] == None
         assert list(cmds[0].shape) == [7]
 
