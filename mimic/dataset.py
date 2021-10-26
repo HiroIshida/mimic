@@ -86,6 +86,32 @@ class AutoRegressiveDataset(Dataset):
         sample_output = self.data[idx][1:]
         return sample_input, sample_output
 
+class BiasedAutoRegressiveDataset(Dataset):
+    data: List[torch.Tensor]
+    val_padding: float = 0.0
+    continue_flag: float = 0.0
+    end_flag: float = 1.0
+    n_bias: int
+    def __init__(self, featureseq_list: List[torch.Tensor], n_bias: int, val_padding:float =0.0):
+        self.n_bias = n_bias
+        seq_list = deepcopy(featureseq_list)
+        self.data = attach_flag_info(seq_list, self.val_padding, self.continue_flag, self.end_flag)
+
+    @classmethod
+    def from_chunk(cls, chunk: ImageCommandDataChunk) -> 'BiasedAutoRegressiveDataset':
+        assert chunk.has_encoder
+        featureseq_list = chunk.to_featureseq_list()
+        return BiasedAutoRegressiveDataset(featureseq_list, chunk.n_encoder_output())
+
+    @property
+    def n_state(self) -> int: return self.data[0].shape[1] - self.n_bias
+    def __len__(self) -> int: return len(self.data)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        sample_input = self.data[idx][:-1]
+        sample_output = self.data[idx][1:, self.n_bias:]
+        return sample_input, sample_output
+
 class FirstOrderARDataset(Dataset):
     n_state: int
     data_pre: torch.Tensor
