@@ -3,6 +3,7 @@ from torch.utils.data.dataset import Subset
 from mimic.models.common import _Model
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
+from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 
@@ -27,7 +28,8 @@ from typing import Type
 # TODO(HiroIshida) maybe values are list
 _dataset_compat_table = {
         ImageAutoEncoder.__name__: [ReconstructionDataset],
-        LSTM.__name__: [AutoRegressiveDataset, BiasedAutoRegressiveDataset],
+        LSTM.__name__: [AutoRegressiveDataset],
+        BiasedLSTM.__name__: [BiasedAutoRegressiveDataset],
         DenseProp.__name__: [FirstOrderARDataset],
         BiasedDenseProp.__name__: [BiasedFirstOrderARDataset]
         }

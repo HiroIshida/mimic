@@ -11,7 +11,7 @@ from mimic.models.common import _Model
 from mimic.models.common import LossDict
 from mimic.dataset import AutoRegressiveDataset
 
-class LSTM(_Model):
+class LSTMBase(_Model):
     """
     Note that n_state 
     """
@@ -23,7 +23,7 @@ class LSTM(_Model):
     lstm_layer: nn.LSTM
     output_layer: nn.Linear
 
-    def __init__(self, device: device, n_state: int, n_bias: int=0, n_hidden: int=200, n_layer: int=2):
+    def __init__(self, device: device, n_state: int, n_bias: int, n_hidden: int=200, n_layer: int=2):
         _Model.__init__(self, device)
         self.n_state = n_state
         self.n_bias = n_bias
@@ -60,3 +60,13 @@ class LSTM(_Model):
         pred_output = self.forward(sample_input)
         loss_value = nn.MSELoss(reduction=reduction)(pred_output[:, state_slicer], sample_output[:, state_slicer])
         return LossDict({'prediction': loss_value})
+
+class LSTM(LSTMBase):
+    def __init__(self, device: device, n_state: int, n_hidden: int=200, n_layer: int=2):
+        n_bias = 0
+        super().__init__(device, n_state, n_bias, n_hidden=n_hidden, n_layer=n_layer)
+
+class BiasedLSTM(LSTMBase):
+    def __init__(self, device: device, n_state: int, n_bias: int, n_hidden: int=200, n_layer: int=2):
+        assert n_bias > 0
+        super().__init__(device, n_state, n_bias, n_hidden=n_hidden, n_layer=n_layer)
