@@ -8,6 +8,7 @@ import torch
 
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
+from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 from mimic.predictor import AbstractPredictor
@@ -20,8 +21,8 @@ def create_predictor(project_name: str, model_name: str) -> \
         Union[ImageCommandPredictor, FFImageCommandPredictor]:
     dispatch_dict = {
             'lstm': [LSTM, ImageCommandPredictor],
+            'biased_lstm': [BiasedLSTM, FFImageCommandPredictor],
             'dense_prop': [DenseProp, ImageCommandPredictor],
-            'biased_dense_prop': [BiasedDenseProp, FFImageCommandPredictor]
             }
     ModelT, PredictorT = dispatch_dict[model_name]
     ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
@@ -57,8 +58,8 @@ if __name__=='__main__':
         predictor.feed((imgseq.data[i], cmdseq.data[i]))
     imgseq_pred, cmdseq_pred = map(list, zip(*predictor.predict(n_prediction)))
     filename = os.path.join(get_project_dir(project_name), 'prediction_result_{}.gif'.format(model_name))
-    if model_name == 'biased_dense_prop':
-        print('images are not predicted by biased_dense_prop') 
+    if model_name == 'biased_lstm':
+        print('images can not be predicted by biased_lstm') 
     else:
         clip = ImageSequenceClip(imgseq_pred, fps=50)
         clip.write_gif(filename, fps=50)
