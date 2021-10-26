@@ -14,6 +14,7 @@ from mimic.datatype import AbstractDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.datatype import ImageCommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
+from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
 from mimic.models import LSTM
@@ -37,12 +38,16 @@ def prepare_chunk(project_name: str) -> AbstractDataChunk:
 # TODO what is type of model_type. how to specify 'class' type??
 # TODO Do type check! but this function is type-wise tricky...
 @typing.no_type_check 
-def train_propagator(project_name: str, model_type, config: Config) -> None:
+def train_propagator(project_name: str, model_type, config: Config, use_bias=False) -> None:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     chunk = prepare_chunk(project_name)
     if model_type is LSTM:
-        dataset = AutoRegressiveDataset.from_chunk(chunk)
-        prop_model = model_type(device, dataset.n_state)
+        if use_bias:
+            dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
+            prop_model = LSTM(device, dataset.n_state, dataset.n_bias)
+        else:
+            dataset = AutoRegressiveDataset.from_chunk(chunk)
+            prop_model = model_type(device, dataset.n_state)
     elif model_type is DenseProp:
         dataset = FirstOrderARDataset.from_chunk(chunk)
         prop_model = model_type(device, dataset.n_state)
@@ -63,10 +68,13 @@ if __name__=='__main__':
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
     parser.add_argument('-n', type=int, default=1000, help='training epoch')
     parser.add_argument('-model', type=str, default="lstm", help='model name')
+    parser.add_argument('--bias', action='store_true', help='prediction mode')
+
     args = parser.parse_args()
     project_name = args.pn
     model_name = args.model
     n_epoch = args.n
+    use_bias = args.bias
 
     prop_model: type
     if model_name == 'lstm':
@@ -80,4 +88,4 @@ if __name__=='__main__':
 
     logger = create_default_logger(project_name, 'propagator_{}'.format(model_name))
     config = Config(n_epoch=n_epoch)
-    train_propagator(project_name, prop_model, config)
+    train_propagator(project_name, prop_model, config, use_bias=use_bias)

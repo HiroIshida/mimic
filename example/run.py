@@ -29,7 +29,7 @@ script_path = os.path.join(here, 'kuka_reaching.py')
 
 cmd_generate_dataset = 'python3 {0} -pn {1} -n {2}'.format(script_path, cfg.project_name, cfg.n_data)
 cmd_train_autoencoder = 'python3 -m mimic.scripts.train_auto_encoder -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_ae)
-cmd_train_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_lstm)
+cmd_train_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} --bias'.format(cfg.project_name, cfg.n_train_lstm)
 cmd_train_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model dense_prop'.format(cfg.project_name, cfg.n_train_dense)
 cmd_train_biasd_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model biased_dense_prop'.format(cfg.project_name, cfg.n_train_biased_dense)
 cmd_run_predictor_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model lstm'.format(cfg.project_name)
