@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
+from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 from mimic.predictor import SimplePredictor
@@ -14,6 +15,7 @@ from mimic.datatype import CommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
+from mimic.dataset import _continue_flag
 
 from test_datatypes import image_command_datachunk_with_encoder
 
@@ -23,17 +25,20 @@ def test_predictor_core():
     for i in range(10):
         chunk.push_epoch(seq)
     dataset = AutoRegressiveDataset.from_chunk(chunk)
-    seq = dataset[0][:29, :7]
+    sample_input = dataset[0][0]
+    seq = sample_input[:29, :7]
 
     lstm = LSTM(torch.device('cpu'), 7 + 1)
     predictor = SimplePredictor(lstm)
     for cmd in seq:
         predictor.feed(cmd.detach().numpy())
-    assert torch.all(torch.stack(predictor.states) == dataset[0][:29, :])
+    seq_with_flag = torch.cat(
+            (seq, torch.ones(29, 1) * _continue_flag), dim=1)
+    assert torch.all(torch.stack(predictor.states) == seq_with_flag)
 
     cmd_pred = predictor.predict(n_horizon=1, with_feeds=False)
 
-    out = lstm(torch.unsqueeze(dataset[0][:29, :], dim=0))
+    out = lstm(torch.unsqueeze(seq_with_flag, dim=0))
     cmd_pred_direct = out[0][-1, :-1].detach().numpy()
     assert np.all(cmd_pred == cmd_pred_direct)
 
@@ -95,7 +100,7 @@ def test_FFImageCommandPredictor():
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    prop = BiasedDenseProp(torch.device('cpu'), 7, 16)
+    prop = BiasedLSTM(torch.device('cpu'), 7 + 1, 16)
     predictor = FFImageCommandPredictor(prop, ae)
 
     assert predictor.img_torch_one_shot is None
@@ -106,9 +111,13 @@ def test_FFImageCommandPredictor():
 
         assert predictor.img_torch_one_shot is not None
         assert list(predictor.img_torch_one_shot.shape) == [16]
-        assert list(predictor.states[0].shape) == [7]
+        assert list(predictor.states[0].shape) == [7 + 16 + 1]
 
         imgs, cmds = zip(*predictor.predict(5))
+        assert imgs[0] == None
+        assert list(cmds[0].shape) == [7]
+
+        imgs, cmds = zip(*predictor.predict(5, with_feeds=True))
         assert imgs[0] == None
         assert list(cmds[0].shape) == [7]
 
@@ -132,16 +141,17 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     assert slice2.step == None
 
     chunk = image_command_datachunk_with_encoder
-    error = evaluate_command_prediction_error(ae, lstm, chunk)
-    error2 = evaluate_command_prediction_error(ae, lstm, chunk, batch_size=2)
+    dataset = AutoRegressiveDataset.from_chunk(chunk)
+    error = evaluate_command_prediction_error(ae, lstm, dataset)
+    error2 = evaluate_command_prediction_error(ae, lstm, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
 
     dataset = FirstOrderARDataset.from_chunk(chunk)
-    error = evaluate_command_prediction_error(ae, dense_prop, chunk)
-    error2 = evaluate_command_prediction_error(ae, dense_prop, chunk, batch_size=2)
+    error = evaluate_command_prediction_error(ae, dense_prop, dataset)
+    error2 = evaluate_command_prediction_error(ae, dense_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
 
     dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
-    error = evaluate_command_prediction_error(ae, biased_prop, chunk)
-    error2 = evaluate_command_prediction_error(ae, biased_prop, chunk, batch_size=2)
+    error = evaluate_command_prediction_error(ae, biased_prop, dataset)
+    error2 = evaluate_command_prediction_error(ae, biased_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3

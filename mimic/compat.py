@@ -3,12 +3,14 @@ from torch.utils.data.dataset import Subset
 from mimic.models.common import _Model
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
+from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 
 from mimic.dataset import _Dataset
 from mimic.dataset import ReconstructionDataset
 from mimic.dataset import AutoRegressiveDataset
+from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
 
@@ -25,18 +27,17 @@ from typing import Type
 
 # TODO(HiroIshida) maybe values are list
 _dataset_compat_table = {
-        ImageAutoEncoder.__name__: ReconstructionDataset,
-        LSTM.__name__: AutoRegressiveDataset,
-        DenseProp.__name__: FirstOrderARDataset,
-        BiasedDenseProp.__name__: BiasedFirstOrderARDataset
+        ImageAutoEncoder.__name__: [ReconstructionDataset],
+        LSTM.__name__: [AutoRegressiveDataset],
+        BiasedLSTM.__name__: [BiasedAutoRegressiveDataset],
+        DenseProp.__name__: [FirstOrderARDataset],
+        BiasedDenseProp.__name__: [BiasedFirstOrderARDataset]
         }
-
-def compatible_dataset(model: _Model) -> Type[_Dataset]:
-    model_type_name = model.__class__.__name__
-    return _dataset_compat_table[model_type_name]
 
 @typing.no_type_check 
 def is_compatible(model: _Model, dataset: Dataset) -> bool:
+    compat_models = _dataset_compat_table[model.__class__.__name__]
+    compat_model_names = [m.__name__ for m in compat_models]
     if isinstance(dataset, Subset):
-        return compatible_dataset(model).__name__ == dataset.dataset.__class__.__name__ 
-    return compatible_dataset(model) == dataset.__class__.__name__
+        return dataset.dataset.__class__.__name__ in compat_model_names
+    return dataset.__class__.__name__ in compat_model_names

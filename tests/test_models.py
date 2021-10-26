@@ -3,9 +3,11 @@ import torch
 
 from mimic.models import ImageAutoEncoder
 from mimic.dataset import AutoRegressiveDataset
+from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
 from mimic.models import LSTM
+from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 from test_datatypes import cmd_datachunk
@@ -32,12 +34,24 @@ def test_lstm_with_image(image_datachunk_with_encoder):
     dataset = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset.data[0].shape 
     model = LSTM(torch.device('cpu'), n_state)
-    sample = dataset.data[0].unsqueeze(0)
+    sample_ = dataset[0]
+    assert isinstance(sample_, tuple)
+    sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
     loss = model.loss(sample)
     assert len(list(loss.values())) == 1
     assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
 
     loss_sliced = model.loss(sample, slice(5, None))
+
+def test_biased_lstm_pipeline(image_command_datachunk_with_encoder):
+    dataset = BiasedAutoRegressiveDataset.from_chunk(image_command_datachunk_with_encoder)
+    model = BiasedLSTM(torch.device('cpu'), dataset.n_state, dataset.n_bias)
+    sample_ = dataset[0]
+    assert isinstance(sample_, tuple)
+    sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
+    loss = model.loss(sample)
+    assert len(list(loss.values())) == 1
+    assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
 
 def test_densedrop_pipeline(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder
