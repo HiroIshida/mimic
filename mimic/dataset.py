@@ -81,7 +81,10 @@ class AutoRegressiveDataset(Dataset):
 
     def __len__(self) -> int: return len(self.data)
 
-    def __getitem__(self, idx: int) -> torch.Tensor: return self.data[idx]
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        sample_input = self.data[idx][:-1]
+        sample_output = self.data[idx][1:]
+        return sample_input, sample_output
 
 class FirstOrderARDataset(Dataset):
     n_state: int

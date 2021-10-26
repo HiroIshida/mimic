@@ -23,17 +23,20 @@ def test_predictor_core():
     for i in range(10):
         chunk.push_epoch(seq)
     dataset = AutoRegressiveDataset.from_chunk(chunk)
-    seq = dataset[0][:29, :7]
+    sample_input = dataset[0][0]
+    seq = sample_input[:29, :7]
 
     lstm = LSTM(torch.device('cpu'), 7 + 1)
     predictor = SimplePredictor(lstm)
     for cmd in seq:
         predictor.feed(cmd.detach().numpy())
-    assert torch.all(torch.stack(predictor.states) == dataset[0][:29, :])
+    seq_with_flag = torch.cat(
+            (seq, torch.ones(29, 1) * AutoRegressiveDataset.continue_flag), dim=1)
+    assert torch.all(torch.stack(predictor.states) == seq_with_flag)
 
     cmd_pred = predictor.predict(n_horizon=1, with_feeds=False)
 
-    out = lstm(torch.unsqueeze(dataset[0][:29, :], dim=0))
+    out = lstm(torch.unsqueeze(seq_with_flag, dim=0))
     cmd_pred_direct = out[0][-1, :-1].detach().numpy()
     assert np.all(cmd_pred == cmd_pred_direct)
 

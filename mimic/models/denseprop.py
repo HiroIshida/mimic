@@ -56,6 +56,7 @@ class DenseProp(_Model):
         return LossDict({'prediction': loss_value})
 
 class BiasedDenseProp(_Model):
+    # TODO shold be part of DenseProp class
     n_state: int
     n_hidden: int
     n_layer: int
