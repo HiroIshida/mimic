@@ -24,7 +24,7 @@ from mimic.scripts.utils import split_with_ratio
 from mimic.scripts.utils import create_default_logger
 from mimic.scripts.utils import query_yes_no
 
-def prepare_chunk(project_name: str) -> AbstractDataChunk:
+def prepare_trained_image_chunk(project_name: str) -> AbstractDataChunk:
     tcache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
     try:
         chunk_: Union[ImageDataChunk, ImageCommandDataChunk] \
@@ -41,7 +41,7 @@ def prepare_chunk(project_name: str) -> AbstractDataChunk:
 @typing.no_type_check 
 def train_propagator(project_name: str, model_type, config: Config) -> None:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    chunk = prepare_chunk(project_name)
+    chunk = prepare_trained_image_chunk(project_name)
     if model_type is LSTM:
         dataset = AutoRegressiveDataset.from_chunk(chunk)
         prop_model = LSTM(device, dataset.n_state)
