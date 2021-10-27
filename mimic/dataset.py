@@ -23,13 +23,13 @@ class _Dataset(Dataset):
     def from_chunk(cls: Type[DatasetT], chunk: AbstractDataChunk) -> DatasetT: ...
     def __len__(self) -> int: ...
 
-class ReconstructionDataset(Dataset):
+class ReconstructionDataset(_Dataset):
     data: torch.Tensor
     def __init__(self, data):
         self.data = data
 
     @classmethod
-    def from_chunk(cls, chunk: ImageDataChunk) -> 'ReconstructionDataset':
+    def from_chunk(cls, chunk: ImageDataChunk) -> 'ReconstructionDataset': # type: ignore[override]
         assert (not chunk.has_encoder)
         featureseq_list = chunk.to_featureseq_list()
         n_seq, n_channel, n_pixel1, n_pixel2 = featureseq_list[0].shape
@@ -57,7 +57,7 @@ def attach_flag_info(seq_list: List[torch.Tensor]) -> List[torch.Tensor]:
         seq_list[i] = torch.cat((tmp, torch.unsqueeze(tensor_flags, 1)), dim=1)
     return seq_list
 
-class AutoRegressiveDataset(Dataset):
+class AutoRegressiveDataset(_Dataset):
     """
     Always come with end-of-epoch flags
     """
@@ -83,7 +83,7 @@ class AutoRegressiveDataset(Dataset):
         sample_output = self.data[idx][1:]
         return sample_input, sample_output
 
-class BiasedAutoRegressiveDataset(Dataset):
+class BiasedAutoRegressiveDataset(_Dataset):
     data: List[torch.Tensor]
     n_bias: int
     def __init__(self, featureseq_list: List[torch.Tensor], n_bias: int):
@@ -92,7 +92,7 @@ class BiasedAutoRegressiveDataset(Dataset):
         self.data = attach_flag_info(seq_list)
 
     @classmethod
-    def from_chunk(cls, chunk: ImageCommandDataChunk) -> 'BiasedAutoRegressiveDataset':
+    def from_chunk(cls, chunk: ImageCommandDataChunk) -> 'BiasedAutoRegressiveDataset': # type: ignore[override]
         assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
         return BiasedAutoRegressiveDataset(featureseq_list, chunk.n_encoder_output())
@@ -106,7 +106,7 @@ class BiasedAutoRegressiveDataset(Dataset):
         sample_output = self.data[idx][1:, self.n_bias:]
         return sample_input, sample_output
 
-class FirstOrderARDataset(Dataset):
+class FirstOrderARDataset(_Dataset):
     n_state: int
     data_pre: torch.Tensor
     data_post: torch.Tensor
@@ -133,7 +133,7 @@ class FirstOrderARDataset(Dataset):
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]: 
         return (self.data_pre[idx], self.data_post[idx])
 
-class BiasedFirstOrderARDataset(Dataset):
+class BiasedFirstOrderARDataset(_Dataset):
     n_state: int
     n_bias: int
     biases: torch.Tensor # 2-dim tensor
@@ -160,7 +160,7 @@ class BiasedFirstOrderARDataset(Dataset):
         self.n_state = len(self.data_pre[0] - n_encoder_output)
 
     @classmethod
-    def from_chunk(cls, chunk: ImageCommandDataChunk) -> 'BiasedFirstOrderARDataset':
+    def from_chunk(cls, chunk: ImageCommandDataChunk) -> 'BiasedFirstOrderARDataset': # type: ignore[override]
         assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
         return BiasedFirstOrderARDataset(featureseq_list, chunk.n_encoder_output())
