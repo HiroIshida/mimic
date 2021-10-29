@@ -69,7 +69,7 @@ class AutoRegressiveDataset(_Dataset):
 
     @classmethod
     def from_chunk(cls, chunk: AbstractDataChunk) -> 'AutoRegressiveDataset':
-        if isinstance(chunk, ImageDataChunk):
+        if isinstance(chunk, ImageDataChunk) or isinstance(chunk, ImageCommandDataChunk):
             assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
         return AutoRegressiveDataset(featureseq_list)
