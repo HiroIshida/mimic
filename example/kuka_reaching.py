@@ -17,6 +17,7 @@ from mimic.predictor import FFImageCommandPredictor
 from mimic.predictor import ImageCommandPredictor
 from mimic.trainer import TrainCache
 from mimic.models import ImageAutoEncoder, LSTM, BiasedDenseProp
+from mimic.scripts.predict import create_predictor
 
 class BulletManager(object):
 
@@ -156,6 +157,7 @@ if __name__=='__main__':
     parser.add_argument('--depth', action='store_true', help='with depth channel')
     parser.add_argument('--predict', action='store_true', help='prediction mode')
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
+    parser.add_argument('-model', type=str, default='lstm', help='propagator model name')
     parser.add_argument('-n', type=int, default=300, help='epoch num')
     parser.add_argument('-m', type=int, default=112, help='pixel num') # same as mnist
     args = parser.parse_args()
@@ -164,16 +166,14 @@ if __name__=='__main__':
     with_depth = args.depth
     prediction_mode = args.predict
     project_name = args.pn
+    model_name = args.model
 
     pbdata_path = pybullet_data.getDataPath()
     urdf_path = os.path.join(pbdata_path, 'kuka_iiwa', 'model.urdf')
     bm = BulletManager(False, urdf_path, 'lbr_iiwa_link_7')
 
     if prediction_mode:
-        tcache_ae = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
-        tcache_lstm = TrainCache[LSTM].load(project_name, LSTM)
-        predictor = ImageCommandPredictor(tcache_lstm.best_model, tcache_ae.best_model)
-
+        predictor = create_predictor(project_name, model_name)
         target_pos = np.array([0.5, 0.0, 0.3]) + np.random.randn(3) * np.array([0.2, 0.5, 0.1])
         bm.set_box(target_pos)
         img_seq = bm.prediction_simulate(predictor, n_pixel)
