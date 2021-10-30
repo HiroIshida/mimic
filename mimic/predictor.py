@@ -25,8 +25,8 @@ from abc import ABC, abstractmethod
 
 StateT = TypeVar('StateT') # TODO maybe this is unncessarly
 FBPropT = TypeVar('FBPropT', bound=Union[LSTM, DenseProp])
-FFPropT = TypeVar('FFPropT', bound=Union[BiasedDenseProp])
-PropT = TypeVar('PropT', bound=Union[LSTM, DenseProp, BiasedDenseProp])
+FFPropT = TypeVar('FFPropT', bound=Union[BiasedLSTM, BiasedDenseProp])
+PropT = TypeVar('PropT', bound=Union[LSTM, BiasedLSTM, DenseProp, BiasedDenseProp])
 
 class AbstractPredictor(ABC, Generic[StateT, PropT]):
     propagator: PropT
@@ -48,19 +48,22 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
         raw_preds = feeds if with_feeds else preds
         return [self._strip_flag_if_necessary(e) for e in raw_preds]
 
+    def _is_with_flag(self):
+        return isinstance(self.propagator, LSTMBase) or isinstance(self.propagator, BiasedDenseProp)
+
     def _attach_flag_if_necessary(self, vec: torch.Tensor) -> torch.Tensor:
-        if isinstance(self.propagator, LSTMBase):
+        if self._is_with_flag():
             flag = torch.tensor([_continue_flag])
             return torch.cat((vec, flag))
         return vec
 
     def _strip_flag_if_necessary(self, vec: torch.Tensor) -> torch.Tensor: 
-        if isinstance(self.propagator, LSTMBase):
+        if self._is_with_flag():
             return vec[:-1]
         return vec
 
     def _force_continue_flag_if_necessary(self, vec: torch.Tensor) -> None: 
-        if isinstance(self.propagator, LSTMBase):
+        if self._is_with_flag():
             vec[-1] = _continue_flag
 
     def _feed(self, state: torch.Tensor) -> None:

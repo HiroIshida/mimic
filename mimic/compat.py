@@ -31,7 +31,7 @@ _dataset_compat_table = {
         LSTM.__name__: [AutoRegressiveDataset],
         BiasedLSTM.__name__: [BiasedAutoRegressiveDataset],
         DenseProp.__name__: [FirstOrderARDataset],
-        BiasedDenseProp.__name__: [BiasedFirstOrderARDataset]
+        BiasedDenseProp.__name__: [BiasedAutoRegressiveDataset]
         }
 
 @typing.no_type_check 
