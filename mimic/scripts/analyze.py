@@ -6,7 +6,7 @@ from mimic.models import BiasedLSTM
 from mimic.models import BiasedDenseProp
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
-from mimic.compat import get_compat_dataset
+from mimic.compat import get_compat_dataset_type
 from mimic.trainer import TrainCache
 from mimic.predictor import evaluate_command_prediction_error
 from mimic.scripts.train_propagator import prepare_trained_image_chunk
@@ -32,7 +32,7 @@ if __name__=='__main__':
     modelT = _model_table[model_name]
     prop_train_cache = TrainCache.load(project_name, modelT)
 
-    DatasetT = get_compat_dataset(prop_train_cache.best_model)
+    DatasetT = get_compat_dataset_type(prop_train_cache.best_model)
     prop_dataset = DatasetT.from_chunk(chunk_intact)
 
     ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)

@@ -16,6 +16,7 @@ from mimic.dataset import BiasedFirstOrderARDataset
 
 import typing
 from typing import Type
+from typing import Dict
 
 # The reason why compatibility is not written as a class variable of a model is that 
 # we do not intriduce a hierarchy between models and dataset. 
@@ -26,7 +27,7 @@ from typing import Type
 # custom compatibility relations 
 
 # TODO(HiroIshida) maybe values are list
-_dataset_compat_table = {
+_dataset_compat_table : Dict[str, Type[_Dataset]] = {
         ImageAutoEncoder.__name__: ReconstructionDataset,
         LSTM.__name__: AutoRegressiveDataset,
         BiasedLSTM.__name__: BiasedAutoRegressiveDataset,
@@ -34,12 +35,12 @@ _dataset_compat_table = {
         BiasedDenseProp.__name__: BiasedAutoRegressiveDataset
         }
 
-def get_compat_dataset(model: _Model) -> _Dataset:
+def get_compat_dataset_type(model: _Model) -> Type[_Dataset]:
     return _dataset_compat_table[model.__class__.__name__]
 
 @typing.no_type_check 
 def is_compatible(model: _Model, dataset: Dataset) -> bool:
-    compat_dataset = get_compat_dataset(model)
+    compat_dataset = get_compat_dataset_type(model)
     compat_dataset_name = compat_dataset.__name__
     if isinstance(dataset, Subset):
         return dataset.dataset.__class__.__name__ == compat_dataset_name
