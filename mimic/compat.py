@@ -27,17 +27,20 @@ from typing import Type
 
 # TODO(HiroIshida) maybe values are list
 _dataset_compat_table = {
-        ImageAutoEncoder.__name__: [ReconstructionDataset],
-        LSTM.__name__: [AutoRegressiveDataset],
-        BiasedLSTM.__name__: [BiasedAutoRegressiveDataset],
-        DenseProp.__name__: [FirstOrderARDataset],
-        BiasedDenseProp.__name__: [BiasedAutoRegressiveDataset]
+        ImageAutoEncoder.__name__: ReconstructionDataset,
+        LSTM.__name__: AutoRegressiveDataset,
+        BiasedLSTM.__name__: BiasedAutoRegressiveDataset,
+        DenseProp.__name__: FirstOrderARDataset,
+        BiasedDenseProp.__name__: BiasedAutoRegressiveDataset
         }
+
+def get_compat_dataset(model: _Model) -> _Dataset:
+    return _dataset_compat_table[model.__class__.__name__]
 
 @typing.no_type_check 
 def is_compatible(model: _Model, dataset: Dataset) -> bool:
-    compat_models = _dataset_compat_table[model.__class__.__name__]
-    compat_model_names = [m.__name__ for m in compat_models]
+    compat_dataset = get_compat_dataset(model)
+    compat_dataset_name = compat_dataset.__name__
     if isinstance(dataset, Subset):
-        return dataset.dataset.__class__.__name__ in compat_model_names
-    return dataset.__class__.__name__ in compat_model_names
+        return dataset.dataset.__class__.__name__ == compat_dataset_name
+    return dataset.__class__.__name__ == compat_dataset_name
