@@ -39,19 +39,24 @@ cmd_train_biasd_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} 
 cmd_run_predictor_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model lstm'.format(cfg.project_name)
 cmd_run_predictor_biased_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model biased_lstm'.format(cfg.project_name)
 cmd_run_predictor_dense_prop = 'python3 -m mimic.scripts.predict -pn {0} -model dense_prop'.format(cfg.project_name)
+cmd_run_predictor_biased_dense_prop = 'python3 -m mimic.scripts.predict -pn {0} -model biased_dense_prop'.format(cfg.project_name)
 
 cmd_analyze_lstm = 'python3 -m mimic.scripts.analyze -pn {0} -model lstm'.format(cfg.project_name)
 cmd_analyze_biasd_lstm = 'python3 -m mimic.scripts.analyze -pn {0} -model biased_lstm'.format(cfg.project_name)
 
 # NOTE Hard-coding without for-loop on purpose so that it can be easily commented out
 subprocess.check_call(cmd_generate_dataset, shell=True)
+
 subprocess.check_call(cmd_train_autoencoder, shell=True)
 subprocess.check_call(cmd_train_lstm, shell=True)
 subprocess.check_call(cmd_train_biased_lstm, shell=True)
 subprocess.check_call(cmd_train_dense_prop, shell=True)
 subprocess.check_call(cmd_train_biasd_dense_prop, shell=True)
+
 subprocess.check_call(cmd_run_predictor_lstm, shell=True)
 subprocess.check_call(cmd_run_predictor_biased_lstm, shell=True)
 subprocess.check_call(cmd_run_predictor_dense_prop, shell=True)
+subprocess.check_call(cmd_run_predictor_biased_dense_prop, shell=True)
+
 subprocess.check_call(cmd_analyze_lstm, shell=True)
 subprocess.check_call(cmd_analyze_biasd_lstm, shell=True)
