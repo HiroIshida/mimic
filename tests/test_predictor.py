@@ -13,6 +13,7 @@ from mimic.predictor import FFImageCommandPredictor
 from mimic.predictor import get_model_specific_state_slice
 from mimic.datatype import CommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
+from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
 from mimic.dataset import _continue_flag
@@ -129,19 +130,15 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    biased_prop = BiasedDenseProp(torch.device('cpu'), 7, 16)
+    biased_prop = BiasedDenseProp(torch.device('cpu'), 7 + 1, 16)
     dense_prop = DenseProp(torch.device('cpu'), 16 + 7)
     lstm = LSTM(torch.device('cpu'), 16 + 7 + 1)
 
-    slice1 = get_model_specific_state_slice(ae, biased_prop)
-    assert slice1.start == None
-    assert slice1.stop == None
-    assert slice1.step == None
-
-    slice2 = get_model_specific_state_slice(ae, lstm)
-    assert slice2.start == 16
-    assert slice2.stop == -1
-    assert slice2.step == None
+    for model in [lstm, biased_prop]:
+        slicer = get_model_specific_state_slice(ae, lstm)
+        assert slicer.start == 16
+        assert slicer.stop == -1
+        assert slicer.step == None
 
     chunk = image_command_datachunk_with_encoder
     dataset = AutoRegressiveDataset.from_chunk(chunk)
@@ -154,9 +151,7 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     error2 = evaluate_command_prediction_error(ae, dense_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
 
-    """
-    dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
+    dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
     error = evaluate_command_prediction_error(ae, biased_prop, dataset)
     error2 = evaluate_command_prediction_error(ae, biased_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
-    """

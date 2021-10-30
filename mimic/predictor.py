@@ -190,9 +190,7 @@ class FFImageCommandPredictor(AbstractPredictor[MaybeNoneImageCommandPair, FFPro
 def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: PropT) -> slice:
     idx_start: Optional[int] = autoencoder.n_bottleneck
     idx_end = None
-    if isinstance(propagator, BiasedDenseProp):
-        idx_start = None
-    if isinstance(propagator, LSTM): 
+    if isinstance(propagator, (BiasedDenseProp, LSTMBase)):
         idx_end = -1
     return slice(idx_start, idx_end)
 
