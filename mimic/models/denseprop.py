@@ -57,7 +57,6 @@ class DenseProp(_Model):
 
 class BiasedDenseProp(_Model):
     # TODO shold be part of DenseProp class
-    n_flag: int = 1
     n_state: int
     n_hidden: int
     n_layer: int
@@ -78,28 +77,25 @@ class BiasedDenseProp(_Model):
 
     def _create_layers(self, **kwargs) -> None:
         layers = create_linear_layers(
-                self.n_state + self.n_bias + self.n_flag, 
-                self.n_state + self.n_flag, 
-                self.n_hidden, self.n_layer)
+                self.n_state + self.n_bias, self.n_state, self.n_hidden, self.n_layer)
         self.layer = nn.Sequential(*layers)
 
     def forward(self, sample_input: torch.Tensor):
         n_batch, n_seq, n_input = sample_input.shape
-        assert n_input == self.n_state + self.n_bias + self.n_flag
+        assert n_input == self.n_state + self.n_bias
 
-        init_feature = sample_input[:, 0, self.n_bias:]
-        init_bias_feature = sample_input[:, 0, :self.n_bias]
+        init_feature = torch.unsqueeze(sample_input[:, 0, self.n_bias:], dim=1)
+        init_bias_feature = torch.unsqueeze(sample_input[:, 0, :self.n_bias], dim=1)
 
         pred_feature_list = []
         feature = init_feature
         for i in range(n_seq):
-            feature_cat = torch.cat((init_bias_feature, feature), dim=1)
+            feature_cat = torch.cat((init_bias_feature, feature), dim=2)
             feature = self.layer(feature_cat)
             pred_feature_list.append(feature)
-        return torch.stack(pred_feature_list)
+        return torch.cat(pred_feature_list, dim=1)
 
-    """
-    def loss2(self, sample: Tuple[torch.Tensor, torch.Tensor],
+    def loss(self, sample: Tuple[torch.Tensor, torch.Tensor],
             state_slicer: Optional[slice] = None, reduction='mean') -> LossDict:
 
         sample_input, sample_output = sample
@@ -110,15 +106,6 @@ class BiasedDenseProp(_Model):
         assert n_input == self.n_state + self.n_bias, 'expect: {}, got: {}'.format(self.n_state + self.n_bias, n_input)
         assert n_output == self.n_state, 'expect: {}, got: {}'.format(self.n_state, n_output)
 
-        pred_feature_list = self.forward2(sample_input)
-    """
-
-    def loss(self, sample: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], 
-            state_slicer: Optional[slice] = None, reduction='mean') -> LossDict:
-        if state_slicer is None:
-            state_slicer = slice(None)
-        assert state_slicer.step == None
-        sample_pre, sample_post, bias = sample
-        post_pred = self.forward(sample_pre, bias)
-        loss_value = nn.MSELoss(reduction=reduction)(post_pred[:, state_slicer], sample_post[:, state_slicer])
+        pred_output = self.forward(sample_input)
+        loss_value = nn.MSELoss(reduction=reduction)(pred_output[:, state_slicer], sample_output[:, state_slicer])
         return LossDict({'prediction': loss_value})
