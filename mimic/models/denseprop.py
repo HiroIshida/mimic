@@ -57,6 +57,7 @@ class DenseProp(_Model):
 
 class BiasedDenseProp(_Model):
     # TODO shold be part of DenseProp class
+    n_flag: int = 1
     n_state: int
     n_hidden: int
     n_layer: int
@@ -77,12 +78,40 @@ class BiasedDenseProp(_Model):
 
     def _create_layers(self, **kwargs) -> None:
         layers = create_linear_layers(
-                self.n_state + self.n_bias, self.n_state, self.n_hidden, self.n_layer)
+                self.n_state + self.n_bias + self.n_flag, 
+                self.n_state + self.n_flag, 
+                self.n_hidden, self.n_layer)
         self.layer = nn.Sequential(*layers)
 
-    def forward(self, sample_pre: torch.Tensor, bias: torch.Tensor):
-        sample_pre_cat = torch.cat((sample_pre, bias), dim=1)
-        return self.layer(sample_pre_cat)
+    def forward(self, sample_input: torch.Tensor):
+        n_batch, n_seq, n_input = sample_input.shape
+        assert n_input == self.n_state + self.n_bias + self.n_flag
+
+        init_feature = sample_input[:, 0, self.n_bias:]
+        init_bias_feature = sample_input[:, 0, :self.n_bias]
+
+        pred_feature_list = []
+        feature = init_feature
+        for i in range(n_seq):
+            feature_cat = torch.cat((init_bias_feature, feature), dim=1)
+            feature = self.layer(feature_cat)
+            pred_feature_list.append(feature)
+        return torch.stack(pred_feature_list)
+
+    """
+    def loss2(self, sample: Tuple[torch.Tensor, torch.Tensor],
+            state_slicer: Optional[slice] = None, reduction='mean') -> LossDict:
+
+        sample_input, sample_output = sample
+        n_batch, n_seq, n_input = sample_input.shape
+        n_batch2, n_seq2, n_output = sample_output.shape
+        assert n_batch == n_batch2 
+        assert n_seq == n_seq2
+        assert n_input == self.n_state + self.n_bias, 'expect: {}, got: {}'.format(self.n_state + self.n_bias, n_input)
+        assert n_output == self.n_state, 'expect: {}, got: {}'.format(self.n_state, n_output)
+
+        pred_feature_list = self.forward2(sample_input)
+    """
 
     def loss(self, sample: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], 
             state_slicer: Optional[slice] = None, reduction='mean') -> LossDict:

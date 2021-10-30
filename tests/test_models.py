@@ -66,11 +66,10 @@ def test_densedrop_pipeline(image_command_datachunk_with_encoder):
 
 def test_biaseddensedrop_pipeline(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder
-    dataset = BiasedFirstOrderARDataset.from_chunk(chunk)
+    dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
+    sample_ = dataset[0]
+    sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
+
     n_state, n_bias = 7, 16
     model = BiasedDenseProp(torch.device('cpu'), n_state, n_bias)
-    pre, post, bias = dataset[0]
-    sample = (pre.unsqueeze(0), post.unsqueeze(0), bias.unsqueeze(0))
-    loss = model.loss(sample)
-    assert len(list(loss.values())) == 1
-    assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
+    model.forward(sample[0])
