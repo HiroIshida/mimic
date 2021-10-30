@@ -80,16 +80,32 @@ class BiasedDenseProp(_Model):
                 self.n_state + self.n_bias, self.n_state, self.n_hidden, self.n_layer)
         self.layer = nn.Sequential(*layers)
 
-    def forward(self, sample_pre: torch.Tensor, bias: torch.Tensor):
-        sample_pre_cat = torch.cat((sample_pre, bias), dim=1)
-        return self.layer(sample_pre_cat)
+    def forward(self, sample_input: torch.Tensor):
+        n_batch, n_seq, n_input = sample_input.shape
+        assert n_input == self.n_state + self.n_bias
 
-    def loss(self, sample: Tuple[torch.Tensor, torch.Tensor, torch.Tensor], 
+        init_feature = torch.unsqueeze(sample_input[:, 0, self.n_bias:], dim=1)
+        init_bias_feature = torch.unsqueeze(sample_input[:, 0, :self.n_bias], dim=1)
+
+        pred_feature_list = []
+        feature = init_feature
+        for i in range(n_seq):
+            feature_cat = torch.cat((init_bias_feature, feature), dim=2)
+            feature = self.layer(feature_cat)
+            pred_feature_list.append(feature)
+        return torch.cat(pred_feature_list, dim=1)
+
+    def loss(self, sample: Tuple[torch.Tensor, torch.Tensor],
             state_slicer: Optional[slice] = None, reduction='mean') -> LossDict:
-        if state_slicer is None:
-            state_slicer = slice(None)
-        assert state_slicer.step == None
-        sample_pre, sample_post, bias = sample
-        post_pred = self.forward(sample_pre, bias)
-        loss_value = nn.MSELoss(reduction=reduction)(post_pred[:, state_slicer], sample_post[:, state_slicer])
+
+        sample_input, sample_output = sample
+        n_batch, n_seq, n_input = sample_input.shape
+        n_batch2, n_seq2, n_output = sample_output.shape
+        assert n_batch == n_batch2 
+        assert n_seq == n_seq2
+        assert n_input == self.n_state + self.n_bias, 'expect: {}, got: {}'.format(self.n_state + self.n_bias, n_input)
+        assert n_output == self.n_state, 'expect: {}, got: {}'.format(self.n_state, n_output)
+
+        pred_output = self.forward(sample_input)
+        loss_value = nn.MSELoss(reduction=reduction)(pred_output[:, state_slicer], sample_output[:, state_slicer])
         return LossDict({'prediction': loss_value})
