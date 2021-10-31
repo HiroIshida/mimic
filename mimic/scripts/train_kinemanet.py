@@ -35,6 +35,6 @@ if __name__=='__main__':
     model = KinemaNet(device, dataset.meta_data)
 
     ds_train, ds_valid = split_with_ratio(dataset)
-    tcache = TrainCache[KinemaNet](project_name, KinemaNet)
+    tcache = TrainCache[KinemaNet](project_name, KinemaNet, cache_postfix='_' + robot_name)
     config = Config(batch_size=1000, n_epoch=3000) 
     train(model, ds_train, ds_valid, tcache=tcache, config=config)
