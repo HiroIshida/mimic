@@ -7,13 +7,14 @@ install_requires = [
         "numpy",
         "torch",
         "torchvision",
+        "tinyfk",
         "tqdm",
         "matplotlib"
         ]
 
 # for running demo
 extras_require = {
-        'test': ["pybullet", "tinyfk", "pybullet", "moviepy"]
+        'test': ["pybullet", "moviepy"]
         }
 
 setup(
