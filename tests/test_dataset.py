@@ -1,5 +1,7 @@
 import numpy as np
+import os
 import torch
+import pybullet_data
 from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.dataset import ReconstructionDataset
@@ -9,6 +11,7 @@ from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
+from mimic.dataset import KinematicsDataset
 import pytest
 
 from test_datatypes import cmd_datachunk
@@ -85,3 +88,18 @@ def test_BiasedFirstOrderARDataset_pipeline(image_command_datachunk_with_encoder
     assert list(pre.shape) == [7]
     assert list(post.shape) == [7]
     assert list(bias.shape) == [16]
+
+@pytest.fixture(scope='session')
+def kinematics_dataset():
+    pbdata_path = pybullet_data.getDataPath()
+    urdf_path = os.path.join(pbdata_path, 'kuka_iiwa', 'model.urdf')
+    joint_names = ['lbr_iiwa_joint_{}'.format(idx+1) for idx in range(7)]
+    link_names = ['lbr_iiwa_link_6', 'lbr_iiwa_link_7']
+    dataset = KinematicsDataset.from_urdf(urdf_path, joint_names, link_names, n_sample=5)
+    return dataset
+
+def test_kinemanet_pipeline(kinematics_dataset):
+    inp, out = kinematics_dataset[0]
+    assert len(inp) == 7
+    assert len(out) == 6 * 2
+
