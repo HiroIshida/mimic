@@ -6,6 +6,7 @@ from mimic.models import LSTM
 from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
+from mimic.models import KinemaNet
 
 from mimic.dataset import _DatasetFromChunk
 from mimic.dataset import ReconstructionDataset
@@ -13,6 +14,7 @@ from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
+from mimic.dataset import KinematicsDataset
 
 import typing
 from typing import Type
@@ -32,7 +34,8 @@ _dataset_compat_table : Dict[str, Type[_DatasetFromChunk]] = {
         LSTM.__name__: AutoRegressiveDataset,
         BiasedLSTM.__name__: BiasedAutoRegressiveDataset,
         DenseProp.__name__: AutoRegressiveDataset,
-        BiasedDenseProp.__name__: BiasedAutoRegressiveDataset
+        BiasedDenseProp.__name__: BiasedAutoRegressiveDataset,
+        KinemaNet.__name__: KinematicsDataset
         }
 
 def get_compat_dataset_type(model: _Model) -> Type[_DatasetFromChunk]:
