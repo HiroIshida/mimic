@@ -12,7 +12,7 @@ from typing import Generic
 from typing import NewType
 from mimic.datatype import AbstractDataChunk
 from mimic.dataset import AutoRegressiveDataset
-from mimic.dataset import _Dataset
+from mimic.dataset import _DatasetFromChunk
 from mimic.dataset import _continue_flag
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTMBase
@@ -196,7 +196,7 @@ def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: Pr
     return slice(idx_start, idx_end)
 
 def evaluate_command_prediction_error(autoencoder: ImageAutoEncoder, propagator: PropT, 
-        dataset: _Dataset, batch_size: Optional[int] = None) -> float:
+        dataset: _DatasetFromChunk, batch_size: Optional[int] = None) -> float:
 
     assert is_compatible(propagator, dataset)
     #TODO check if dataset is compatible with propagator model

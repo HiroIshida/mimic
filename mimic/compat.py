@@ -7,7 +7,7 @@ from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 
-from mimic.dataset import _Dataset
+from mimic.dataset import _DatasetFromChunk
 from mimic.dataset import ReconstructionDataset
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
@@ -27,7 +27,7 @@ from typing import Dict
 # custom compatibility relations 
 
 # TODO(HiroIshida) maybe values are list
-_dataset_compat_table : Dict[str, Type[_Dataset]] = {
+_dataset_compat_table : Dict[str, Type[_DatasetFromChunk]] = {
         ImageAutoEncoder.__name__: ReconstructionDataset,
         LSTM.__name__: AutoRegressiveDataset,
         BiasedLSTM.__name__: BiasedAutoRegressiveDataset,
@@ -35,7 +35,7 @@ _dataset_compat_table : Dict[str, Type[_Dataset]] = {
         BiasedDenseProp.__name__: BiasedAutoRegressiveDataset
         }
 
-def get_compat_dataset_type(model: _Model) -> Type[_Dataset]:
+def get_compat_dataset_type(model: _Model) -> Type[_DatasetFromChunk]:
     return _dataset_compat_table[model.__class__.__name__]
 
 @typing.no_type_check 

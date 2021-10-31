@@ -18,13 +18,13 @@ _end_flag = 1.0
 _val_padding = 0.0
 
 ChunkT = TypeVar('ChunkT', bound=AbstractDataChunk)
-DatasetT = TypeVar('DatasetT', bound='_Dataset')
-class _Dataset(Dataset, Generic[ChunkT]):
+DatasetT = TypeVar('DatasetT', bound='_DatasetFromChunk')
+class _DatasetFromChunk(Dataset, Generic[ChunkT]):
     @classmethod
     def from_chunk(cls: Type[DatasetT], chunk: ChunkT) -> DatasetT: ...
     def __len__(self) -> int: ...
 
-class ReconstructionDataset(_Dataset[ImageDataChunk]):
+class ReconstructionDataset(_DatasetFromChunk[ImageDataChunk]):
     data: torch.Tensor
     def __init__(self, data):
         self.data = data
@@ -58,7 +58,7 @@ def attach_flag_info(seq_list: List[torch.Tensor]) -> List[torch.Tensor]:
         seq_list[i] = torch.cat((tmp, torch.unsqueeze(tensor_flags, 1)), dim=1)
     return seq_list
 
-class AutoRegressiveDataset(_Dataset):
+class AutoRegressiveDataset(_DatasetFromChunk):
     """
     Always come with end-of-epoch flags
     """
@@ -84,7 +84,7 @@ class AutoRegressiveDataset(_Dataset):
         sample_output = self.data[idx][1:]
         return sample_input, sample_output
 
-class BiasedAutoRegressiveDataset(_Dataset[ImageCommandDataChunk]):
+class BiasedAutoRegressiveDataset(_DatasetFromChunk[ImageCommandDataChunk]):
     data: List[torch.Tensor]
     n_bias: int
     def __init__(self, featureseq_list: List[torch.Tensor], n_bias: int):
@@ -107,7 +107,7 @@ class BiasedAutoRegressiveDataset(_Dataset[ImageCommandDataChunk]):
         sample_output = self.data[idx][1:, self.n_bias:]
         return sample_input, sample_output
 
-class FirstOrderARDataset(_Dataset):
+class FirstOrderARDataset(_DatasetFromChunk):
     n_state: int
     data_pre: torch.Tensor
     data_post: torch.Tensor
@@ -134,7 +134,7 @@ class FirstOrderARDataset(_Dataset):
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]: 
         return (self.data_pre[idx], self.data_post[idx])
 
-class BiasedFirstOrderARDataset(_Dataset[ImageCommandDataChunk]):
+class BiasedFirstOrderARDataset(_DatasetFromChunk[ImageCommandDataChunk]):
     n_state: int
     n_bias: int
     biases: torch.Tensor # 2-dim tensor
