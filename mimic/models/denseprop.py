@@ -11,6 +11,8 @@ from torch.nn.modules import activation
 from mimic.models.common import _Model, NullConfig, _ModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import FirstOrderARDataset
+from mimic.dataset import KinematicsMetaData
+from mimic.dataset import KinematicsDataset
 
 def create_linear_layers(n_input, n_output, n_hidden, n_layer,
         activation: Optional[str]) -> List[nn.Module]:
@@ -107,3 +109,33 @@ class DenseProp(DenseBase):
 class BiasedDenseProp(DenseBase):
     def __init__(self, device: device, n_state: int, n_bias: int, config: DenseConfig):
         super().__init__(device, n_state, n_bias, config)
+
+class KinemaNet(_Model):
+    meta_data: KinematicsMetaData
+    n_input: int
+    n_output: int
+    n_hidden: int
+    n_layer: int
+    layer: nn.Module
+    n_bias: int
+    def __init__(self, 
+            device: device, 
+            meta_data: KinematicsMetaData,
+            n_hidden: int=200, 
+            n_layer: int=2):
+        _Model.__init__(self, device)
+        self.n_input = meta_data.input_dim
+        self.n_output = meta_data.output_dim
+        self.n_hidden = n_hidden
+        self.n_layer = n_layer
+        self._create_layers()
+
+    def _create_layers(self, **kwargs) -> None:
+        layers = create_linear_layers(self.n_input, self.n_output, self.n_hidden, self.n_layer)
+        self.layer = nn.Sequential(*layers)
+
+    def loss(self, sample: Tuple[torch.Tensor, torch.Tensor]):
+        sample_input, sample_output = sample
+        pred_output = self.layer(sample_input)
+        loss_value = nn.MSELoss()(pred_output, sample_output)
+        return LossDict({'prediction': loss_value})

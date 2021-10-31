@@ -184,9 +184,9 @@ class KinematicsMetaData:
     link_names: List[str]
 
     @property
-    def input_dim(self): len(self.joint_names)
+    def input_dim(self): return len(self.joint_names)
     @property
-    def output_dim(self): len(self.link_names) * (3 + 3) # trans + rot
+    def output_dim(self): return len(self.link_names) * (3 + 3) # trans + rot
 
 class KinematicsDataset(Dataset):
     data_input: torch.Tensor

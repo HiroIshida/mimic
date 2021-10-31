@@ -9,3 +9,4 @@ from .denseprop import DenseConfig
 from .denseprop import DenseBase
 from .denseprop import DenseProp
 from .denseprop import BiasedDenseProp
+from .denseprop import KinemaNet
