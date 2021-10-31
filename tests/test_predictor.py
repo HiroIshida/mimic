@@ -1,8 +1,10 @@
 import numpy as np
 import torch
 from mimic.models import ImageAutoEncoder
+from mimic.models import LSTMBase
 from mimic.models import LSTM
 from mimic.models import BiasedLSTM
+from mimic.models import DenseBase
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 from mimic.predictor import SimplePredictor
@@ -48,8 +50,8 @@ def test_ImagePredictor():
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    lstm = LSTM(torch.device('cpu'), 17)
-    denseprop = DenseProp(torch.device('cpu'), 16)
+    lstm = LSTM(torch.device('cpu'), 16 + 1)
+    denseprop = DenseProp(torch.device('cpu'), 16 + 1)
 
     for propagator in [lstm, denseprop]:
         print('testing : {}'.format(propagator.__class__.__name__))
@@ -59,7 +61,7 @@ def test_ImagePredictor():
             img = np.zeros((n_pixel, n_pixel, n_channel))
             predictor.feed(img)
         assert len(predictor.states) == 10
-        if isinstance(propagator, LSTM):
+        if isinstance(propagator, (LSTMBase, DenseBase)):
             assert list(predictor.states[0].shape) == [16 + 1] # flag must be attached
         else:
             assert list(predictor.states[0].shape) == [16] # flag must be attached
@@ -77,7 +79,7 @@ def test_ImageCommandPredictor():
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     lstm = LSTM(torch.device('cpu'), 16 + 7 + 1)
-    denseprop = DenseProp(torch.device('cpu'), 16 + 7)
+    denseprop = DenseProp(torch.device('cpu'), 16 + 7 + 1)
 
     for propagator in [lstm, denseprop]:
         print('testing : {}'.format(propagator.__class__.__name__))
@@ -87,10 +89,11 @@ def test_ImageCommandPredictor():
             img = np.zeros((n_pixel, n_pixel, n_channel))
             cmd = np.zeros(7)
             predictor.feed((img, cmd))
-        if isinstance(propagator, LSTM):
-            assert list(predictor.states[0].shape) == [16 + 7 + 1]
+
+        if isinstance(propagator, (LSTMBase, DenseBase)):
+            assert list(predictor.states[0].shape) == [16 + 7 + 1] # flag must be attached
         else:
-            assert list(predictor.states[0].shape) == [16 + 7]
+            assert list(predictor.states[0].shape) == [16 + 7] # flag must be attached
 
         imgs, cmds = zip(*predictor.predict(5))
         assert imgs[0].shape == (n_pixel, n_pixel, n_channel)
@@ -131,7 +134,7 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     biased_prop = BiasedDenseProp(torch.device('cpu'), 7 + 1, 16)
-    dense_prop = DenseProp(torch.device('cpu'), 16 + 7)
+    dense_prop = DenseProp(torch.device('cpu'), 16 + 7 + 1)
     lstm = LSTM(torch.device('cpu'), 16 + 7 + 1)
 
     for model in [lstm, biased_prop]:
@@ -146,7 +149,7 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     error2 = evaluate_command_prediction_error(ae, lstm, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
 
-    dataset = FirstOrderARDataset.from_chunk(chunk)
+    dataset = AutoRegressiveDataset.from_chunk(chunk)
     error = evaluate_command_prediction_error(ae, dense_prop, dataset)
     error2 = evaluate_command_prediction_error(ae, dense_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3

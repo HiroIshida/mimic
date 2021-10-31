@@ -31,7 +31,7 @@ _dataset_compat_table : Dict[str, Type[_Dataset]] = {
         ImageAutoEncoder.__name__: ReconstructionDataset,
         LSTM.__name__: AutoRegressiveDataset,
         BiasedLSTM.__name__: BiasedAutoRegressiveDataset,
-        DenseProp.__name__: FirstOrderARDataset,
+        DenseProp.__name__: AutoRegressiveDataset,
         BiasedDenseProp.__name__: BiasedAutoRegressiveDataset
         }
 

@@ -53,10 +53,10 @@ def test_biased_lstm_pipeline(image_command_datachunk_with_encoder):
     assert len(list(loss.values())) == 1
     assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
 
-def test_densedrop_pipeline(image_command_datachunk_with_encoder):
+def test_denseprop_pipeline(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder
-    dataset = FirstOrderARDataset.from_chunk(chunk)
-    n_state = 16 + 7
+    dataset = AutoRegressiveDataset.from_chunk(chunk)
+    n_state = 16 + 7 + 1
     model = DenseProp(torch.device('cpu'), n_state)
     pre, post = dataset[0]
     sample = (pre.unsqueeze(0), post.unsqueeze(0))
@@ -64,7 +64,7 @@ def test_densedrop_pipeline(image_command_datachunk_with_encoder):
     assert len(list(loss.values())) == 1
     assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
 
-def test_biaseddensedrop_pipeline(image_command_datachunk_with_encoder):
+def test_biaseddenseprop_pipeline(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder
     dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
     sample_ = dataset[0]

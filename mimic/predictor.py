@@ -15,9 +15,10 @@ from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import _Dataset
 from mimic.dataset import _continue_flag
 from mimic.models import ImageAutoEncoder
-from mimic.models.lstm import LSTMBase
+from mimic.models import LSTMBase
 from mimic.models import LSTM
 from mimic.models import BiasedLSTM
+from mimic.models import DenseBase
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 from mimic.compat import is_compatible
@@ -49,7 +50,7 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
         return [self._strip_flag_if_necessary(e) for e in raw_preds]
 
     def _is_with_flag(self):
-        return isinstance(self.propagator, LSTMBase) or isinstance(self.propagator, BiasedDenseProp)
+        return isinstance(self.propagator, (LSTMBase, DenseBase))
 
     def _attach_flag_if_necessary(self, vec: torch.Tensor) -> torch.Tensor:
         if self._is_with_flag():

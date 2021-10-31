@@ -49,7 +49,7 @@ def train_propagator(project_name: str, model_type, config: Config) -> None:
         dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
         prop_model = BiasedLSTM(device, dataset.n_state, dataset.n_bias)
     elif model_type is DenseProp:
-        dataset = FirstOrderARDataset.from_chunk(chunk)
+        dataset = AutoRegressiveDataset.from_chunk(chunk)
         prop_model = DenseProp(device, dataset.n_state)
     elif model_type is BiasedDenseProp:
         dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
