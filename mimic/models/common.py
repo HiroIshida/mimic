@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod, abstractclassmethod
+import logging
+logger = logging.getLogger(__name__)
+
 import torch.nn as nn
 import torch
 from typing import Any, Optional, Type
@@ -54,6 +57,9 @@ class _Model(nn.Module, ABC, Generic[MConfigT]):
         super().__init__()
         self.device = device
         self.config = config
+        logger.info('model name: {}'.format(self.__class__.__name__))
+        logger.info('model config: {}'.format(config))
+        logger.info('model is initialized')
 
     def put_on_device(self): self.to(self.device)
 

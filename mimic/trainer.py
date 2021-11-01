@@ -131,6 +131,7 @@ def train(
         tcache: TrainCache,
         config: Config = Config()) -> None:
 
+    logger.info('train start with config: {}'.format(config))
     assert is_compatible(model, dataset_train)
     assert is_compatible(model, dataset_validate)
 
