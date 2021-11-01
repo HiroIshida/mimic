@@ -34,7 +34,6 @@ def average_loss_dict(loss_dict_list: List[LossDictFloat]) -> LossDictFloat:
         out[key] /= len(loss_dict_list)
     return out
 
-@dataclass
 class _ModelConfigBase:
     def hash_value(self) -> str:
         if len(self.__dict__.keys()) == 0:

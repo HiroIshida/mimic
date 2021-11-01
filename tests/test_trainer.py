@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import random_split
 from mimic.file import get_project_dir
 from mimic.models import ImageAutoEncoder
-from mimic.models import LSTM
+from mimic.models import LSTM, LSTMConfig
 from mimic.datatype import CommandDataChunk
 from mimic.dataset import ReconstructionDataset
 from mimic.dataset import AutoRegressiveDataset
@@ -43,7 +43,7 @@ def test_train(image_datachunk, image_datachunk_with_encoder):
     postfix = "_hogehoge"
     dataset2 = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset2.data[0].shape 
-    model2 = LSTM(torch.device('cpu'), n_state)
+    model2 = LSTM(torch.device('cpu'), n_state, LSTMConfig)
     _train(project_name, model2, dataset2, LSTM, config, postfix)
 
 """

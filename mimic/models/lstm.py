@@ -1,40 +1,42 @@
 import logging
 from typing import Optional
 from typing import Tuple
+from dataclasses import dataclass
 logger = logging.getLogger(__name__)
 
 import torch
 from torch._C import device
 import torch.nn as nn
 
-from mimic.models.common import _Model, NullConfig
+from mimic.models.common import _Model, NullConfig, _ModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import AutoRegressiveDataset
 
-class LSTMBase(_Model[NullConfig]):
+@dataclass
+class LSTMConfig(_ModelConfigBase):
+    n_hidden: int = 200
+    n_layer: int = 2
+
+class LSTMBase(_Model[LSTMConfig]):
     """
     Note that n_state 
     """
     n_flag: int = 1
     n_state: int
-    n_hidden: int
-    n_layer: int
     n_bias: int
     lstm_layer: nn.LSTM
     output_layer: nn.Linear
 
-    def __init__(self, device: device, n_state: int, n_bias: int, n_hidden: int=200, n_layer: int=2):
-        _Model.__init__(self, device, NullConfig())
+    def __init__(self, device: device, n_state: int, n_bias: int, config: LSTMConfig):
+        _Model.__init__(self, device, config)
         self.n_state = n_state
         self.n_bias = n_bias
-        self.n_hidden = n_hidden
-        self.n_layer = n_layer
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
         n_input = self.n_state + self.n_bias
-        self.lstm_layer = nn.LSTM(n_input, self.n_hidden, self.n_layer, batch_first=True)
-        self.output_layer = nn.Linear(self.n_hidden, self.n_state)
+        self.lstm_layer = nn.LSTM(n_input, self.config.n_hidden, self.config.n_layer, batch_first=True)
+        self.output_layer = nn.Linear(self.config.n_hidden, self.n_state)
 
     def forward(self, sample_input: torch.Tensor) -> torch.Tensor:
         n_batch, n_seq, n_input = sample_input.shape
@@ -62,11 +64,11 @@ class LSTMBase(_Model[NullConfig]):
         return LossDict({'prediction': loss_value})
 
 class LSTM(LSTMBase):
-    def __init__(self, device: device, n_state: int, n_hidden: int=200, n_layer: int=2):
+    def __init__(self, device: device, n_state: int, config: LSTMConfig):
         n_bias = 0
-        super().__init__(device, n_state, n_bias, n_hidden=n_hidden, n_layer=n_layer)
+        super().__init__(device, n_state, n_bias, config)
 
 class BiasedLSTM(LSTMBase):
-    def __init__(self, device: device, n_state: int, n_bias: int, n_hidden: int=200, n_layer: int=2):
+    def __init__(self, device: device, n_state: int, n_bias: int, config: LSTMConfig):
         assert n_bias > 0
-        super().__init__(device, n_state, n_bias, n_hidden=n_hidden, n_layer=n_layer)
+        super().__init__(device, n_state, n_bias, config)
