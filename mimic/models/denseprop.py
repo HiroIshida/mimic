@@ -110,28 +110,28 @@ class BiasedDenseProp(DenseBase):
     def __init__(self, device: device, n_state: int, n_bias: int, config: DenseConfig):
         super().__init__(device, n_state, n_bias, config)
 
-class KinemaNet(_Model):
+class KinemaNet(_Model[DenseConfig]):
     meta_data: KinematicsMetaData
     n_input: int
     n_output: int
-    n_hidden: int
-    n_layer: int
     layer: nn.Module
-    n_bias: int
     def __init__(self, 
             device: device, 
             meta_data: KinematicsMetaData,
-            n_hidden: int=200, 
-            n_layer: int=2):
-        _Model.__init__(self, device)
+            config: DenseConfig):
+        _Model.__init__(self, device, config)
         self.n_input = meta_data.input_dim
         self.n_output = meta_data.output_dim
-        self.n_hidden = n_hidden
-        self.n_layer = n_layer
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
-        layers = create_linear_layers(self.n_input, self.n_output, self.n_hidden, self.n_layer)
+        layers = create_linear_layers(
+                self.n_input, 
+                self.n_output, 
+                self.config.n_hidden, 
+                self.config.n_layer,
+                self.config.activation
+                )
         self.layer = nn.Sequential(*layers)
 
     def loss(self, sample: Tuple[torch.Tensor, torch.Tensor]):

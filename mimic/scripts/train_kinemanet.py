@@ -4,7 +4,7 @@ import pybullet_data
 import torch
 
 from mimic.dataset import KinematicsDataset
-from mimic.models import KinemaNet
+from mimic.models import KinemaNet, DenseConfig
 from mimic.trainer import train
 from mimic.trainer import Config
 from mimic.trainer import TrainCache
@@ -32,7 +32,7 @@ if __name__=='__main__':
 
     dataset = KinematicsDataset.from_urdf(urdf_path, joint_names, link_names)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = KinemaNet(device, dataset.meta_data)
+    model = KinemaNet(device, dataset.meta_data, DenseConfig(200, 6))
 
     ds_train, ds_valid = split_with_ratio(dataset)
     tcache = TrainCache[KinemaNet](project_name, KinemaNet, cache_postfix='_' + robot_name)
