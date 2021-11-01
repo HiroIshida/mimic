@@ -1,10 +1,15 @@
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractclassmethod
 import torch.nn as nn
 import torch
-from typing import Any
+from typing import Any, Optional, Type
 from typing import Dict
 from typing import List
 from typing import NewType
+from typing import TypeVar
+from typing import Generic
+from dataclasses import dataclass
+import pickle
+import hashlib
 
 LossDict = NewType('LossDict', Dict[str, torch.Tensor])
 LossDictFloat = NewType('LossDictFloat', Dict[str, float])
@@ -29,13 +34,31 @@ def average_loss_dict(loss_dict_list: List[LossDictFloat]) -> LossDictFloat:
         out[key] /= len(loss_dict_list)
     return out
 
-class _Model(nn.Module, ABC):
+class _ModelConfigBase:
+    @property
+    def hash_value(self) -> str:
+        if len(self.__dict__.keys()) == 0:
+            return ""
+        data_pickle = pickle.dumps(self)
+        data_md5 = hashlib.md5(data_pickle).hexdigest()
+        return data_md5[:7]
+
+@dataclass
+class NullConfig(_ModelConfigBase): ...
+
+MConfigT = TypeVar('MConfigT', bound='_ModelConfigBase')
+class _Model(nn.Module, ABC, Generic[MConfigT]):
     device : torch.device
-    def __init__(self, device: torch.device):
+    config: MConfigT
+    def __init__(self, device: torch.device, config: MConfigT):
         super().__init__()
         self.device = device
+        self.config = config
 
     def put_on_device(self): self.to(self.device)
+
+    @property
+    def hash_value(self) -> str: return self.config.hash_value
 
     @abstractmethod
     def loss(self, sample : Any) -> LossDict: ...

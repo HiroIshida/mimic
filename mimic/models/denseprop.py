@@ -1,11 +1,12 @@
 from typing import List
 from typing import Tuple
 from typing import Optional
+from dataclasses import dataclass
 import torch
 from torch._C import device
 import torch.nn as nn
 
-from mimic.models.common import _Model
+from mimic.models.common import _Model, NullConfig, _ModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import FirstOrderARDataset
 
@@ -20,29 +21,29 @@ def create_linear_layers(n_input, n_output, n_hidden, n_layer) -> List[nn.Linear
     layers.append(output_layer)
     return layers
 
-class DenseBase(_Model):
+@dataclass
+class DenseConfig(_ModelConfigBase):
+    n_hidden: int = 200
+    n_layer: int = 2
+
+class DenseBase(_Model[DenseConfig]):
     # TODO shold be part of DenseProp class
     n_state: int
-    n_hidden: int
-    n_layer: int
     layer: nn.Module
     n_bias: int
     def __init__(self, 
             device: device, 
             n_state: int, 
             n_bias: int,
-            n_hidden: int=200, 
-            n_layer: int=2):
-        _Model.__init__(self, device)
+            config: DenseConfig):
+        _Model.__init__(self, device, config)
         self.n_state = n_state
         self.n_bias = n_bias
-        self.n_hidden = n_hidden
-        self.n_layer = n_layer
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
         layers = create_linear_layers(
-                self.n_state + self.n_bias, self.n_state, self.n_hidden, self.n_layer)
+                self.n_state + self.n_bias, self.n_state, self.config.n_hidden, self.config.n_layer)
         self.layer = nn.Sequential(*layers)
 
     def forward(self, sample_input: torch.Tensor):
@@ -76,10 +77,10 @@ class DenseBase(_Model):
         return LossDict({'prediction': loss_value})
 
 class DenseProp(DenseBase):
-    def __init__(self, device: device, n_state: int, n_hidden: int=200, n_layer: int=2):
+    def __init__(self, device: device, n_state: int, config: DenseConfig):
         n_bias = 0
-        super().__init__(device, n_state, n_bias, n_hidden, n_layer)
+        super().__init__(device, n_state, n_bias, config)
 
 class BiasedDenseProp(DenseBase):
-    def __init__(self, device: device, n_state: int, n_bias: int, n_hidden: int=200, n_layer: int=2):
-        super().__init__(device, n_state, n_bias, n_hidden, n_layer)
+    def __init__(self, device: device, n_state: int, n_bias: int, config: DenseConfig):
+        super().__init__(device, n_state, n_bias, config)

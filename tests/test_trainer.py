@@ -1,10 +1,11 @@
+import pytest
 import os
 import shutil
 import torch
 from torch.utils.data import random_split
 from mimic.file import get_project_dir
 from mimic.models import ImageAutoEncoder
-from mimic.models import LSTM
+from mimic.models import LSTM, LSTMConfig
 from mimic.datatype import CommandDataChunk
 from mimic.dataset import ReconstructionDataset
 from mimic.dataset import AutoRegressiveDataset
@@ -43,8 +44,20 @@ def test_train(image_datachunk, image_datachunk_with_encoder):
     postfix = "_hogehoge"
     dataset2 = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset2.data[0].shape 
-    model2 = LSTM(torch.device('cpu'), n_state)
+    model2 = LSTM(torch.device('cpu'), n_state, LSTMConfig())
     _train(project_name, model2, dataset2, LSTM, config, postfix)
+
+    # Another training session for LSTM using different LSTMConfig
+    model3 = LSTM(torch.device('cpu'), n_state, LSTMConfig(100, 1))
+    n_total = len(dataset2)
+    train_set, val_set =  random_split(dataset2, [n_total-2, 2])
+    tcache = TrainCache[LSTM](project_name, LSTM, cache_postfix=postfix)
+    train(model3, train_set, val_set, tcache=tcache, config=config)
+
+    with pytest.raises(AssertionError):
+        tcache = TrainCache.load(project_name, LSTM, postfix)
+    tcaches = TrainCache.load_multiple(project_name, LSTM, postfix)
+    assert len(tcaches) == 2
 
 """
 # this test uses not fake data;

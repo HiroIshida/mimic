@@ -1,8 +1,17 @@
 import torch
+from mimic.models.common import NullConfig
+from mimic.models import LSTMConfig
 from mimic.models.common import LossDict
 from mimic.models.common import LossDictFloat
 from mimic.models.common import average_loss_dict
 from mimic.models.common import to_scalar_values
+
+def test_model_config():
+    conf1 = NullConfig()
+    assert len(conf1.hash_value) == 0
+
+    conf2 = LSTMConfig()
+    assert len(conf2.hash_value) == 7
 
 def test_to_scalar_values():
     a = torch.tensor([2., 3.], requires_grad=True)

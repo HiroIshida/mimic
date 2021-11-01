@@ -30,6 +30,7 @@ from mimic.models.common import to_scalar_values
 from mimic.models.common import average_loss_dict
 from mimic.file import dump_pickled_data
 from mimic.file import _cache_name
+from mimic.file import _cache_name_list
 from mimic.file import load_pickled_data
 from mimic.compat import is_compatible
 
@@ -49,20 +50,22 @@ class TrainCache(Generic[ModelT]):
     validate_loss_dict_seq: List[LossDictFloat]
     best_model: ModelT
     latest_model: ModelT
-    cache_postfix: Optional[str]
+    cache_postfix: str
 
     def __init__(self, project_name: str, model_type: Type[ModelT], cache_postfix: Optional[str]=None):
+        if cache_postfix is None:
+            cache_postfix = ""
         self.project_name = project_name
         self.train_loss_dict_seq = []
         self.validate_loss_dict_seq = []
-        self.cache_postfix = cache_postfix
+        self.cache_postfix = cache_postfix 
         self.model_type = model_type
 
     @typing.no_type_check
     def exists_cache(self) -> bool:
-        filename = _cache_name(self.project_name, 
+        filename_list = _cache_name_list(self.project_name, 
                 self.__class__, self.model_type.__name__, self.cache_postfix)
-        return os.path.exists(filename)
+        return len(filename_list)!=0
 
     def on_startof_epoch(self, epoch: int):
         logger.info('new epoch: {}'.format(epoch))
@@ -86,8 +89,9 @@ class TrainCache(Generic[ModelT]):
         if(totals[-1] == min_loss):
             self.best_model = model
             logger.info('model is updated')
+        postfix = self.cache_postfix + model.hash_value
         dump_pickled_data(self, self.project_name, 
-                self.best_model.__class__.__name__, self.cache_postfix)
+                self.best_model.__class__.__name__, postfix)
 
     def visualize(self, fax: Optional[Tuple]=None):
         fax = plt.subplots() if fax is None else fax
@@ -104,7 +108,21 @@ class TrainCache(Generic[ModelT]):
             cache_postfix: Optional[str]=None) -> TrainCacheT:
         # requiring "model_type" seems redundant but there is no way to 
         # use info of ModelT from @classmethod
-        return load_pickled_data(project_name, cls, model_type.__name__, cache_postfix)
+        data_list = load_pickled_data(project_name, cls, model_type.__name__, cache_postfix)
+        assert len(data_list) == 1, "data_list has {} elements.".format(len(data_list))
+        return data_list[0]
+
+    # TODO: probably has better design ...
+    @classmethod
+    def load_multiple(cls: Type[TrainCacheT], project_name: str, model_type: type, 
+            cache_postfix: Optional[str]=None) -> List[TrainCacheT]:
+        # requiring "model_type" seems redundant but there is no way to 
+        # use info of ModelT from @classmethod
+        data_list = load_pickled_data(project_name, cls, model_type.__name__, cache_postfix)
+        assert len(data_list) > 1, "data_list has {} elements.".format(len(data_list))
+        return data_list
+
+
 
 def train(
         model: _Model, 

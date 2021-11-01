@@ -65,7 +65,9 @@ class AbstractDataChunk(ABC, Generic[DataT]):
 
     @classmethod
     def load(cls: Type[ChunkT], project_name: str) -> ChunkT:
-        return load_pickled_data(project_name, cls)
+        data_list = load_pickled_data(project_name, cls)
+        assert len(data_list) == 1
+        return data_list[0]
 
     def dump(self, project_name: str) -> None:
         obj = copy.deepcopy(self)
