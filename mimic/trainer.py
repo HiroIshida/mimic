@@ -108,7 +108,21 @@ class TrainCache(Generic[ModelT]):
             cache_postfix: Optional[str]=None) -> TrainCacheT:
         # requiring "model_type" seems redundant but there is no way to 
         # use info of ModelT from @classmethod
-        return load_pickled_data(project_name, cls, model_type.__name__, cache_postfix)
+        data_list = load_pickled_data(project_name, cls, model_type.__name__, cache_postfix)
+        assert len(data_list) == 1, "data_list has {} elements.".format(len(data_list))
+        return data_list[0]
+
+    # TODO: probably has better design ...
+    @classmethod
+    def load_multiple(cls: Type[TrainCacheT], project_name: str, model_type: type, 
+            cache_postfix: Optional[str]=None) -> List[TrainCacheT]:
+        # requiring "model_type" seems redundant but there is no way to 
+        # use info of ModelT from @classmethod
+        data_list = load_pickled_data(project_name, cls, model_type.__name__, cache_postfix)
+        assert len(data_list) > 1, "data_list has {} elements.".format(len(data_list))
+        return data_list
+
+
 
 def train(
         model: _Model, 

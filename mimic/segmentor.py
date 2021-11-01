@@ -22,7 +22,9 @@ class Segmentor:
 
     @classmethod
     def load(cls, project_name: str) -> 'Segmentor':
-        return load_pickled_data(project_name, Segmentor)
+        data_list = load_pickled_data(project_name, Segmentor)
+        assert len(data_list) == 1
+        return data_list[0]
 
     @lru_cache(maxsize=None)
     def to_labelseq_list(self) -> List[np.ndarray]:

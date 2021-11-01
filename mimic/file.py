@@ -46,11 +46,15 @@ def _cache_name_list(project_name: str, cls: type,
 
 DataT = TypeVar('DataT') 
 def load_pickled_data(project_name: str, cls: Type[DataT], 
-        prefix: Optional[str] = None, postfix: Optional[str] = None) -> DataT:
-    wholename = _cache_name(project_name, cls, prefix, postfix)
-    with open(wholename, 'rb') as f:
-        data = pickle.load(f)
-    return data
+        prefix: Optional[str] = None, postfix: Optional[str] = None) -> List[DataT]:
+    filenames = _cache_name_list(project_name, cls, prefix, postfix)
+
+    data_list = []
+    for fname in filenames:
+        with open(fname, 'rb') as f:
+            data = pickle.load(f)
+        data_list.append(data)
+    return data_list
 
 def dump_pickled_data(data: Any, project_name: str, 
         prefix: Optional[str] = None, postfix: Optional[str] = None) -> None:
