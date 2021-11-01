@@ -4,6 +4,7 @@ from functools import reduce
 import operator
 import copy
 from torch._C import device
+import numpy as np
 
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -108,9 +109,12 @@ class TrainCache(Generic[ModelT]):
             cache_postfix: Optional[str]=None) -> TrainCacheT:
         # requiring "model_type" seems redundant but there is no way to 
         # use info of ModelT from @classmethod
-        data_list = load_pickled_data(project_name, cls, model_type.__name__, cache_postfix)
-        assert len(data_list) == 1, "data_list has {} elements.".format(len(data_list))
-        return data_list[0]
+
+        # If multiple caches are found, choose best one respect to valid loss
+        tcache_list = load_pickled_data(project_name, cls, model_type.__name__, cache_postfix)
+        loss_list = [tcache.validate_loss_dict_seq[-1]['total'] for tcache in tcache_list]
+        idx = np.argmin(loss_list)
+        return tcache_list[idx]
 
     # TODO: probably has better design ...
     @classmethod

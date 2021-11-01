@@ -54,8 +54,8 @@ def test_train(image_datachunk, image_datachunk_with_encoder):
     tcache = TrainCache[LSTM](project_name, LSTM, cache_postfix=postfix)
     train(model3, train_set, val_set, tcache=tcache, config=config)
 
-    with pytest.raises(AssertionError):
-        tcache = TrainCache.load(project_name, LSTM, postfix)
+    tcache = TrainCache.load(project_name, LSTM, postfix)
+
     tcaches = TrainCache.load_multiple(project_name, LSTM, postfix)
     assert len(tcaches) == 2
 
