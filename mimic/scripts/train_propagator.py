@@ -41,7 +41,7 @@ def prepare_trained_image_chunk(project_name: str) -> AbstractDataChunk:
 # TODO what is type of model_type. how to specify 'class' type??
 # TODO Do type check! but this function is type-wise tricky...
 @typing.no_type_check 
-def train_propagator(project_name: str, model_type, config: Config) -> None:
+def train_propagator(project_name: str, model_type, config: Config, force: bool=False) -> None:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     chunk = prepare_trained_image_chunk(project_name)
     if model_type is LSTM:
@@ -59,9 +59,10 @@ def train_propagator(project_name: str, model_type, config: Config) -> None:
     else:
         raise RuntimeError
     tcache = TrainCache[model_type](project_name, model_type)
-    if tcache.exists_cache():
-        if not query_yes_no('tcach exists. do you want to overwrite?'):
-            raise RuntimeError('execution interrupt')
+    if not force:
+        if tcache.exists_cache():
+            if not query_yes_no('tcach exists. do you want to overwrite?'):
+                raise RuntimeError('execution interrupt')
     ds_train, ds_valid = split_with_ratio(dataset)
     train(prop_model, ds_train, ds_valid, tcache=tcache, config=config)
 

@@ -12,7 +12,7 @@ from mimic.scripts.utils import split_with_ratio
 from mimic.scripts.utils import create_default_logger
 from mimic.scripts.utils import query_yes_no
 
-def train_auto_encoder(project_name: str, n_bottleneck: int, config: Config) -> None:
+def train_auto_encoder(project_name: str, n_bottleneck: int, config: Config, force: bool=False) -> None:
     try:
         tmp = ImageCommandDataChunk.load(project_name)
         chunk_ = ImageDataChunk.from_imgcmd_chunk(tmp)
@@ -26,9 +26,10 @@ def train_auto_encoder(project_name: str, n_bottleneck: int, config: Config) -> 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = ImageAutoEncoder(device, n_bottleneck, image_shape=image_shape)
     tcache = TrainCache[ImageAutoEncoder](project_name, ImageAutoEncoder)
-    if tcache.exists_cache():
-        if not query_yes_no('tcach exists. do you want to overwrite?'):
-            raise RuntimeError('execution interrupt')
+    if not force:
+        if tcache.exists_cache():
+            if not query_yes_no('tcach exists. do you want to overwrite?'):
+                raise RuntimeError('execution interrupt')
     train(model, ds_train, ds_valid, tcache=tcache, config=config)
 
 if __name__=='__main__':
