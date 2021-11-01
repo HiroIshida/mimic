@@ -30,6 +30,7 @@ from mimic.models.common import to_scalar_values
 from mimic.models.common import average_loss_dict
 from mimic.file import dump_pickled_data
 from mimic.file import _cache_name
+from mimic.file import _cache_name_list
 from mimic.file import load_pickled_data
 from mimic.compat import is_compatible
 
@@ -62,9 +63,9 @@ class TrainCache(Generic[ModelT]):
 
     @typing.no_type_check
     def exists_cache(self) -> bool:
-        filename = _cache_name(self.project_name, 
+        filename_list = _cache_name_list(self.project_name, 
                 self.__class__, self.model_type.__name__, self.cache_postfix)
-        return os.path.exists(filename)
+        return len(filename_list)!=0
 
     def on_startof_epoch(self, epoch: int):
         logger.info('new epoch: {}'.format(epoch))

@@ -1,7 +1,9 @@
 import os
 import os.path as osp
+import re
 import pickle
 from typing import Any
+from typing import List
 from typing import Type
 from typing import TypeVar
 from typing import Optional
@@ -27,6 +29,20 @@ def _cache_name(project_name: str, cls: type,
         filename = filename + postfix
     wholename = osp.join(get_project_dir(project_name), filename)
     return wholename
+
+def _cache_name_list(project_name: str, cls: type, 
+        prefix: Optional[str] = None, postfix: Optional[str] = None) -> List[str]:
+    base_name = _cache_name(project_name, cls, prefix, postfix)
+
+    cache_name_list = []
+    head, tail = os.path.split(base_name)
+    fnames = os.listdir(head)
+    for fname in fnames:
+        res = re.match(r'{}*.'.format(tail), fname)
+        if res is not None:
+            whole_name = os.path.join(head, fname)
+            cache_name_list.append(whole_name)
+    return cache_name_list
 
 DataT = TypeVar('DataT') 
 def load_pickled_data(project_name: str, cls: Type[DataT], 
