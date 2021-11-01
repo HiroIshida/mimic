@@ -49,13 +49,15 @@ class TrainCache(Generic[ModelT]):
     validate_loss_dict_seq: List[LossDictFloat]
     best_model: ModelT
     latest_model: ModelT
-    cache_postfix: Optional[str]
+    cache_postfix: str
 
     def __init__(self, project_name: str, model_type: Type[ModelT], cache_postfix: Optional[str]=None):
+        if cache_postfix is None:
+            cache_postfix = ""
         self.project_name = project_name
         self.train_loss_dict_seq = []
         self.validate_loss_dict_seq = []
-        self.cache_postfix = cache_postfix
+        self.cache_postfix = cache_postfix 
         self.model_type = model_type
 
     @typing.no_type_check
@@ -86,8 +88,9 @@ class TrainCache(Generic[ModelT]):
         if(totals[-1] == min_loss):
             self.best_model = model
             logger.info('model is updated')
+        postfix = self.cache_postfix + model.hash_value
         dump_pickled_data(self, self.project_name, 
-                self.best_model.__class__.__name__, self.cache_postfix)
+                self.best_model.__class__.__name__, postfix)
 
     def visualize(self, fax: Optional[Tuple]=None):
         fax = plt.subplots() if fax is None else fax

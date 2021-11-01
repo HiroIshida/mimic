@@ -8,10 +8,10 @@ from mimic.models.common import to_scalar_values
 
 def test_model_config():
     conf1 = NullConfig()
-    assert len(conf1.hash_value()) == 0
+    assert len(conf1.hash_value) == 0
 
     conf2 = LSTMConfig()
-    assert len(conf2.hash_value()) == 7
+    assert len(conf2.hash_value) == 7
 
 def test_to_scalar_values():
     a = torch.tensor([2., 3.], requires_grad=True)

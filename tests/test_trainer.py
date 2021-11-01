@@ -43,7 +43,7 @@ def test_train(image_datachunk, image_datachunk_with_encoder):
     postfix = "_hogehoge"
     dataset2 = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset2.data[0].shape 
-    model2 = LSTM(torch.device('cpu'), n_state, LSTMConfig)
+    model2 = LSTM(torch.device('cpu'), n_state, LSTMConfig())
     _train(project_name, model2, dataset2, LSTM, config, postfix)
 
 """

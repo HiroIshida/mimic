@@ -35,6 +35,7 @@ def average_loss_dict(loss_dict_list: List[LossDictFloat]) -> LossDictFloat:
     return out
 
 class _ModelConfigBase:
+    @property
     def hash_value(self) -> str:
         if len(self.__dict__.keys()) == 0:
             return ""
@@ -55,6 +56,9 @@ class _Model(nn.Module, ABC, Generic[MConfigT]):
         self.config = config
 
     def put_on_device(self): self.to(self.device)
+
+    @property
+    def hash_value(self) -> str: return self.config.hash_value
 
     @abstractmethod
     def loss(self, sample : Any) -> LossDict: ...
