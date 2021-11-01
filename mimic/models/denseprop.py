@@ -1,22 +1,40 @@
 from typing import List
 from typing import Tuple
 from typing import Optional
+from typing import Type
 from dataclasses import dataclass
 import torch
 from torch._C import device
 import torch.nn as nn
+from torch.nn.modules import activation
 
 from mimic.models.common import _Model, NullConfig, _ModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import FirstOrderARDataset
 
-def create_linear_layers(n_input, n_output, n_hidden, n_layer) -> List[nn.Linear]:
-    layers = []
+def create_linear_layers(n_input, n_output, n_hidden, n_layer,
+        activation: Optional[str]) -> List[nn.Module]:
+
+    AT: Optional[Type[nn.Module]] = None
+    if activation=='relu':
+        AT = nn.ReLU
+    elif activation=='sigmoid':
+        AT = nn.Sigmoid
+    elif activation=='tanh':
+        AT = nn.Tanh
+
+    layers: List[nn.Module] = []
     input_layer = nn.Linear(n_input, n_hidden)
     layers.append(input_layer)
+    if AT is not None:
+        layers.append(AT())
+
     for _ in range(n_layer):
         middle_layer = nn.Linear(n_hidden, n_hidden)
         layers.append(middle_layer)
+        if AT is not None:
+            layers.append(AT())
+
     output_layer = nn.Linear(n_hidden, n_output)
     layers.append(output_layer)
     return layers
@@ -25,6 +43,7 @@ def create_linear_layers(n_input, n_output, n_hidden, n_layer) -> List[nn.Linear
 class DenseConfig(_ModelConfigBase):
     n_hidden: int = 200
     n_layer: int = 2
+    activation: Optional[str] = None
 
 class DenseBase(_Model[DenseConfig]):
     # TODO shold be part of DenseProp class
@@ -43,7 +62,11 @@ class DenseBase(_Model[DenseConfig]):
 
     def _create_layers(self, **kwargs) -> None:
         layers = create_linear_layers(
-                self.n_state + self.n_bias, self.n_state, self.config.n_hidden, self.config.n_layer)
+                self.n_state + self.n_bias, 
+                self.n_state, 
+                self.config.n_hidden, 
+                self.config.n_layer, 
+                self.config.activation)
         self.layer = nn.Sequential(*layers)
 
     def forward(self, sample_input: torch.Tensor):
