@@ -120,6 +120,7 @@ class KinemaNet(_Model[DenseConfig]):
             meta_data: KinematicsMetaData,
             config: DenseConfig):
         _Model.__init__(self, device, config)
+        self.meta_data = meta_data
         self.n_input = meta_data.input_dim
         self.n_output = meta_data.output_dim
         self._create_layers()
