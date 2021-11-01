@@ -7,11 +7,11 @@ import torch
 from torch._C import device
 import torch.nn as nn
 
-from mimic.models.common import _Model
+from mimic.models.common import _Model, NullConfig
 from mimic.models.common import LossDict
 from mimic.dataset import AutoRegressiveDataset
 
-class LSTMBase(_Model):
+class LSTMBase(_Model[NullConfig]):
     """
     Note that n_state 
     """
@@ -24,7 +24,7 @@ class LSTMBase(_Model):
     output_layer: nn.Linear
 
     def __init__(self, device: device, n_state: int, n_bias: int, n_hidden: int=200, n_layer: int=2):
-        _Model.__init__(self, device)
+        _Model.__init__(self, device, NullConfig())
         self.n_state = n_state
         self.n_bias = n_bias
         self.n_hidden = n_hidden

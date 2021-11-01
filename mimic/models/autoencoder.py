@@ -5,7 +5,7 @@ from torch._C import device
 from typing import Dict
 
 from mimic.primitives import AbstractEncoder
-from .common import _Model
+from .common import _Model, NullConfig
 from .common import LossDict
 
 class Reshape(nn.Module):
@@ -24,13 +24,13 @@ class DeepEncoder(AbstractEncoder):
     def __call__(self, image: torch.Tensor) -> torch.Tensor:
         return self.encoder(image)
 
-class AbstractEncoderDecoder(_Model, ABC):
+class AbstractEncoderDecoder(_Model[NullConfig], ABC):
     encoder : nn.Module
     decoder : nn.Module
     n_bottleneck : int
 
     def __init__(self, device: device, n_bottleneck: int, **kwargs):
-        _Model.__init__(self, device)
+        _Model.__init__(self, device, NullConfig())
         self.n_bottleneck = n_bottleneck
         self._create_layers(**kwargs)
 
