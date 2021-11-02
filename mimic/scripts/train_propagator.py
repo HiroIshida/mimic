@@ -29,12 +29,10 @@ from mimic.scripts.utils import query_yes_no
 def prepare_trained_image_chunk(project_name: str) -> AbstractDataChunk:
     tcache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
     try:
-        chunk_: Union[ImageDataChunk, ImageCommandDataChunk] \
+        chunk: Union[ImageDataChunk, ImageCommandDataChunk] \
                 = ImageCommandDataChunk.load(project_name)
     except FileNotFoundError:
-        chunk_ = ImageDataChunk.load(project_name)
-    n_intact = 5
-    _, chunk = chunk_.split(n_first=n_intact)
+        chunk = ImageDataChunk.load(project_name)
     chunk.set_encoder(tcache.best_model.get_encoder())
     return chunk
 
@@ -43,7 +41,11 @@ def prepare_trained_image_chunk(project_name: str) -> AbstractDataChunk:
 @typing.no_type_check 
 def train_propagator(project_name: str, model_type, config: Config, force: bool=False) -> None:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    chunk = prepare_trained_image_chunk(project_name)
+    chunk_ = prepare_trained_image_chunk(project_name)
+
+    n_intact = 5
+    _, chunk = chunk_.split(n_first=n_intact)
+
     if model_type is LSTM:
         dataset = AutoRegressiveDataset.from_chunk(chunk)
         prop_model = LSTM(device, dataset.n_state, LSTMConfig())
