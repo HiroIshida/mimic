@@ -21,6 +21,7 @@ from mimic.models import BiasedLSTM
 from mimic.models import DenseBase
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
+from mimic.models import DeprecatedDenseProp
 from mimic.compat import is_compatible
 from abc import ABC, abstractmethod
 
@@ -50,6 +51,7 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
         return [self._strip_flag_if_necessary(e) for e in raw_preds]
 
     def _is_with_flag(self):
+        if isinstance(self.propagator, DeprecatedDenseProp): return False
         return isinstance(self.propagator, (LSTMBase, DenseBase))
 
     def _attach_flag_if_necessary(self, vec: torch.Tensor) -> torch.Tensor:
