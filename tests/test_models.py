@@ -5,11 +5,11 @@ from mimic.models import ImageAutoEncoder
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
-from mimic.dataset import BiasedFirstOrderARDataset
 from mimic.models import LSTM, LSTMConfig
 from mimic.models import BiasedLSTM
 from mimic.models import DenseProp, DenseConfig
 from mimic.models import BiasedDenseProp
+from mimic.models import DeprecatedDenseProp
 from mimic.models.denseprop import create_linear_layers
 from mimic.models.denseprop import KinemaNet
 from test_datatypes import cmd_datachunk
@@ -82,6 +82,20 @@ def test_biaseddenseprop_pipeline(image_command_datachunk_with_encoder):
 
     n_state, n_bias = dataset.n_state, 16
     model = BiasedDenseProp(torch.device('cpu'), n_state, n_bias, DenseConfig())
+    pred = model.forward(sample[0])
+    assert pred.shape == sample[1].shape
+
+    loss = model.loss(sample)
+    assert len(list(loss.values())) == 1
+    assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
+
+def test_deprecateddenseprop_pipeline(image_command_datachunk_with_encoder):
+    chunk = image_command_datachunk_with_encoder
+    dataset = FirstOrderARDataset.from_chunk(chunk)
+    sample_ = dataset[0]
+    sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
+
+    model = DeprecatedDenseProp(torch.device('cpu'), dataset.n_state, DenseConfig())
     pred = model.forward(sample[0])
     assert pred.shape == sample[1].shape
 

@@ -6,6 +6,7 @@ from mimic.models import LSTM
 from mimic.models import BiasedLSTM
 from mimic.models import DenseBase, DenseConfig
 from mimic.models import DenseProp
+from mimic.models import DeprecatedDenseProp
 from mimic.models import BiasedDenseProp
 from mimic.predictor import SimplePredictor
 from mimic.predictor import evaluate_command_prediction_error
@@ -80,8 +81,9 @@ def test_ImageCommandPredictor():
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     lstm = LSTM(torch.device('cpu'), 16 + 7 + 1, LSTMConfig())
     denseprop = DenseProp(torch.device('cpu'), 16 + 7 + 1, DenseConfig())
+    depredense = DeprecatedDenseProp(torch.device('cpu'), 16 + 7, DenseConfig())
 
-    for propagator in [lstm, denseprop]:
+    for propagator in [lstm, denseprop, depredense]:
         print('testing : {}'.format(propagator.__class__.__name__))
         predictor = ImageCommandPredictor(propagator, ae)
 
@@ -90,7 +92,7 @@ def test_ImageCommandPredictor():
             cmd = np.zeros(7)
             predictor.feed((img, cmd))
 
-        if isinstance(propagator, (LSTMBase, DenseBase)):
+        if not isinstance(propagator, (DeprecatedDenseProp)):
             assert list(predictor.states[0].shape) == [16 + 7 + 1] # flag must be attached
         else:
             assert list(predictor.states[0].shape) == [16 + 7] # flag must be attached
@@ -135,6 +137,7 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     biased_prop = BiasedDenseProp(torch.device('cpu'), 7 + 1, 16, DenseConfig())
     dense_prop = DenseProp(torch.device('cpu'), 16 + 7 + 1, DenseConfig())
+    depre_prop = DeprecatedDenseProp(torch.device('cpu'), 16 + 7, DenseConfig())
     lstm = LSTM(torch.device('cpu'), 16 + 7 + 1, LSTMConfig())
 
     for model in [lstm, biased_prop]:
@@ -157,4 +160,9 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
     error = evaluate_command_prediction_error(ae, biased_prop, dataset)
     error2 = evaluate_command_prediction_error(ae, biased_prop, dataset, batch_size=2)
+    assert abs(error2 - error) < 1e-3
+
+    dataset = FirstOrderARDataset.from_chunk(chunk)
+    error = evaluate_command_prediction_error(ae, depre_prop, dataset)
+    error2 = evaluate_command_prediction_error(ae, depre_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3

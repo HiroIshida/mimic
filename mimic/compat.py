@@ -6,6 +6,7 @@ from mimic.models import LSTM
 from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
+from mimic.models import DeprecatedDenseProp
 from mimic.models import KinemaNet
 
 from mimic.dataset import _DatasetFromChunk
@@ -37,6 +38,7 @@ _dataset_compat_table : Dict[str, _DatasetT] = {
         BiasedLSTM.__name__: BiasedAutoRegressiveDataset,
         DenseProp.__name__: AutoRegressiveDataset,
         BiasedDenseProp.__name__: BiasedAutoRegressiveDataset,
+        DeprecatedDenseProp.__name__: FirstOrderARDataset,
         KinemaNet.__name__: KinematicsDataset
         }
 

@@ -8,5 +8,6 @@ from .lstm import BiasedLSTM
 from .denseprop import DenseConfig
 from .denseprop import DenseBase
 from .denseprop import DenseProp
+from .denseprop import DeprecatedDenseProp
 from .denseprop import BiasedDenseProp
 from .denseprop import KinemaNet
