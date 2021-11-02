@@ -21,12 +21,14 @@ args = parser.parse_args()
 
 dryrun = args.dryrun
 if dryrun:
-    cfg = Config('kuka_reaching_test', 15, 3, 3, 3, 3, 3)
+    cfg = Config('_kuka_reaching_test', 15, 3, 3, 3, 3, 3)
 else:
     cfg = Config('kuka_reaching', 300, 1000, 4000, 4000, 2000, 2000)
 
 here = os.path.dirname(os.path.realpath(sys.argv[0]))
 script_path = os.path.join(here, 'kuka_reaching.py')
+
+cmd_train_kinematics = 'python3 -m mimic.scripts.train_kinemanet -n 10 -m 10 -pn _kinematics_test'
 
 cmd_generate_dataset = 'python3 {0} -pn {1} -n {2}'.format(script_path, cfg.project_name, cfg.n_data)
 
@@ -46,6 +48,8 @@ cmd_analyze_biasd_lstm = 'python3 -m mimic.scripts.analyze -pn {0} -model biased
 cmd_analyze_biasd_dense_prop = 'python3 -m mimic.scripts.analyze -pn {0} -model biased_dense_prop'.format(cfg.project_name)
 
 # NOTE Hard-coding without for-loop on purpose so that it can be easily commented out
+subprocess.check_call(cmd_train_kinematics, shell=True)
+
 subprocess.check_call(cmd_generate_dataset, shell=True)
 
 subprocess.check_call(cmd_train_autoencoder, shell=True)

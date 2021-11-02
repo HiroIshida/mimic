@@ -11,9 +11,11 @@ from mimic.models import BiasedLSTM
 from mimic.models import DenseProp, DenseConfig
 from mimic.models import BiasedDenseProp
 from mimic.models.denseprop import create_linear_layers
+from mimic.models.denseprop import KinemaNet
 from test_datatypes import cmd_datachunk
 from test_datatypes import image_datachunk_with_encoder
 from test_datatypes import image_command_datachunk_with_encoder
+from test_dataset import kinematics_dataset
 
 def test_image_auto_encoder():
     n_batch = 100
@@ -86,3 +88,12 @@ def test_biaseddenseprop_pipeline(image_command_datachunk_with_encoder):
     loss = model.loss(sample)
     assert len(list(loss.values())) == 1
     assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
+
+def test_kinemanet_pipeline(kinematics_dataset):
+    dataset = kinematics_dataset
+    model = KinemaNet(torch.device('cpu'), dataset.meta_data, DenseConfig())
+    pre, post = dataset[0]
+    sample = (pre.unsqueeze(0), post.unsqueeze(0))
+    ret = model.forward(pre.unsqueeze(0))
+    assert list(ret.shape) == [1, 12]
+    loss = model.loss(sample)
