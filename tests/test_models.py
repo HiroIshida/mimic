@@ -94,4 +94,6 @@ def test_kinemanet_pipeline(kinematics_dataset):
     model = KinemaNet(torch.device('cpu'), dataset.meta_data, DenseConfig())
     pre, post = dataset[0]
     sample = (pre.unsqueeze(0), post.unsqueeze(0))
+    ret = model.forward(pre.unsqueeze(0))
+    assert list(ret.shape) == [1, 12]
     loss = model.loss(sample)

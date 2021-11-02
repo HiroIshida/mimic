@@ -135,8 +135,10 @@ class KinemaNet(_Model[DenseConfig]):
                 )
         self.layer = nn.Sequential(*layers)
 
+    def forward(self, sample: torch.Tensor): return self.layer(sample)
+
     def loss(self, sample: Tuple[torch.Tensor, torch.Tensor]):
         sample_input, sample_output = sample
-        pred_output = self.layer(sample_input)
+        pred_output = self.forward(sample_input)
         loss_value = nn.MSELoss()(pred_output, sample_output)
         return LossDict({'prediction': loss_value})
