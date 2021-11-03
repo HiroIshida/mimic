@@ -17,7 +17,7 @@ from mimic.predictor import FFImageCommandPredictor
 from mimic.predictor import ImageCommandPredictor
 from mimic.trainer import TrainCache
 from mimic.models import ImageAutoEncoder, LSTM, BiasedDenseProp
-from mimic.scripts.predict import create_predictor
+from mimic.scripts.predict import create_predictor_from_name
 
 class BulletManager(object):
 
@@ -141,6 +141,7 @@ class BulletManager(object):
 
         img_list = []
         for i in range(300):
+            print(i)
             cmd = angles_now()
             rgba, _ = self.take_photo(n_pixel)
             image = rgba[:, :, :3]
@@ -173,7 +174,7 @@ if __name__=='__main__':
     bm = BulletManager(False, urdf_path, 'lbr_iiwa_link_7')
 
     if prediction_mode:
-        predictor = create_predictor(project_name, model_name)
+        predictor = create_predictor_from_name(project_name, model_name)
         target_pos = np.array([0.5, 0.0, 0.3]) + np.random.randn(3) * np.array([0.2, 0.5, 0.1])
         bm.set_box(target_pos)
         img_seq = bm.prediction_simulate(predictor, n_pixel)

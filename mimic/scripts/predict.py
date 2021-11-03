@@ -11,24 +11,27 @@ from mimic.models import LSTM
 from mimic.models import BiasedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
+from mimic.models import DeprecatedDenseProp
 from mimic.predictor import AbstractPredictor
 from mimic.predictor import ImageCommandPredictor
 from mimic.predictor import FFImageCommandPredictor
+from mimic.predictor import create_predictor
 from mimic.trainer import TrainCache
 
 @typing.no_type_check 
-def create_predictor(project_name: str, model_name: str) -> \
+def create_predictor_from_name(project_name: str, model_name: str) -> \
         Union[ImageCommandPredictor, FFImageCommandPredictor]:
     dispatch_dict = {
-            'lstm': [LSTM, ImageCommandPredictor],
-            'biased_lstm': [BiasedLSTM, FFImageCommandPredictor],
-            'dense_prop': [DenseProp, ImageCommandPredictor],
-            'biased_dense_prop': [BiasedDenseProp, FFImageCommandPredictor],
+            'lstm': LSTM,
+            'biased_lstm': BiasedLSTM,
+            'dense_prop': DenseProp,
+            'biased_dense_prop': BiasedDenseProp,
+            'depre_dense_prop': DeprecatedDenseProp,
             }
-    ModelT, PredictorT = dispatch_dict[model_name]
+    ModelT = dispatch_dict[model_name]
     ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
     prop_train_cache = TrainCache[ModelT].load(project_name, ModelT)
-    return PredictorT[ModelT](prop_train_cache.best_model, ae_train_cache.best_model)
+    return create_predictor(ae_train_cache.best_model, prop_train_cache.best_model)
 
 if __name__=='__main__':
     # only for demo
@@ -49,7 +52,7 @@ if __name__=='__main__':
     model_name = args.model
     n_prediction = args.n
 
-    predictor = create_predictor(project_name, model_name)
+    predictor = create_predictor_from_name(project_name, model_name)
     chunk = ImageCommandDataChunk.load(project_name)
     n_intact = 5
     chunk_intact, _ = chunk.split(n_intact)
