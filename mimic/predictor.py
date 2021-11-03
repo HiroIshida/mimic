@@ -4,13 +4,14 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import torchvision
+import typing
 from typing import Optional, Tuple
 from typing import Union
 from typing import List
 from typing import TypeVar
 from typing import Generic
 from typing import NewType
-from mimic.datatype import AbstractDataChunk
+from mimic.datatype import CommandDataSequence, ImageCommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import _DatasetFromChunk
 from mimic.dataset import _continue_flag
@@ -25,10 +26,14 @@ from mimic.models import DeprecatedDenseProp
 from mimic.compat import is_compatible
 from abc import ABC, abstractmethod
 
+FBPropTypes = Union[LSTM, DenseProp, DeprecatedDenseProp]
+FFPropTypes = Union[BiasedLSTM, BiasedDenseProp]
+PropTypes = Union[FBPropTypes, FFPropTypes]
+
 StateT = TypeVar('StateT') # TODO maybe this is unncessarly
-FBPropT = TypeVar('FBPropT', bound=Union[LSTM, DenseProp])
-FFPropT = TypeVar('FFPropT', bound=Union[BiasedLSTM, BiasedDenseProp])
-PropT = TypeVar('PropT', bound=Union[LSTM, BiasedLSTM, DenseProp, BiasedDenseProp])
+FBPropT = TypeVar('FBPropT', bound=FBPropTypes)
+FFPropT = TypeVar('FFPropT', bound=FFPropTypes)
+PropT = TypeVar('PropT', bound=PropTypes)
 
 class AbstractPredictor(ABC, Generic[StateT, PropT]):
     propagator: PropT
@@ -190,14 +195,42 @@ class FFImageCommandPredictor(AbstractPredictor[MaybeNoneImageCommandPair, FFPro
             raw_preds = preds
         return [self._strip_flag_if_necessary(e) for e in raw_preds]
 
-def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: PropT) -> slice:
+def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: PropTypes) -> slice:
     idx_start: Optional[int] = autoencoder.n_bottleneck
     idx_end = None
     if isinstance(propagator, (BiasedDenseProp, LSTMBase)):
         idx_end = -1
     return slice(idx_start, idx_end)
 
-def evaluate_command_prediction_error(autoencoder: ImageAutoEncoder, propagator: PropT, 
+def create_predictor(autoencoder: ImageAutoEncoder, propagator: PropTypes) -> Union[ImageCommandPredictor, FFImageCommandPredictor]:
+    if isinstance(propagator, (BiasedLSTM, BiasedDenseProp)):
+        return FFImageCommandPredictor(propagator, autoencoder) # type: ignore
+    else:
+        return ImageCommandPredictor(propagator, autoencoder) # type: ignore
+    raise RuntimeError
+
+def evaluate_command_prediction_error(
+        autoencoder: ImageAutoEncoder, 
+        propagator: PropTypes, 
+        chunk: ImageCommandDataChunk) -> float: 
+
+    mse_list = []
+    for seqs in chunk.seqs_list:
+        predictor = create_predictor(autoencoder, propagator)
+        cmd_pred_lst: List[np.ndarray] = []
+        img_seq, cmd_seq = seqs
+        for img, cmd in zip(img_seq.data[:-1], cmd_seq.data[:-1]):
+            predictor.feed((img, cmd))
+            pred_imgs, pred_cmds = zip(*predictor.predict(1))
+            pred_cmd: np.ndarray = pred_cmds[0] # type: ignore
+            cmd_pred_lst.append(pred_cmd)
+        cmd_pred_seq = np.array(cmd_pred_lst)
+        mse = ((cmd_pred_seq - cmd_seq.data[1:])**2).mean(axis=0).mean()
+        mse_list.append(mse)
+
+    return np.mean(mse_list) 
+
+def evaluate_command_prediction_error_old(autoencoder: ImageAutoEncoder, propagator: PropTypes, 
         dataset: _DatasetFromChunk, batch_size: Optional[int] = None) -> float:
 
     assert is_compatible(propagator, dataset)
