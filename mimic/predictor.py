@@ -25,10 +25,14 @@ from mimic.models import DeprecatedDenseProp
 from mimic.compat import is_compatible
 from abc import ABC, abstractmethod
 
+FBPropTypes = Union[LSTM, DenseProp, DeprecatedDenseProp]
+FFPropTtypes = Union[BiasedLSTM, BiasedDenseProp]
+PropTypes = Union[FBPropTypes, FFPropTtypes]
+
 StateT = TypeVar('StateT') # TODO maybe this is unncessarly
-FBPropT = TypeVar('FBPropT', bound=Union[LSTM, DenseProp])
-FFPropT = TypeVar('FFPropT', bound=Union[BiasedLSTM, BiasedDenseProp])
-PropT = TypeVar('PropT', bound=Union[LSTM, BiasedLSTM, DenseProp, BiasedDenseProp])
+FBPropT = TypeVar('FBPropT', bound=FBPropTypes)
+FFPropT = TypeVar('FFPropT', bound=FFPropTtypes)
+PropT = TypeVar('PropT', bound=PropTypes)
 
 class AbstractPredictor(ABC, Generic[StateT, PropT]):
     propagator: PropT
@@ -190,14 +194,14 @@ class FFImageCommandPredictor(AbstractPredictor[MaybeNoneImageCommandPair, FFPro
             raw_preds = preds
         return [self._strip_flag_if_necessary(e) for e in raw_preds]
 
-def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: PropT) -> slice:
+def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: PropTypes) -> slice:
     idx_start: Optional[int] = autoencoder.n_bottleneck
     idx_end = None
     if isinstance(propagator, (BiasedDenseProp, LSTMBase)):
         idx_end = -1
     return slice(idx_start, idx_end)
 
-def evaluate_command_prediction_error(autoencoder: ImageAutoEncoder, propagator: PropT, 
+def evaluate_command_prediction_error(autoencoder: ImageAutoEncoder, propagator: PropTypes, 
         dataset: _DatasetFromChunk, batch_size: Optional[int] = None) -> float:
 
     assert is_compatible(propagator, dataset)
