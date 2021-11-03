@@ -10,11 +10,12 @@ from mimic.models import DeprecatedDenseProp
 from mimic.models import BiasedDenseProp
 from mimic.predictor import SimplePredictor
 from mimic.predictor import evaluate_command_prediction_error
+from mimic.predictor import evaluate_command_prediction_error2
 from mimic.predictor import ImagePredictor
 from mimic.predictor import ImageCommandPredictor
 from mimic.predictor import FFImageCommandPredictor
 from mimic.predictor import get_model_specific_state_slice
-from mimic.datatype import CommandDataChunk
+from mimic.datatype import CommandDataChunk, ImageCommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
@@ -166,3 +167,21 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     error = evaluate_command_prediction_error(ae, depre_prop, dataset)
     error2 = evaluate_command_prediction_error(ae, depre_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
+
+def test_evaluate_command_prop2(image_command_datachunk_with_encoder):
+    n_seq = 100
+    n_channel = 3
+    n_pixel = 28
+    ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
+    biased_prop = BiasedDenseProp(torch.device('cpu'), 7 + 1, 16, DenseConfig())
+    dense_prop = DenseProp(torch.device('cpu'), 16 + 7 + 1, DenseConfig())
+    depre_prop = DeprecatedDenseProp(torch.device('cpu'), 16 + 7, DenseConfig())
+    lstm = LSTM(torch.device('cpu'), 16 + 7 + 1, LSTMConfig())
+
+    chunk: ImageCommandDataChunk = image_command_datachunk_with_encoder
+    chunk_test, _ = chunk.split(1)
+
+    prop_models = [biased_prop, dense_prop, depre_prop]
+    for prop in prop_models:
+        evaluate_command_prediction_error2(ae, prop, chunk_test)
+
