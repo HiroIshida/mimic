@@ -9,6 +9,7 @@ from dataclasses import dataclass
 class Config:
     project_name: str
     n_data: int
+    m_pixel: int
     n_train_ae: int
     n_train_lstm: int
     n_train_biased_lstm: int
@@ -21,16 +22,16 @@ args = parser.parse_args()
 
 dryrun = args.dryrun
 if dryrun:
-    cfg = Config('_kuka_reaching_test', 15, 3, 3, 3, 3, 3)
+    cfg = Config('_kuka_reaching_test', 15, 112, 3, 3, 3, 3, 3)
 else:
-    cfg = Config('kuka_reaching', 300, 1000, 4000, 4000, 2000, 2000)
+    cfg = Config('kuka_reaching', 300, 224, 1000, 4000, 4000, 2000, 2000)
 
 here = os.path.dirname(os.path.realpath(sys.argv[0]))
 script_path = os.path.join(here, 'kuka_reaching.py')
 
 cmd_train_kinematics = 'python3 -m mimic.scripts.train_kinemanet -n 10 -m 10 -pn _kinematics_test'
 
-cmd_generate_dataset = 'python3 {0} -pn {1} -n {2}'.format(script_path, cfg.project_name, cfg.n_data)
+cmd_generate_dataset = 'python3 {0} -pn {1} -n {2} -m {3}'.format(script_path, cfg.project_name, cfg.n_data, cfg.m_pixel)
 
 cmd_train_autoencoder = 'python3 -m mimic.scripts.train_auto_encoder -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_ae)
 cmd_train_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_lstm)
