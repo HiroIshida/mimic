@@ -37,6 +37,7 @@ cmd_train_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1}'.form
 cmd_train_biased_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model biased_lstm'.format(cfg.project_name, cfg.n_train_biased_lstm)
 cmd_train_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model dense_prop'.format(cfg.project_name, cfg.n_train_dense)
 cmd_train_biasd_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model biased_dense_prop'.format(cfg.project_name, cfg.n_train_biased_dense)
+cmd_visualize_train_result = 'python3 -m mimic.scripts.visualize_train_result -pn {0}'.format(cfg.project_name)
 
 cmd_run_predictor_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model lstm'.format(cfg.project_name)
 cmd_run_predictor_biased_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model biased_lstm'.format(cfg.project_name)
@@ -57,6 +58,8 @@ subprocess.check_call(cmd_train_lstm, shell=True)
 subprocess.check_call(cmd_train_biased_lstm, shell=True)
 subprocess.check_call(cmd_train_dense_prop, shell=True)
 subprocess.check_call(cmd_train_biasd_dense_prop, shell=True)
+
+subprocess.check_call(cmd_visualize_train_result, shell=True)
 
 subprocess.check_call(cmd_run_predictor_lstm, shell=True)
 subprocess.check_call(cmd_run_predictor_biased_lstm, shell=True)
