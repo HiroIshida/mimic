@@ -9,8 +9,8 @@ from mimic.models import DenseProp
 from mimic.models import DeprecatedDenseProp
 from mimic.models import BiasedDenseProp
 from mimic.predictor import SimplePredictor
+from mimic.predictor import evaluate_command_prediction_error_old
 from mimic.predictor import evaluate_command_prediction_error
-from mimic.predictor import evaluate_command_prediction_error2
 from mimic.predictor import ImagePredictor
 from mimic.predictor import ImageCommandPredictor
 from mimic.predictor import FFImageCommandPredictor
@@ -149,23 +149,23 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
 
     chunk = image_command_datachunk_with_encoder
     dataset = AutoRegressiveDataset.from_chunk(chunk)
-    error = evaluate_command_prediction_error(ae, lstm, dataset)
-    error2 = evaluate_command_prediction_error(ae, lstm, dataset, batch_size=2)
+    error = evaluate_command_prediction_error_old(ae, lstm, dataset)
+    error2 = evaluate_command_prediction_error_old(ae, lstm, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
 
     dataset = AutoRegressiveDataset.from_chunk(chunk)
-    error = evaluate_command_prediction_error(ae, dense_prop, dataset)
-    error2 = evaluate_command_prediction_error(ae, dense_prop, dataset, batch_size=2)
+    error = evaluate_command_prediction_error_old(ae, dense_prop, dataset)
+    error2 = evaluate_command_prediction_error_old(ae, dense_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
 
     dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
-    error = evaluate_command_prediction_error(ae, biased_prop, dataset)
-    error2 = evaluate_command_prediction_error(ae, biased_prop, dataset, batch_size=2)
+    error = evaluate_command_prediction_error_old(ae, biased_prop, dataset)
+    error2 = evaluate_command_prediction_error_old(ae, biased_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
 
     dataset = FirstOrderARDataset.from_chunk(chunk)
-    error = evaluate_command_prediction_error(ae, depre_prop, dataset)
-    error2 = evaluate_command_prediction_error(ae, depre_prop, dataset, batch_size=2)
+    error = evaluate_command_prediction_error_old(ae, depre_prop, dataset)
+    error2 = evaluate_command_prediction_error_old(ae, depre_prop, dataset, batch_size=2)
     assert abs(error2 - error) < 1e-3
 
 def test_evaluate_command_prop2(image_command_datachunk_with_encoder):
@@ -183,5 +183,5 @@ def test_evaluate_command_prop2(image_command_datachunk_with_encoder):
 
     prop_models = [biased_prop, dense_prop, depre_prop]
     for prop in prop_models:
-        evaluate_command_prediction_error2(ae, prop, chunk_test)
+        evaluate_command_prediction_error(ae, prop, chunk_test)
 

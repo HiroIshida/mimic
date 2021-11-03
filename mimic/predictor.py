@@ -209,7 +209,7 @@ def create_predictor(autoencoder: ImageAutoEncoder, propagator: PropTypes) -> Un
         return ImageCommandPredictor(propagator, autoencoder) # type: ignore
     raise RuntimeError
 
-def evaluate_command_prediction_error2(
+def evaluate_command_prediction_error(
         autoencoder: ImageAutoEncoder, 
         propagator: PropTypes, 
         chunk: ImageCommandDataChunk) -> float: 
@@ -230,7 +230,7 @@ def evaluate_command_prediction_error2(
 
     return np.mean(mse_list) 
 
-def evaluate_command_prediction_error(autoencoder: ImageAutoEncoder, propagator: PropTypes, 
+def evaluate_command_prediction_error_old(autoencoder: ImageAutoEncoder, propagator: PropTypes, 
         dataset: _DatasetFromChunk, batch_size: Optional[int] = None) -> float:
 
     assert is_compatible(propagator, dataset)

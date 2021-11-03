@@ -8,7 +8,7 @@ from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.compat import get_compat_dataset_type
 from mimic.trainer import TrainCache
-from mimic.predictor import evaluate_command_prediction_error
+from mimic.predictor import evaluate_command_prediction_error_old
 from mimic.scripts.train_propagator import prepare_trained_image_chunk
 
 _model_table = {
@@ -37,7 +37,7 @@ if __name__=='__main__':
 
     ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
 
-    val = evaluate_command_prediction_error(
+    val = evaluate_command_prediction_error_old(
             ae_train_cache.best_model,
             prop_train_cache.best_model,
             prop_dataset)
