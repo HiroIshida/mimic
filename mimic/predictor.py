@@ -232,6 +232,9 @@ def evaluate_command_prediction_error(
 
 def evaluate_command_prediction_error_old(autoencoder: ImageAutoEncoder, propagator: PropTypes, 
         dataset: _DatasetFromChunk, batch_size: Optional[int] = None) -> float:
+    # NOTE the result of this function will be sometimes largely different from the newer version.
+    # This is because in this old version, the flag value is estimated by the predictor, while 
+    # in the newer version, the flag value is forced to 1 (continue).
 
     assert is_compatible(propagator, dataset)
     #TODO check if dataset is compatible with propagator model
