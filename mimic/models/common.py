@@ -40,8 +40,6 @@ def average_loss_dict(loss_dict_list: List[LossDictFloat]) -> LossDictFloat:
 class _ModelConfigBase:
     @property
     def hash_value(self) -> str:
-        if len(self.__dict__.keys()) == 0:
-            return ""
         data_pickle = pickle.dumps(self)
         data_md5 = hashlib.md5(data_pickle).hexdigest()
         return data_md5[:7]

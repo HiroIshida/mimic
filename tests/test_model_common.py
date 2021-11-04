@@ -8,7 +8,7 @@ from mimic.models.common import to_scalar_values
 
 def test_model_config():
     conf1 = NullConfig()
-    assert len(conf1.hash_value) == 0
+    assert len(conf1.hash_value) == 7
 
     conf2 = LSTMConfig()
     assert len(conf2.hash_value) == 7

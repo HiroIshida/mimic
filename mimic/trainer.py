@@ -1,4 +1,5 @@
 import os
+import uuid
 from dataclasses import dataclass
 from functools import reduce
 import operator
@@ -61,6 +62,7 @@ class TrainCache(Generic[ModelT]):
         self.validate_loss_dict_seq = []
         self.cache_postfix = cache_postfix 
         self.model_type = model_type
+        self.uuid_str = str(uuid.uuid4())[-6:]
 
     @typing.no_type_check
     def exists_cache(self) -> bool:
@@ -90,7 +92,7 @@ class TrainCache(Generic[ModelT]):
         if(totals[-1] == min_loss):
             self.best_model = model
             logger.info('model is updated')
-        postfix = self.cache_postfix + model.hash_value
+        postfix = '-'.join([self.cache_postfix, model.hash_value, self.uuid_str])
         dump_pickled_data(self, self.project_name, 
                 self.best_model.__class__.__name__, postfix)
 
