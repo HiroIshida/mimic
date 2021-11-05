@@ -21,6 +21,8 @@ class LSTMConfig(_ModelConfigBase):
     n_layer: int = 2
     @property
     def n_bias(self) -> int: return 0
+    @property
+    def n_aug(self) -> int: return 0
 
 @dataclass
 class BiasedLSTMConfig(_ModelConfigBase):
@@ -28,6 +30,17 @@ class BiasedLSTMConfig(_ModelConfigBase):
     n_bias: int
     n_hidden: int = 200
     n_layer: int = 2
+    @property
+    def n_aug(self) -> int: return 0
+
+@dataclass
+class AugedLSTMConfig(_ModelConfigBase):
+    n_state: int
+    n_aug: int
+    n_hidden: int = 200
+    n_layer: int = 2
+    @property
+    def n_bias(self) -> int: return 0
 
 LSTMConfigT = TypeVar('LSTMConfigT', bound=_ModelConfigBase)
 class LSTMBase(_Model[LSTMConfigT]):
@@ -43,6 +56,8 @@ class LSTMBase(_Model[LSTMConfigT]):
     @property
     def n_bias(self) -> int: return self.config.n_bias # type: ignore
     @property
+    def n_aug(self) -> int: return self.config.n_aug # type: ignore
+    @property
     def n_hidden(self) -> int: return self.config.n_hidden # type: ignore
     @property
     def n_layer(self) -> int: return self.config.n_layer # type: ignore
@@ -52,13 +67,15 @@ class LSTMBase(_Model[LSTMConfigT]):
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
-        n_input = self.n_state + self.n_bias
+        n_input = self.n_state + self.n_aug + self.n_bias
+        n_output =  self.n_state + self.n_aug
         self.lstm_layer = nn.LSTM(n_input, self.n_hidden, self.n_layer, batch_first=True)
-        self.output_layer = nn.Linear(self.n_hidden, self.n_state)
+        self.output_layer = nn.Linear(self.n_hidden, n_output)
 
     def forward(self, sample_input: torch.Tensor) -> torch.Tensor:
         n_batch, n_seq, n_input = sample_input.shape
-        assert n_input == self.n_state + self.n_bias
+        n_input_expect = self.n_state + self.n_aug + self.n_bias
+        assert n_input == n_input_expect
 
         lstm_out, _ = self.lstm_layer(sample_input)
         out = self.output_layer(lstm_out)
@@ -68,10 +85,12 @@ class LSTMBase(_Model[LSTMConfigT]):
         sample_input, sample_output = samples
         n_batch, n_seq, n_input = sample_input.shape
         n_batch2, n_seq2, n_output = sample_output.shape
+        n_input_expect = self.n_state + self.n_aug + self.n_bias
+        n_output_expect = self.n_state + self.n_aug
         assert n_batch == n_batch2 
         assert n_seq == n_seq2
-        assert n_input == self.n_state + self.n_bias, 'expect: {}, got: {}'.format(self.n_state + self.n_bias, n_input)
-        assert n_output == self.n_state, 'expect: {}, got: {}'.format(self.n_state, n_output)
+        assert n_input == self.n_state + self.n_bias, 'expect: {}, got: {}'.format(n_input_expect, n_input)
+        assert n_output == self.n_state, 'expect: {}, got: {}'.format(n_output_expect, n_output)
 
         if state_slicer is None:
             state_slicer = slice(None)
@@ -89,4 +108,9 @@ class LSTM(LSTMBase[LSTMConfig]):
 class BiasedLSTM(LSTMBase):
     def __init__(self, device: device, config: BiasedLSTMConfig):
         assert isinstance(config, BiasedLSTMConfig)
+        super().__init__(device, config)
+
+class AugedLSTM(LSTMBase):
+    def __init__(self, device: device, config: AugedLSTMConfig):
+        assert isinstance(config, AugedLSTMConfig)
         super().__init__(device, config)
