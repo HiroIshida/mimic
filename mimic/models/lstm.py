@@ -1,6 +1,8 @@
+from abc import ABC, abstractproperty
 import logging
 from typing import Optional
 from typing import Tuple
+from typing import TypeVar
 from dataclasses import dataclass
 logger = logging.getLogger(__name__)
 
@@ -14,12 +16,21 @@ from mimic.dataset import AutoRegressiveDataset
 
 @dataclass
 class LSTMConfig(_ModelConfigBase):
+    n_state: int
     n_hidden: int = 200
     n_layer: int = 2
-    n_state: Optional[int] = None
-    n_bias: Optional[int] = None
+    @property
+    def n_bias(self) -> int: return 0
 
-class LSTMBase(_Model[LSTMConfig]):
+@dataclass
+class BiasedLSTMConfig(_ModelConfigBase):
+    n_state: int
+    n_bias: int
+    n_hidden: int = 200
+    n_layer: int = 2
+
+LSTMConfigT = TypeVar('LSTMConfigT', bound=_ModelConfigBase)
+class LSTMBase(_Model[LSTMConfigT]):
     """
     Note that n_state 
     """
@@ -28,21 +39,15 @@ class LSTMBase(_Model[LSTMConfig]):
     output_layer: nn.Linear
 
     @property
-    def n_state(self) -> int: 
-        assert self.config.n_state is not None 
-        return self.config.n_state
+    def n_state(self) -> int: return self.config.n_state # type: ignore
     @property
-    def n_bias(self) -> int: 
-        assert self.config.n_bias is not None 
-        return self.config.n_bias
+    def n_bias(self) -> int: return self.config.n_bias # type: ignore
     @property
-    def n_hidden(self) -> int: return self.config.n_hidden
+    def n_hidden(self) -> int: return self.config.n_hidden # type: ignore
     @property
-    def n_layer(self) -> int: return self.config.n_layer
+    def n_layer(self) -> int: return self.config.n_layer # type: ignore
 
-    def __init__(self, device: device, n_state: int, n_bias: int, config: LSTMConfig):
-        config.n_state = n_state
-        config.n_bias = n_bias
+    def __init__(self, device: device, config: LSTMConfigT):
         _Model.__init__(self, device, config)
         self._create_layers()
 
@@ -76,12 +81,12 @@ class LSTMBase(_Model[LSTMConfig]):
         loss_value = nn.MSELoss(reduction=reduction)(pred_output[:, state_slicer], sample_output[:, state_slicer])
         return LossDict({'prediction': loss_value})
 
-class LSTM(LSTMBase):
-    def __init__(self, device: device, n_state: int, config: LSTMConfig):
-        n_bias = 0
-        super().__init__(device, n_state, n_bias, config)
+class LSTM(LSTMBase[LSTMConfig]):
+    def __init__(self, device: device, config: LSTMConfig):
+        assert isinstance(config, LSTMConfig)
+        super().__init__(device, config)
 
 class BiasedLSTM(LSTMBase):
-    def __init__(self, device: device, n_state: int, n_bias: int, config: LSTMConfig):
-        assert n_bias > 0
-        super().__init__(device, n_state, n_bias, config)
+    def __init__(self, device: device, config: BiasedLSTMConfig):
+        assert isinstance(config, BiasedLSTMConfig)
+        super().__init__(device, config)

@@ -44,11 +44,11 @@ def test_train(image_datachunk, image_datachunk_with_encoder):
     postfix = "_hogehoge"
     dataset2 = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset2.data[0].shape 
-    model2 = LSTM(torch.device('cpu'), n_state, LSTMConfig())
+    model2 = LSTM(torch.device('cpu'), LSTMConfig(n_state))
     _train(project_name, model2, dataset2, LSTM, config, postfix)
 
     # Another training session for LSTM using different LSTMConfig
-    model3 = LSTM(torch.device('cpu'), n_state, LSTMConfig(100, 1))
+    model3 = LSTM(torch.device('cpu'), LSTMConfig(n_state, 100, 1))
     n_total = len(dataset2)
     train_set, val_set =  random_split(dataset2, [n_total-2, 2])
     tcache = TrainCache[LSTM](project_name, LSTM, cache_postfix=postfix)

@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from mimic.models import ImageAutoEncoder
-from mimic.models import LSTMBase, LSTMConfig
+from mimic.models import LSTMBase, LSTMConfig, BiasedLSTMConfig
 from mimic.models import LSTM
 from mimic.models import BiasedLSTM
 from mimic.models import DenseBase, DenseConfig
@@ -33,7 +33,7 @@ def test_predictor_core():
     sample_input = dataset[0][0]
     seq = sample_input[:29, :7]
 
-    lstm = LSTM(torch.device('cpu'), 7 + 1, LSTMConfig())
+    lstm = LSTM(torch.device('cpu'), LSTMConfig(7 + 1))
     predictor = SimplePredictor(lstm)
     for cmd in seq:
         predictor.feed(cmd.detach().numpy())
@@ -52,7 +52,7 @@ def test_ImagePredictor():
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    lstm = LSTM(torch.device('cpu'), 16 + 1, LSTMConfig())
+    lstm = LSTM(torch.device('cpu'), LSTMConfig(16 + 1))
     denseprop = DenseProp(torch.device('cpu'), 16 + 1, DenseConfig())
 
     for propagator in [lstm, denseprop]:
@@ -80,7 +80,7 @@ def test_ImageCommandPredictor():
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    lstm = LSTM(torch.device('cpu'), 16 + 7 + 1, LSTMConfig())
+    lstm = LSTM(torch.device('cpu'), LSTMConfig(16 + 7 + 1))
     denseprop = DenseProp(torch.device('cpu'), 16 + 7 + 1, DenseConfig())
     depredense = DeprecatedDenseProp(torch.device('cpu'), 16 + 7, DenseConfig())
 
@@ -107,7 +107,7 @@ def test_FFImageCommandPredictor():
     n_channel = 3
     n_pixel = 28
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
-    prop1 = BiasedLSTM(torch.device('cpu'), 7 + 1, 16, LSTMConfig())
+    prop1 = BiasedLSTM(torch.device('cpu'), BiasedLSTMConfig(7 + 1, 16))
     predictor1 = FFImageCommandPredictor(prop1, ae)
     prop2 = BiasedDenseProp(torch.device('cpu'), 7 + 1, 16, DenseConfig())
     predictor2 = FFImageCommandPredictor(prop2, ae)
@@ -139,7 +139,7 @@ def test_evaluate_command_prop(image_command_datachunk_with_encoder):
     biased_prop = BiasedDenseProp(torch.device('cpu'), 7 + 1, 16, DenseConfig())
     dense_prop = DenseProp(torch.device('cpu'), 16 + 7 + 1, DenseConfig())
     depre_prop = DeprecatedDenseProp(torch.device('cpu'), 16 + 7, DenseConfig())
-    lstm = LSTM(torch.device('cpu'), 16 + 7 + 1, LSTMConfig())
+    lstm = LSTM(torch.device('cpu'), LSTMConfig(16 + 7 + 1))
 
     for model in [lstm, biased_prop]:
         slicer = get_model_specific_state_slice(ae, lstm)
@@ -176,7 +176,7 @@ def test_evaluate_command_prop2(image_command_datachunk_with_encoder):
     biased_prop = BiasedDenseProp(torch.device('cpu'), 7 + 1, 16, DenseConfig())
     dense_prop = DenseProp(torch.device('cpu'), 16 + 7 + 1, DenseConfig())
     depre_prop = DeprecatedDenseProp(torch.device('cpu'), 16 + 7, DenseConfig())
-    lstm = LSTM(torch.device('cpu'), 16 + 7 + 1, LSTMConfig())
+    lstm = LSTM(torch.device('cpu'), LSTMConfig(16 + 7 + 1))
 
     chunk: ImageCommandDataChunk = image_command_datachunk_with_encoder
     chunk_test, _ = chunk.split(1)

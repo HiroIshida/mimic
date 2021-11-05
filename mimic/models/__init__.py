@@ -2,6 +2,7 @@ from .common import NullConfig
 from .autoencoder import AbstractEncoderDecoder
 from .autoencoder import ImageAutoEncoder
 from .lstm import LSTMConfig
+from .lstm import BiasedLSTMConfig
 from .lstm import LSTMBase
 from .lstm import LSTM
 from .lstm import BiasedLSTM

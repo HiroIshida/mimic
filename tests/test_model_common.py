@@ -10,7 +10,7 @@ def test_model_config():
     conf1 = NullConfig()
     assert len(conf1.hash_value) == 7
 
-    conf2 = LSTMConfig()
+    conf2 = LSTMConfig(2)
     assert len(conf2.hash_value) == 7
 
 def test_to_scalar_values():

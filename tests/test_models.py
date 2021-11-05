@@ -5,7 +5,7 @@ from mimic.models import ImageAutoEncoder
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
-from mimic.models import LSTM, LSTMConfig
+from mimic.models import LSTM, LSTMConfig, BiasedLSTMConfig
 from mimic.models import BiasedLSTM
 from mimic.models import DenseProp, DenseConfig
 from mimic.models import BiasedDenseProp
@@ -36,7 +36,7 @@ def test_image_auto_encoder():
 def test_lstm_with_image(image_datachunk_with_encoder): 
     dataset = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset.data[0].shape 
-    model = LSTM(torch.device('cpu'), n_state, LSTMConfig())
+    model = LSTM(torch.device('cpu'), LSTMConfig(n_state))
     sample_ = dataset[0]
     assert isinstance(sample_, tuple)
     sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
@@ -48,7 +48,7 @@ def test_lstm_with_image(image_datachunk_with_encoder):
 
 def test_biased_lstm_pipeline(image_command_datachunk_with_encoder):
     dataset = BiasedAutoRegressiveDataset.from_chunk(image_command_datachunk_with_encoder)
-    model = BiasedLSTM(torch.device('cpu'), dataset.n_state, dataset.n_bias, LSTMConfig())
+    model = BiasedLSTM(torch.device('cpu'), BiasedLSTMConfig(dataset.n_state, dataset.n_bias))
     sample_ = dataset[0]
     assert isinstance(sample_, tuple)
     sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))

@@ -14,7 +14,7 @@ from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
-from mimic.models import LSTMConfig
+from mimic.models import LSTMConfig, BiasedLSTMConfig
 from mimic.models import LSTM
 from mimic.models import BiasedLSTM
 from mimic.models import DenseConfig
@@ -48,10 +48,10 @@ def train_propagator(project_name: str, model_type, config: Config) -> None:
 
     if model_type is LSTM:
         dataset = AutoRegressiveDataset.from_chunk(chunk)
-        prop_model = LSTM(device, dataset.n_state, LSTMConfig())
+        prop_model = LSTM(device, LSTMConfig(dataset.n_state))
     elif model_type is BiasedLSTM:
         dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
-        prop_model = BiasedLSTM(device, dataset.n_state, dataset.n_bias, LSTMConfig())
+        prop_model = BiasedLSTM(device, BiasedLSTMConfig(dataset.n_state, dataset.n_bias))
     elif model_type is DenseProp:
         dataset = AutoRegressiveDataset.from_chunk(chunk)
         prop_model = DenseProp(device, dataset.n_state, DenseConfig())
