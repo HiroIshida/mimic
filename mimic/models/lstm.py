@@ -16,27 +16,40 @@ from mimic.dataset import AutoRegressiveDataset
 class LSTMConfig(_ModelConfigBase):
     n_hidden: int = 200
     n_layer: int = 2
+    n_state: Optional[int] = None
+    n_bias: Optional[int] = None
 
 class LSTMBase(_Model[LSTMConfig]):
     """
     Note that n_state 
     """
     n_flag: int = 1
-    n_state: int
-    n_bias: int
     lstm_layer: nn.LSTM
     output_layer: nn.Linear
 
+    @property
+    def n_state(self) -> int: 
+        assert self.config.n_state is not None 
+        return self.config.n_state
+    @property
+    def n_bias(self) -> int: 
+        assert self.config.n_bias is not None 
+        return self.config.n_bias
+    @property
+    def n_hidden(self) -> int: return self.config.n_hidden
+    @property
+    def n_layer(self) -> int: return self.config.n_layer
+
     def __init__(self, device: device, n_state: int, n_bias: int, config: LSTMConfig):
+        config.n_state = n_state
+        config.n_bias = n_bias
         _Model.__init__(self, device, config)
-        self.n_state = n_state
-        self.n_bias = n_bias
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
         n_input = self.n_state + self.n_bias
-        self.lstm_layer = nn.LSTM(n_input, self.config.n_hidden, self.config.n_layer, batch_first=True)
-        self.output_layer = nn.Linear(self.config.n_hidden, self.n_state)
+        self.lstm_layer = nn.LSTM(n_input, self.n_hidden, self.n_layer, batch_first=True)
+        self.output_layer = nn.Linear(self.n_hidden, self.n_state)
 
     def forward(self, sample_input: torch.Tensor) -> torch.Tensor:
         n_batch, n_seq, n_input = sample_input.shape

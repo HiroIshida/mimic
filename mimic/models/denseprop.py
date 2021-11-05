@@ -47,28 +47,45 @@ class DenseConfig(_ModelConfigBase):
     n_layer: int = 2
     activation: Optional[str] = None
 
+    # set inside model constructor
+    n_state: Optional[int] = None
+    n_bias: Optional[int] = None
+
 class DenseBase(_Model[DenseConfig]):
     # TODO shold be part of DenseProp class
-    n_state: int
     layer: nn.Module
-    n_bias: int
     def __init__(self, 
             device: device, 
             n_state: int, 
             n_bias: int,
             config: DenseConfig):
+        config.n_state = n_state
+        config.n_bias = n_bias
         _Model.__init__(self, device, config)
-        self.n_state = n_state
-        self.n_bias = n_bias
         self._create_layers()
+
+    @property
+    def n_state(self) -> int: 
+        assert self.config.n_state is not None
+        return self.config.n_state
+    @property
+    def n_bias(self) -> int: 
+        assert self.config.n_bias is not None
+        return self.config.n_bias
+    @property
+    def n_hidden(self) -> int: return self.config.n_hidden
+    @property
+    def n_layer(self) -> int: return self.config.n_layer
+    @property
+    def activation(self) -> Optional[str]: return self.config.activation
 
     def _create_layers(self, **kwargs) -> None:
         layers = create_linear_layers(
                 self.n_state + self.n_bias, 
                 self.n_state, 
-                self.config.n_hidden, 
-                self.config.n_layer, 
-                self.config.activation)
+                self.n_hidden, 
+                self.n_layer, 
+                self.activation)
         self.layer = nn.Sequential(*layers)
 
     def forward(self, sample_input: torch.Tensor):
