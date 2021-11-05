@@ -1,5 +1,7 @@
+from abc import ABC, abstractproperty
 from typing import List
 from typing import Tuple
+from typing import TypeVar
 from typing import Optional
 from typing import Type
 from dataclasses import dataclass
@@ -13,6 +15,23 @@ from mimic.models.common import LossDict
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import KinematicsMetaData
 from mimic.dataset import KinematicsDataset
+
+@dataclass
+class DenseConfig(_ModelConfigBase):
+    n_state: int
+    n_hidden: int = 200
+    n_layer: int = 2
+    activation: Optional[str] = None
+    @property
+    def n_bias(self) -> int: return 0
+
+@dataclass
+class BiasedDenseConfig(_ModelConfigBase):
+    n_state: int
+    n_bias: int
+    n_hidden: int = 200
+    n_layer: int = 2
+    activation: Optional[str] = None
 
 def create_linear_layers(n_input, n_output, n_hidden, n_layer,
         activation: Optional[str]) -> List[nn.Module]:
@@ -41,43 +60,26 @@ def create_linear_layers(n_input, n_output, n_hidden, n_layer,
     layers.append(output_layer)
     return layers
 
-@dataclass
-class DenseConfig(_ModelConfigBase):
-    n_hidden: int = 200
-    n_layer: int = 2
-    activation: Optional[str] = None
-
-    # set inside model constructor
-    n_state: Optional[int] = None
-    n_bias: Optional[int] = None
-
-class DenseBase(_Model[DenseConfig]):
+DenseConfigT = TypeVar('DenseConfigT', bound=_ModelConfigBase)
+class DenseBase(_Model[DenseConfigT]):
     # TODO shold be part of DenseProp class
     layer: nn.Module
     def __init__(self, 
             device: device, 
-            n_state: int, 
-            n_bias: int,
-            config: DenseConfig):
-        config.n_state = n_state
-        config.n_bias = n_bias
+            config: DenseConfigT):
         _Model.__init__(self, device, config)
         self._create_layers()
 
     @property
-    def n_state(self) -> int: 
-        assert self.config.n_state is not None
-        return self.config.n_state
+    def n_state(self) -> int: return self.config.n_state # type: ignore
     @property
-    def n_bias(self) -> int: 
-        assert self.config.n_bias is not None
-        return self.config.n_bias
+    def n_bias(self) -> int: return self.config.n_bias # type: ignore
     @property
-    def n_hidden(self) -> int: return self.config.n_hidden
+    def n_hidden(self) -> int: return self.config.n_hidden # type: ignore
     @property
-    def n_layer(self) -> int: return self.config.n_layer
+    def n_layer(self) -> int: return self.config.n_layer # type: ignore
     @property
-    def activation(self) -> Optional[str]: return self.config.activation
+    def activation(self) -> Optional[str]: return self.config.activation # type: ignore
 
     def _create_layers(self, **kwargs) -> None:
         layers = create_linear_layers(
@@ -118,15 +120,16 @@ class DenseBase(_Model[DenseConfig]):
         loss_value = nn.MSELoss(reduction=reduction)(pred_output[:, state_slicer], sample_output[:, state_slicer])
         return LossDict({'prediction': loss_value})
 
+
 class DenseProp(DenseBase):
-    def __init__(self, device: device, n_state: int, config: DenseConfig):
-        n_bias = 0
-        super().__init__(device, n_state, n_bias, config)
+    def __init__(self, device: device, config: DenseConfig):
+        assert isinstance(config, DenseConfig)
+        super().__init__(device, config)
 
 class DeprecatedDenseProp(DenseBase):
-    def __init__(self, device: device, n_state: int, config: DenseConfig):
-        n_bias = 0
-        super().__init__(device, n_state, n_bias, config)
+    def __init__(self, device: device, config: DenseConfig):
+        assert isinstance(config, DenseConfig)
+        super().__init__(device, config)
 
     # override!!
     def forward(self, sample_pre: torch.Tensor):
@@ -144,10 +147,17 @@ class DeprecatedDenseProp(DenseBase):
         return LossDict({'prediction': loss_value})
 
 class BiasedDenseProp(DenseBase):
-    def __init__(self, device: device, n_state: int, n_bias: int, config: DenseConfig):
-        super().__init__(device, n_state, n_bias, config)
+    def __init__(self, device: device, config: BiasedDenseConfig):
+        assert isinstance(config, BiasedDenseConfig)
+        super().__init__(device, config)
 
-class KinemaNet(_Model[DenseConfig]):
+@dataclass
+class KinemaNetConfig(_ModelConfigBase):
+    n_hidden: int = 200
+    n_layer: int = 6
+    activation: Optional[str] = None
+
+class KinemaNet(_Model[KinemaNetConfig]):
     meta_data: KinematicsMetaData
     n_input: int
     n_output: int
@@ -155,7 +165,8 @@ class KinemaNet(_Model[DenseConfig]):
     def __init__(self, 
             device: device, 
             meta_data: KinematicsMetaData,
-            config: DenseConfig):
+            config: KinemaNetConfig):
+        assert isinstance(config, KinemaNetConfig)
         _Model.__init__(self, device, config)
         self.meta_data = meta_data
         self.n_input = meta_data.input_dim

@@ -7,7 +7,7 @@ from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.models import LSTM, LSTMConfig, BiasedLSTMConfig
 from mimic.models import BiasedLSTM
-from mimic.models import DenseProp, DenseConfig
+from mimic.models import DenseProp, DenseConfig, BiasedDenseConfig, KinemaNetConfig
 from mimic.models import BiasedDenseProp
 from mimic.models import DeprecatedDenseProp
 from mimic.models.denseprop import create_linear_layers
@@ -67,7 +67,7 @@ def test_denseprop_pipeline(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder
     dataset = AutoRegressiveDataset.from_chunk(chunk)
     n_state = 16 + 7 + 1
-    model = DenseProp(torch.device('cpu'), n_state, DenseConfig(activation='leru'))
+    model = DenseProp(torch.device('cpu'), DenseConfig(n_state, activation='leru'))
     pre, post = dataset[0]
     sample = (pre.unsqueeze(0), post.unsqueeze(0))
     loss = model.loss(sample)
@@ -81,7 +81,7 @@ def test_biaseddenseprop_pipeline(image_command_datachunk_with_encoder):
     sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
 
     n_state, n_bias = dataset.n_state, 16
-    model = BiasedDenseProp(torch.device('cpu'), n_state, n_bias, DenseConfig())
+    model = BiasedDenseProp(torch.device('cpu'), BiasedDenseConfig(n_state, n_bias))
     pred = model.forward(sample[0])
     assert pred.shape == sample[1].shape
 
@@ -95,7 +95,7 @@ def test_deprecateddenseprop_pipeline(image_command_datachunk_with_encoder):
     sample_ = dataset[0]
     sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
 
-    model = DeprecatedDenseProp(torch.device('cpu'), dataset.n_state, DenseConfig())
+    model = DeprecatedDenseProp(torch.device('cpu'), DenseConfig(dataset.n_state))
     pred = model.forward(sample[0])
     assert pred.shape == sample[1].shape
 
@@ -105,7 +105,7 @@ def test_deprecateddenseprop_pipeline(image_command_datachunk_with_encoder):
 
 def test_kinemanet_pipeline(kinematics_dataset):
     dataset = kinematics_dataset
-    model = KinemaNet(torch.device('cpu'), dataset.meta_data, DenseConfig())
+    model = KinemaNet(torch.device('cpu'), dataset.meta_data, KinemaNetConfig())
     pre, post = dataset[0]
     sample = (pre.unsqueeze(0), post.unsqueeze(0))
     ret = model.forward(pre.unsqueeze(0))
