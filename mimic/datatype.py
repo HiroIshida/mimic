@@ -15,8 +15,6 @@ from typing import TypeVar
 from typing import Tuple
 from typing import NewType
 
-import tinyfk
-
 from torch.functional import Tensor
 
 from mimic.file import dump_pickled_data
@@ -202,14 +200,10 @@ class AugedImageCommandDataChunk(AbstractDataChunk[_AugedImageCommandDataSequenc
         _, n_dof = cmd_seq.data.shape
         assert n_dof == len(robot_spec.joint_names)
 
-        kin_solver = tinyfk.RobotModel(robot_spec.urdf_path)
-        joint_ids = kin_solver.get_joint_ids(robot_spec.joint_names)
-        link_ids = kin_solver.get_link_ids(robot_spec.featured_link_names)
+        fksolver = robot_spec.create_fksolver()
 
         obj = cls(robot_spec, chunk_other.encoder_holder['encoder'])
         for img_seq, cmd_seq in chunk_other.seqs_list:
-            angle_vectors = cmd_seq.data
-            coords, _ = kin_solver.solve_forward_kinematics(angle_vectors, link_ids, joint_ids, with_rot=True)
-            coords = coords.reshape((-1, len(robot_spec.featured_link_names) * 6))
+            coords = fksolver(cmd_seq.data)
             obj.push_epoch((img_seq.data, cmd_seq.data, coords))
         return obj
