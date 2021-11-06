@@ -3,9 +3,11 @@ from .autoencoder import AbstractEncoderDecoder
 from .autoencoder import ImageAutoEncoder
 from .lstm import LSTMConfig
 from .lstm import BiasedLSTMConfig
+from .lstm import AugedLSTMConfig
 from .lstm import LSTMBase
 from .lstm import LSTM
 from .lstm import BiasedLSTM
+from .lstm import AugedLSTM
 from .denseprop import DenseConfig
 from .denseprop import BiasedDenseConfig
 from .denseprop import KinemaNetConfig

@@ -89,8 +89,8 @@ class LSTMBase(_Model[LSTMConfigT]):
         n_output_expect = self.n_state + self.n_aug
         assert n_batch == n_batch2 
         assert n_seq == n_seq2
-        assert n_input == self.n_state + self.n_bias, 'expect: {}, got: {}'.format(n_input_expect, n_input)
-        assert n_output == self.n_state, 'expect: {}, got: {}'.format(n_output_expect, n_output)
+        assert n_input == n_input_expect, 'expect: {}, got: {}'.format(n_input_expect, n_input)
+        assert n_output == n_output_expect, 'expect: {}, got: {}'.format(n_output_expect, n_output)
 
         if state_slicer is None:
             state_slicer = slice(None)
