@@ -15,10 +15,13 @@ from typing import TypeVar
 from typing import Tuple
 from typing import NewType
 
+import tinyfk
+
 from torch.functional import Tensor
 
 from mimic.file import dump_pickled_data
 from mimic.file import load_pickled_data
+from mimic.robot import RobotSpecBase
 from mimic.primitives import AbstractEncoder
 
 
@@ -85,9 +88,12 @@ class AbstractDataChunk(ABC, Generic[DataT]):
     def __getitem__(self, index: int) -> DataT:
         return self.seqs_list[index]
 
-class CommandDataSequence(AbstractDataSequence):
+class VectorDataSequence(AbstractDataSequence):
     def to_featureseq(self):
         return torch.from_numpy(self.data).float()
+
+class CommandDataSequence(VectorDataSequence): ...
+class AugDataSequence(VectorDataSequence): ...
 
 _CommandDataSequence = Tuple[CommandDataSequence]
 class CommandDataChunk(AbstractDataChunk[_CommandDataSequence]):
@@ -164,3 +170,40 @@ class ImageCommandDataChunk(AbstractDataChunk[_ImageCommandDataSequence], ImageD
         img_data_seq = ImageDataSequence(imgseq, self.encoder_holder)
         cmd_data_seq = CommandDataSequence(cmdseq)
         super()._push_epoch((img_data_seq, cmd_data_seq))
+
+_AugedImageCommandDataSequence = Tuple[ImageDataSequence, CommandDataSequence, AugDataSequence]
+class AugedImageCommandDataChunk(AbstractDataChunk[_AugedImageCommandDataSequence], ImageDataChunkBase):
+    def __init__(self, encoder: Optional[AbstractEncoder] = None):
+        super().__init__([]) # TODO enable optional seq input??
+        ImageDataChunkBase.__init__(self, encoder)
+
+    def push_epoch(self, auged_imgcmd_seq: Tuple[np.ndarray, np.ndarray, np.ndarray]) -> None:
+        """
+        auged_imgcmd_seq with (img, cmd, aug) order
+        """
+        imgseq, cmdseq, augseq = auged_imgcmd_seq
+        assert imgseq.ndim == 4 and cmdseq.ndim == 2
+        img_data_seq = ImageDataSequence(imgseq, self.encoder_holder)
+        cmd_data_seq = CommandDataSequence(cmdseq)
+        aug_data_seq = AugDataSequence(augseq)
+        super()._push_epoch((img_data_seq, cmd_data_seq, aug_data_seq))
+
+    @classmethod
+    def from_imgcmd_chunk(cls, chunk_other: ImageCommandDataChunk, 
+            robot_spec: RobotSpecBase) -> 'AugedImageCommandDataChunk':
+
+        img_seq, cmd_seq = chunk_other.seqs_list[0]
+        _, n_dof = cmd_seq.data.shape
+        assert n_dof == len(robot_spec.joint_names)
+
+        kin_solver = tinyfk.RobotModel(robot_spec.urdf_path)
+        joint_ids = kin_solver.get_joint_ids(robot_spec.joint_names)
+        link_ids = kin_solver.get_link_ids(robot_spec.featured_link_names)
+
+        obj = cls(chunk_other.encoder_holder['encoder'])
+        for img_seq, cmd_seq in chunk_other.seqs_list:
+            angle_vectors = cmd_seq.data
+            coords, _ = kin_solver.solve_forward_kinematics(angle_vectors, link_ids, joint_ids, with_rot=True)
+            coords = coords.reshape((-1, len(robot_spec.featured_link_names) * 6))
+            obj.push_epoch((img_seq.data, cmd_seq.data, coords))
+        return obj

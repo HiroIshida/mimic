@@ -8,7 +8,9 @@ from mimic.datatype import CommandDataSequence
 from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.datatype import ImageCommandDataChunk
+from mimic.datatype import AugedImageCommandDataChunk
 from mimic.models import ImageAutoEncoder
+from mimic.robot import KukaSpec
 
 def test_dataseq_slice():
     seq = CommandDataSequence(np.zeros((10, 3)))
@@ -106,3 +108,9 @@ def test_image_featureseq_list_generateion_pipeline(image_datachunk, image_datac
 def test_image_command_datachunk_with_encoder_pipeline(image_command_datachunk_with_encoder):
     fslist = image_command_datachunk_with_encoder.to_featureseq_list()
     assert list(fslist[0].size()) == [100, 16 + 7]
+
+def test_auged_image_command_datachunk_pipeline(image_command_datachunk_with_encoder):
+    chunk_other: ImageCommandDataChunk = image_command_datachunk_with_encoder
+    chunk = AugedImageCommandDataChunk.from_imgcmd_chunk(chunk_other, KukaSpec())
+    fslist = chunk.to_featureseq_list()
+    assert list(fslist[0].size()) == [100, 16 + 7 + 6]
