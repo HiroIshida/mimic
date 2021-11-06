@@ -6,6 +6,7 @@ from typing import Optional
 import numpy as np
 import tinyfk
 import math
+import functools
 
 class RobotSpecBase(ABC):
     @abstractproperty
@@ -15,6 +16,7 @@ class RobotSpecBase(ABC):
     @abstractproperty
     def urdf_path(self) -> str: ...
 
+    @functools.lru_cache(None)
     def create_fksolver(self) -> Callable[[np.ndarray], np.ndarray]:
         kin_solver = tinyfk.RobotModel(self.urdf_path)
         link_ids = kin_solver.get_link_ids(self.featured_link_names)
