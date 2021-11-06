@@ -188,6 +188,11 @@ class AugedImageCommandDataChunk(AbstractDataChunk[_AugedImageCommandDataSequenc
         aug_data_seq = AugDataSequence(augseq)
         super()._push_epoch((img_data_seq, cmd_data_seq, aug_data_seq))
 
+    @property
+    def n_aug(self) -> int: 
+        img_seq, cmd_seq, aug_seq = self.seqs_list[0]
+        return aug_seq.data.shape[1]
+
     @classmethod
     def from_imgcmd_chunk(cls, chunk_other: ImageCommandDataChunk, 
             robot_spec: RobotSpecBase) -> 'AugedImageCommandDataChunk':

@@ -19,6 +19,7 @@ from test_datatypes import image_datachunk
 from test_datatypes import _img_chunk_uneven_n
 from test_datatypes import image_datachunk_with_encoder
 from test_datatypes import image_command_datachunk_with_encoder
+from test_datatypes import auged_image_command_datachunk
 
 def test_reconstruction_dataset_pipeline(image_datachunk):
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
@@ -56,6 +57,13 @@ def test_autoregressive_dataset_pipeline2(cmd_datachunk):
     for seq in dataset.data:
         assert list(seq.shape) == [20, 8]
     assert len(dataset) == 10
+
+def test_auged_autoregressive_dataset_pipeline(auged_image_command_datachunk):
+    dataset = AutoRegressiveDataset.from_chunk(auged_image_command_datachunk)
+    assert len(dataset) == 10
+    sample_input, sample_output = dataset[0]
+    assert list(sample_input.shape) == [100 - 1, 16 + 7 + 6 + 1]
+    assert list(sample_output.shape) == [100 - 1, 16 + 7 + 6 + 1]
 
 def test_biased_autoregressive_dataset_pipeline(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder

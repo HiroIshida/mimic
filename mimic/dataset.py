@@ -15,6 +15,7 @@ from torch.utils.data import Dataset
 
 from mimic.datatype import AbstractDataChunk
 from mimic.datatype import ImageCommandDataChunk
+from mimic.datatype import AugedImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
 
 from dataclasses import dataclass
@@ -82,6 +83,30 @@ class AutoRegressiveDataset(_DatasetFromChunk):
 
     @property
     def n_state(self) -> int: return self.data[0].shape[1]
+
+    def __len__(self) -> int: return len(self.data)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+        sample_input = self.data[idx][:-1]
+        sample_output = self.data[idx][1:]
+        return sample_input, sample_output
+
+class AugedAutoRegressiveDataset(_DatasetFromChunk):
+    data: List[torch.Tensor]
+    n_aug: int
+    def __init__(self, featureseq_list: List[torch.Tensor], n_aug: int):
+        seq_list = deepcopy(featureseq_list)
+        self.data = attach_flag_info(seq_list)
+        self.n_aug = n_aug
+
+    @classmethod
+    def from_chunk(cls, chunk: AugedImageCommandDataChunk) -> 'AugedAutoRegressiveDataset':
+        assert chunk.has_encoder
+        featureseq_list = chunk.to_featureseq_list()
+        return cls(featureseq_list, chunk.n_aug)
+
+    @property
+    def n_state(self) -> int: return self.data[0].shape[1] - self.n_aug
 
     def __len__(self) -> int: return len(self.data)
 

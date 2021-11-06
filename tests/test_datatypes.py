@@ -109,8 +109,12 @@ def test_image_command_datachunk_with_encoder_pipeline(image_command_datachunk_w
     fslist = image_command_datachunk_with_encoder.to_featureseq_list()
     assert list(fslist[0].size()) == [100, 16 + 7]
 
-def test_auged_image_command_datachunk_pipeline(image_command_datachunk_with_encoder):
+@pytest.fixture(scope='session')
+def auged_image_command_datachunk(image_command_datachunk_with_encoder):
     chunk_other: ImageCommandDataChunk = image_command_datachunk_with_encoder
     chunk = AugedImageCommandDataChunk.from_imgcmd_chunk(chunk_other, KukaSpec())
-    fslist = chunk.to_featureseq_list()
+    return chunk
+
+def test_auged_image_command_datachunk_pipeline(auged_image_command_datachunk):
+    fslist = auged_image_command_datachunk.to_featureseq_list()
     assert list(fslist[0].size()) == [100, 16 + 7 + 6]
