@@ -173,9 +173,11 @@ class ImageCommandDataChunk(AbstractDataChunk[_ImageCommandDataSequence], ImageD
 
 _AugedImageCommandDataSequence = Tuple[ImageDataSequence, CommandDataSequence, AugDataSequence]
 class AugedImageCommandDataChunk(AbstractDataChunk[_AugedImageCommandDataSequence], ImageDataChunkBase):
-    def __init__(self, encoder: Optional[AbstractEncoder] = None):
+    robot_spec: RobotSpecBase
+    def __init__(self, robot_spec: RobotSpecBase, encoder: Optional[AbstractEncoder] = None):
         super().__init__([]) # TODO enable optional seq input??
         ImageDataChunkBase.__init__(self, encoder)
+        self.robot_spec = robot_spec
 
     def push_epoch(self, auged_imgcmd_seq: Tuple[np.ndarray, np.ndarray, np.ndarray]) -> None:
         """
@@ -196,7 +198,6 @@ class AugedImageCommandDataChunk(AbstractDataChunk[_AugedImageCommandDataSequenc
     @classmethod
     def from_imgcmd_chunk(cls, chunk_other: ImageCommandDataChunk, 
             robot_spec: RobotSpecBase) -> 'AugedImageCommandDataChunk':
-
         img_seq, cmd_seq = chunk_other.seqs_list[0]
         _, n_dof = cmd_seq.data.shape
         assert n_dof == len(robot_spec.joint_names)
@@ -205,7 +206,7 @@ class AugedImageCommandDataChunk(AbstractDataChunk[_AugedImageCommandDataSequenc
         joint_ids = kin_solver.get_joint_ids(robot_spec.joint_names)
         link_ids = kin_solver.get_link_ids(robot_spec.featured_link_names)
 
-        obj = cls(chunk_other.encoder_holder['encoder'])
+        obj = cls(robot_spec, chunk_other.encoder_holder['encoder'])
         for img_seq, cmd_seq in chunk_other.seqs_list:
             angle_vectors = cmd_seq.data
             coords, _ = kin_solver.solve_forward_kinematics(angle_vectors, link_ids, joint_ids, with_rot=True)

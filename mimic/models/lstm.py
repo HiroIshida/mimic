@@ -10,6 +10,7 @@ import torch
 from torch._C import device
 import torch.nn as nn
 
+from mimic.robot import RobotSpecBase
 from mimic.models.common import _Model, NullConfig, _ModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import AutoRegressiveDataset
@@ -37,6 +38,7 @@ class BiasedLSTMConfig(_ModelConfigBase):
 class AugedLSTMConfig(_ModelConfigBase):
     n_state: int
     n_aug: int
+    robot_spec: RobotSpecBase
     n_hidden: int = 200
     n_layer: int = 2
     @property

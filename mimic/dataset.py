@@ -17,6 +17,7 @@ from mimic.datatype import AbstractDataChunk
 from mimic.datatype import ImageCommandDataChunk
 from mimic.datatype import AugedImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
+from mimic.robot import RobotSpecBase
 
 from dataclasses import dataclass
 
@@ -94,16 +95,18 @@ class AutoRegressiveDataset(_DatasetFromChunk):
 class AugedAutoRegressiveDataset(_DatasetFromChunk):
     data: List[torch.Tensor]
     n_aug: int
-    def __init__(self, featureseq_list: List[torch.Tensor], n_aug: int):
+    robot_spec: RobotSpecBase
+    def __init__(self, featureseq_list: List[torch.Tensor], n_aug: int, robot_sepec: RobotSpecBase):
         seq_list = deepcopy(featureseq_list)
         self.data = attach_flag_info(seq_list)
         self.n_aug = n_aug
+        self.robot_spec = robot_sepec
 
     @classmethod
     def from_chunk(cls, chunk: AugedImageCommandDataChunk) -> 'AugedAutoRegressiveDataset':
         assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
-        return cls(featureseq_list, chunk.n_aug)
+        return cls(featureseq_list, chunk.n_aug, chunk.robot_spec)
 
     @property
     def n_state(self) -> int: return self.data[0].shape[1] - self.n_aug

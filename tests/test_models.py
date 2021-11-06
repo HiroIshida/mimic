@@ -50,7 +50,7 @@ def test_lstm_with_image(image_datachunk_with_encoder):
 
 def test_auged_lstm_with_image(auged_image_command_datachunk): 
     dataset = AugedAutoRegressiveDataset.from_chunk(auged_image_command_datachunk)
-    model = AugedLSTM(torch.device('cpu'), AugedLSTMConfig(dataset.n_state, dataset.n_aug))
+    model = AugedLSTM(torch.device('cpu'), AugedLSTMConfig(dataset.n_state, dataset.n_aug, dataset.robot_spec))
     sample_ = dataset[0]
     assert isinstance(sample_, tuple)
     sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
