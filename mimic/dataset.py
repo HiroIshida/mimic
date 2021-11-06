@@ -13,6 +13,7 @@ import torch
 from torch.functional import Tensor
 from torch.utils.data import Dataset
 
+from mimic.robot import RobotSpecBase
 from mimic.datatype import AbstractDataChunk
 from mimic.datatype import ImageCommandDataChunk
 from mimic.datatype import AugedImageCommandDataChunk
@@ -205,53 +206,26 @@ class BiasedFirstOrderARDataset(_DatasetFromChunk[ImageCommandDataChunk]):
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
         return (self.data_pre[idx], self.data_post[idx], self.biases[idx])
 
-
 @dataclass
-class KinematicsMetaData:
-    joint_names: List[str] 
-    link_names: List[str]
-
-    @property
-    def input_dim(self): return len(self.joint_names)
-    @property
-    def output_dim(self): return len(self.link_names) * (3 + 3) # trans + rot
-
 class KinematicsDataset(Dataset):
     data_input: torch.Tensor
     data_output: torch.Tensor
-    meta_data: KinematicsMetaData
+    robot_spec: RobotSpecBase
     n_joints: int
-    def __init__(self, data_input, data_output, meta_data):
+    def __init__(self, data_input, data_output, robot_spec: RobotSpecBase):
         self.data_input = data_input
         self.data_output = data_output
-        self.meta_data = meta_data
+        self.robot_spec = robot_spec
 
     @classmethod
-    def from_urdf(cls, path_to_urdf: str, joint_names: List[str], link_names: List[str], n_sample: Optional[int]=None):
-        n_joint = len(joint_names)
-        if n_sample is None:
-            n_sample = 8 ** n_joint
-        kin_solver = tinyfk.RobotModel(path_to_urdf)
-        joint_ids = kin_solver.get_joint_ids(joint_names)
-        link_ids = kin_solver.get_link_ids(link_names)
-        joint_limits = kin_solver.get_joint_limits(joint_ids)
-        for i in range(len(joint_limits)):
-            if joint_limits[i][0] == None:
-                joint_limits[i][0] = -math.pi * 1.5
-                joint_limits[i][1] = math.pi * 1.5
-        lowers = np.array([limit[0] for limit in joint_limits])
-        uppers = np.array([limit[1] for limit in joint_limits])
-        sample_points = np.random.random((n_sample, n_joint)) * (uppers - lowers) + lowers
+    def from_urdf(cls, robot_spec: RobotSpecBase, n_sample: Optional[int]=None):
+        points = robot_spec.sample_from_cspace(n_sample)
+        fksolver = robot_spec.create_fksolver()
+        coords = fksolver(points)
 
-        coords, _ = kin_solver.solve_forward_kinematics(sample_points, link_ids, joint_ids, with_rot=True)
-        coords = coords.reshape((-1, len(link_names) * 6))
-
-        meta_data = KinematicsMetaData(joint_names, link_names)
-
-        data_input = torch.from_numpy(sample_points).float()
+        data_input = torch.from_numpy(points).float()
         data_output = torch.from_numpy(coords).float()
-
-        return cls(data_input, data_output, meta_data)
+        return cls(data_input, data_output, robot_spec)
 
     def __len__(self) -> int: return len(self.data_input)
 

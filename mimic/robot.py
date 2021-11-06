@@ -2,8 +2,10 @@ from abc import ABC, abstractproperty
 import os
 from typing import List
 from typing import Callable
+from typing import Optional
 import numpy as np
 import tinyfk
+import math
 
 class RobotSpecBase(ABC):
     @abstractproperty
@@ -12,6 +14,7 @@ class RobotSpecBase(ABC):
     def joint_names(self) -> List[str]: ...
     @abstractproperty
     def urdf_path(self) -> str: ...
+
     def create_fksolver(self) -> Callable[[np.ndarray], np.ndarray]:
         kin_solver = tinyfk.RobotModel(self.urdf_path)
         link_ids = kin_solver.get_link_ids(self.featured_link_names)
@@ -23,6 +26,29 @@ class RobotSpecBase(ABC):
             coords = coords.reshape((-1, len(self.featured_link_names) * 6))
             return coords
         return fksolver
+
+    @property
+    def n_joint(self) -> int: return len(self.joint_names)
+
+    @property
+    def n_out(self) -> int: return len(self.featured_link_names) * 6
+
+    def sample_from_cspace(self, n_sample: Optional[int]=None) -> np.ndarray:
+        kin_solver = tinyfk.RobotModel(self.urdf_path)
+        joint_ids = kin_solver.get_joint_ids(self.joint_names)
+        joint_limits = kin_solver.get_joint_limits(joint_ids)
+
+        for i in range(len(joint_limits)):
+            if joint_limits[i][0] == None:
+                joint_limits[i][0] = -math.pi * 1.5
+                joint_limits[i][1] = math.pi * 1.5
+        lowers = np.array([limit[0] for limit in joint_limits])
+        uppers = np.array([limit[1] for limit in joint_limits])
+
+        if n_sample is None:
+            n_sample = 8 ** self.n_joint
+        points = np.random.random((n_sample, self.n_joint)) * (uppers - lowers) + lowers
+        return points
 
 class KukaSpec(RobotSpecBase):
     @property

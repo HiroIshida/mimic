@@ -8,6 +8,7 @@ from mimic.models import KinemaNet, DenseConfig, KinemaNetConfig
 from mimic.trainer import train
 from mimic.trainer import Config
 from mimic.trainer import TrainCache
+from mimic.robot import KukaSpec
 from mimic.scripts.utils import split_with_ratio
 from mimic.scripts.utils import create_default_logger
 
@@ -25,18 +26,15 @@ if __name__=='__main__':
     n_sample = None if args.m == -1 else args.m
 
     if robot_name == 'kuka':
-        pbdata_path = pybullet_data.getDataPath()
-        urdf_path = os.path.join(pbdata_path, 'kuka_iiwa', 'model.urdf')
-        joint_names = ['lbr_iiwa_joint_{}'.format(idx+1) for idx in range(7)]
-        link_names = ['lbr_iiwa_link_7']
+        robot_spec = KukaSpec()
     else:
         raise Exception
 
     logger = create_default_logger(project_name, 'kinemanet_{}'.format(robot_name))
 
-    dataset = KinematicsDataset.from_urdf(urdf_path, joint_names, link_names, n_sample=n_sample)
+    dataset = KinematicsDataset.from_urdf(robot_spec, n_sample=n_sample)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = KinemaNet(device, dataset.meta_data, KinemaNetConfig(200, 6))
+    model = KinemaNet(device, dataset.robot_spec, KinemaNetConfig(200, 6))
 
     ds_train, ds_valid = split_with_ratio(dataset)
     tcache = TrainCache[KinemaNet](project_name, KinemaNet, cache_postfix='_' + robot_name)

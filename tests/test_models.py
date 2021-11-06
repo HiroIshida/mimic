@@ -119,7 +119,7 @@ def test_deprecateddenseprop_pipeline(image_command_datachunk_with_encoder):
 
 def test_kinemanet_pipeline(kinematics_dataset):
     dataset = kinematics_dataset
-    model = KinemaNet(torch.device('cpu'), dataset.meta_data, KinemaNetConfig())
+    model = KinemaNet(torch.device('cpu'), dataset.robot_spec, KinemaNetConfig())
     pre, post = dataset[0]
     sample = (pre.unsqueeze(0), post.unsqueeze(0))
     ret = model.forward(pre.unsqueeze(0))

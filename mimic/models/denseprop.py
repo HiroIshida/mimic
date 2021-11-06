@@ -13,8 +13,8 @@ from torch.nn.modules import activation
 from mimic.models.common import _Model, NullConfig, _ModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import FirstOrderARDataset
-from mimic.dataset import KinematicsMetaData
 from mimic.dataset import KinematicsDataset
+from mimic.robot import RobotSpecBase
 
 @dataclass
 class DenseConfig(_ModelConfigBase):
@@ -158,19 +158,19 @@ class KinemaNetConfig(_ModelConfigBase):
     activation: Optional[str] = None
 
 class KinemaNet(_Model[KinemaNetConfig]):
-    meta_data: KinematicsMetaData
+    robot_spec: RobotSpecBase
     n_input: int
     n_output: int
     layer: nn.Module
     def __init__(self, 
             device: device, 
-            meta_data: KinematicsMetaData,
+            robot_spec: RobotSpecBase,
             config: KinemaNetConfig):
         assert isinstance(config, KinemaNetConfig)
         _Model.__init__(self, device, config)
-        self.meta_data = meta_data
-        self.n_input = meta_data.input_dim
-        self.n_output = meta_data.output_dim
+        self.robot_spec = robot_spec
+        self.n_input = robot_spec.n_joint
+        self.n_output = robot_spec.n_out
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
