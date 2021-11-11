@@ -9,8 +9,9 @@ import torch
 from torch._C import device
 import torch.nn as nn
 from torch.nn.modules import activation
+from mimic.datatype import FeatureInfo
 
-from mimic.models.common import _Model, NullConfig, _ModelConfigBase
+from mimic.models.common import _Model, _PropModel, NullConfig, _ModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import KinematicsDataset
@@ -61,13 +62,14 @@ def create_linear_layers(n_input, n_output, n_hidden, n_layer,
     return layers
 
 DenseConfigT = TypeVar('DenseConfigT', bound=_ModelConfigBase)
-class DenseBase(_Model[DenseConfigT]):
+class DenseBase(_PropModel[DenseConfigT]):
     # TODO shold be part of DenseProp class
     layer: nn.Module
     def __init__(self, 
             device: device, 
-            config: DenseConfigT):
-        _Model.__init__(self, device, config)
+            config: DenseConfigT,
+            finfo: Optional[FeatureInfo]):
+        _PropModel.__init__(self, device, config, finfo)
         self._create_layers()
 
     @property
@@ -122,14 +124,14 @@ class DenseBase(_Model[DenseConfigT]):
 
 
 class DenseProp(DenseBase):
-    def __init__(self, device: device, config: DenseConfig):
+    def __init__(self, device: device, config: DenseConfig, finfo: FeatureInfo=None):
         assert isinstance(config, DenseConfig)
-        super().__init__(device, config)
+        super().__init__(device, config, finfo)
 
 class DeprecatedDenseProp(DenseBase):
-    def __init__(self, device: device, config: DenseConfig):
+    def __init__(self, device: device, config: DenseConfig, finfo: FeatureInfo=None):
         assert isinstance(config, DenseConfig)
-        super().__init__(device, config)
+        super().__init__(device, config, finfo)
 
     # override!!
     def forward(self, sample_pre: torch.Tensor):
@@ -147,9 +149,9 @@ class DeprecatedDenseProp(DenseBase):
         return LossDict({'prediction': loss_value})
 
 class BiasedDenseProp(DenseBase):
-    def __init__(self, device: device, config: BiasedDenseConfig):
+    def __init__(self, device: device, config: BiasedDenseConfig, finfo: FeatureInfo=None):
         assert isinstance(config, BiasedDenseConfig)
-        super().__init__(device, config)
+        super().__init__(device, config, finfo)
 
 @dataclass
 class KinemaNetConfig(_ModelConfigBase):
