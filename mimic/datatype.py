@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import copy
+from dataclasses import dataclass
 import torch
 import torch.nn as nn
 import torchvision
@@ -22,6 +23,16 @@ from mimic.file import load_pickled_data
 from mimic.robot import RobotSpecBase
 from mimic.primitives import AbstractEncoder
 
+# TODO
+# class is not flexible, meaning that when a user want to add another 
+# property such as audio feature, user how to modiry the library.
+# So, the class idearly should be a dict.
+# However, for my own use class is sufficient, because I am the god.
+@dataclass
+class FeatureInfo:
+    n_img_feature: Optional[int]=None
+    n_cmd_feature: Optional[int]=None
+    n_aug_feature: Optional[int]=None
 
 SeqT = TypeVar('SeqT', bound='AbstractDataSequence')
 class AbstractDataSequence(ABC):
@@ -31,6 +42,9 @@ class AbstractDataSequence(ABC):
 
     @abstractmethod
     def to_featureseq(self) -> torch.Tensor: ...
+
+    @abstractmethod
+    def edit_feature_info(self, fi: FeatureInfo) -> None: ...
 
     def get_segment(self: SeqT, slicer: Any) -> SeqT:
         # TODO(HiroIshida) too dirty. there must be a sane way...
@@ -64,6 +78,13 @@ class AbstractDataChunk(ABC, Generic[DataT]):
             seqtorch_list.append(seqtorch)
         return seqtorch_list
 
+    def get_feature_info(self) -> FeatureInfo:
+        seqs = self.seqs_list[0]
+        fi = FeatureInfo()
+        for seq in seqs:
+            seq.edit_feature_info(fi)
+        return fi
+
     @classmethod
     def load(cls: Type[ChunkT], project_name: str) -> ChunkT:
         data_list = load_pickled_data(project_name, cls)
@@ -90,8 +111,13 @@ class VectorDataSequence(AbstractDataSequence):
     def to_featureseq(self):
         return torch.from_numpy(self.data).float()
 
-class CommandDataSequence(VectorDataSequence): ...
-class AugDataSequence(VectorDataSequence): ...
+class CommandDataSequence(VectorDataSequence):
+    def edit_feature_info(self, fi: FeatureInfo):
+        fi.n_cmd_feature = self.data.shape[1]
+
+class AugDataSequence(VectorDataSequence):
+    def edit_feature_info(self, fi: FeatureInfo):
+        fi.n_aug_feature = self.data.shape[1]
 
 _CommandDataSequence = Tuple[CommandDataSequence]
 class CommandDataChunk(AbstractDataChunk[_CommandDataSequence]):
@@ -114,6 +140,12 @@ class ImageDataSequence(AbstractDataSequence):
         encoder = self.encoder_holder['encoder']
         out = encoder(data_torch).detach().clone() if encoder else data_torch
         return out
+
+    def edit_feature_info(self, fi: FeatureInfo):
+        fi.n_img_feature = None
+        encoder = self.encoder_holder['encoder']
+        if encoder is not None:
+            fi.n_img_feature = encoder.n_output
 
 class ImageDataChunkBase:
     encoder_holder : Dict[str, Optional[AbstractEncoder]]

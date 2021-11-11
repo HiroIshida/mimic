@@ -57,6 +57,11 @@ def image_datachunk_with_encoder():
         chunk.push_epoch(imgseq)
     imgseq = np.random.randn(n_seq-2, n_pixel, n_pixel, n_channel) # to test autoregressive
     chunk.push_epoch(imgseq)
+
+    fi = chunk.get_feature_info()
+    assert fi.n_img_feature == 16
+    assert fi.n_cmd_feature == None
+    assert fi.n_aug_feature == None
     return chunk
 
 @pytest.fixture(scope='session')
@@ -70,6 +75,12 @@ def image_command_datachunk_with_encoder():
         imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
         cmdseq = np.random.randn(n_seq, 7)
         chunk.push_epoch((imgseq, cmdseq))
+
+    fi = chunk.get_feature_info()
+    assert fi.n_img_feature == 16
+    assert fi.n_cmd_feature == 7
+    assert fi.n_aug_feature == None
+
     return chunk
 
 def test_dump_load(cmd_datachunk):
@@ -113,6 +124,12 @@ def test_image_command_datachunk_with_encoder_pipeline(image_command_datachunk_w
 def auged_image_command_datachunk(image_command_datachunk_with_encoder):
     chunk_other: ImageCommandDataChunk = image_command_datachunk_with_encoder
     chunk = AugedImageCommandDataChunk.from_imgcmd_chunk(chunk_other, KukaSpec())
+
+    fi = chunk.get_feature_info()
+    assert fi.n_img_feature == 16
+    assert fi.n_cmd_feature == 7
+    assert fi.n_aug_feature == KukaSpec().n_out
+
     return chunk
 
 def test_auged_image_command_datachunk_pipeline(auged_image_command_datachunk):
