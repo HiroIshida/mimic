@@ -9,6 +9,7 @@ import torch
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.models import BiasedLSTM
+from mimic.models import AugedLSTM
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 from mimic.models import DeprecatedDenseProp
@@ -24,6 +25,7 @@ def create_predictor_from_name(project_name: str, model_name: str) -> \
     dispatch_dict = {
             'lstm': LSTM,
             'biased_lstm': BiasedLSTM,
+            'auged_lstm': AugedLSTM,
             'dense_prop': DenseProp,
             'biased_dense_prop': BiasedDenseProp,
             'depre_dense_prop': DeprecatedDenseProp,
