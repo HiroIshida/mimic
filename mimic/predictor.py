@@ -39,6 +39,8 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
     propagator: PropT
     states: List[torch.Tensor]
     def __init__(self, propagator: PropT):
+        assert propagator.has_feature_info(), \
+                'to use predictor you must set FeatureInfo to propagator model'
         self.propagator = propagator
         self.states = []
 
