@@ -19,6 +19,7 @@ from mimic.models import ImageAutoEncoder
 from mimic.models import LSTMBase
 from mimic.models import LSTM
 from mimic.models import BiasedLSTM
+from mimic.models import AugedLSTM
 from mimic.models import DenseBase
 from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
@@ -26,7 +27,7 @@ from mimic.models import DeprecatedDenseProp
 from mimic.compat import is_compatible
 from abc import ABC, abstractmethod
 
-FBPropTypes = Union[LSTM, DenseProp, DeprecatedDenseProp]
+FBPropTypes = Union[LSTM, AugedLSTM, DenseProp, DeprecatedDenseProp]
 FFPropTypes = Union[BiasedLSTM, BiasedDenseProp]
 PropTypes = Union[FBPropTypes, FFPropTypes]
 
@@ -39,6 +40,8 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
     propagator: PropT
     states: List[torch.Tensor]
     def __init__(self, propagator: PropT):
+        assert propagator.has_feature_info(), \
+                'to use predictor you must set FeatureInfo to propagator model'
         self.propagator = propagator
         self.states = []
 
@@ -53,7 +56,38 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
             feeds.append(out)
             preds.append(out)
         raw_preds = feeds if with_feeds else preds
-        return [self._strip_flag_if_necessary(e) for e in raw_preds]
+        return [self._strip_if_necessary(e) for e in raw_preds]
+
+    def _is_with_aug(self): 
+        return (self.propagator.finfo.n_aug_feature != None) and (self.propagator.finfo.n_cmd_feature != None)
+
+    def _attatch_if_ncecessary(self, vec: torch.Tensor) -> torch.Tensor:
+        return self._attach_flag_if_necessary(self._attach_aug_if_necessary(vec))
+
+    def _strip_if_necessary(self, vec: torch.Tensor) -> torch.Tensor:
+        return self._strip_aug_if_necessary(self._strip_flag_if_necessary(vec))
+
+    def _attach_aug_if_necessary(self, vec_original: torch.Tensor) -> torch.Tensor:
+        if not self._is_with_aug():
+            return vec_original
+
+        finfo = self.propagator.finfo
+        vec = vec_original[-finfo.n_cmd_feature:].unsqueeze(dim=0) # type: ignore
+
+        propagator: AugedLSTM = self.propagator # type: ignore
+        robot_spec = propagator.config.robot_spec
+        fksolver = robot_spec.create_fksolver()
+
+        pose = fksolver(vec)
+        pose_torch = torch.from_numpy(pose).float().squeeze()
+        vec = torch.hstack((vec_original, pose_torch))
+        return vec
+
+    def _strip_aug_if_necessary(self, vec: torch.Tensor) -> torch.Tensor:
+        if not self._is_with_aug():
+            return vec
+        finfo = self.propagator.finfo
+        return vec[:-finfo.n_aug_feature] # type: ignore
 
     def _is_with_flag(self):
         if isinstance(self.propagator, DeprecatedDenseProp): return False
@@ -75,7 +109,7 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
             vec[-1] = _continue_flag
 
     def _feed(self, state: torch.Tensor) -> None:
-        state_maybe_with_flag = self._attach_flag_if_necessary(state)
+        state_maybe_with_flag = self._attatch_if_ncecessary(state)
         self.states.append(state_maybe_with_flag)
 
     @abstractmethod
@@ -193,7 +227,7 @@ class FFImageCommandPredictor(AbstractPredictor[MaybeNoneImageCommandPair, FFPro
             raw_preds = [s[self.auto_encoder.n_bottleneck:] for s in feeds]
         else:
             raw_preds = preds
-        return [self._strip_flag_if_necessary(e) for e in raw_preds]
+        return [self._strip_if_necessary(e) for e in raw_preds]
 
 def get_model_specific_state_slice(autoencoder: ImageAutoEncoder, propagator: PropTypes) -> slice:
     idx_start: Optional[int] = autoencoder.n_bottleneck

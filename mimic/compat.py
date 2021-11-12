@@ -8,6 +8,7 @@ from mimic.models import DenseProp
 from mimic.models import BiasedDenseProp
 from mimic.models import DeprecatedDenseProp
 from mimic.models import KinemaNet
+from mimic.models import AugedLSTM
 
 from mimic.dataset import _DatasetFromChunk
 from mimic.dataset import ReconstructionDataset
@@ -15,6 +16,7 @@ from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
+from mimic.dataset import AugedAutoRegressiveDataset
 from mimic.dataset import KinematicsDataset
 
 import typing
@@ -35,6 +37,7 @@ _DatasetT = Union[Type[_DatasetFromChunk], Type[KinematicsDataset]]
 _dataset_compat_table : Dict[str, _DatasetT] = {
         ImageAutoEncoder.__name__: ReconstructionDataset,
         LSTM.__name__: AutoRegressiveDataset,
+        AugedLSTM.__name__: AugedAutoRegressiveDataset,
         BiasedLSTM.__name__: BiasedAutoRegressiveDataset,
         DenseProp.__name__: AutoRegressiveDataset,
         BiasedDenseProp.__name__: BiasedAutoRegressiveDataset,

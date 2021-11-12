@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import torch
-import pybullet_data
 from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.dataset import ReconstructionDataset
@@ -12,6 +11,7 @@ from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
 from mimic.dataset import KinematicsDataset
+from mimic.robot import KukaSpec
 import pytest
 
 from test_datatypes import cmd_datachunk
@@ -19,6 +19,7 @@ from test_datatypes import image_datachunk
 from test_datatypes import _img_chunk_uneven_n
 from test_datatypes import image_datachunk_with_encoder
 from test_datatypes import image_command_datachunk_with_encoder
+from test_datatypes import auged_image_command_datachunk
 
 def test_reconstruction_dataset_pipeline(image_datachunk):
     dataset = ReconstructionDataset.from_chunk(image_datachunk)
@@ -57,6 +58,13 @@ def test_autoregressive_dataset_pipeline2(cmd_datachunk):
         assert list(seq.shape) == [20, 8]
     assert len(dataset) == 10
 
+def test_auged_autoregressive_dataset_pipeline(auged_image_command_datachunk):
+    dataset = AutoRegressiveDataset.from_chunk(auged_image_command_datachunk)
+    assert len(dataset) == 10
+    sample_input, sample_output = dataset[0]
+    assert list(sample_input.shape) == [100 - 1, 16 + 7 + 6 + 1]
+    assert list(sample_output.shape) == [100 - 1, 16 + 7 + 6 + 1]
+
 def test_biased_autoregressive_dataset_pipeline(image_command_datachunk_with_encoder):
     chunk = image_command_datachunk_with_encoder
     dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
@@ -91,11 +99,11 @@ def test_BiasedFirstOrderARDataset_pipeline(image_command_datachunk_with_encoder
 
 @pytest.fixture(scope='session')
 def kinematics_dataset():
-    pbdata_path = pybullet_data.getDataPath()
-    urdf_path = os.path.join(pbdata_path, 'kuka_iiwa', 'model.urdf')
-    joint_names = ['lbr_iiwa_joint_{}'.format(idx+1) for idx in range(7)]
-    link_names = ['lbr_iiwa_link_6', 'lbr_iiwa_link_7']
-    dataset = KinematicsDataset.from_urdf(urdf_path, joint_names, link_names, n_sample=5)
+    class KukaMultiSpec(KukaSpec):
+        @property
+        def featured_link_names(self): return ['lbr_iiwa_link_6', 'lbr_iiwa_link_7']
+
+    dataset = KinematicsDataset.from_urdf(KukaMultiSpec(), n_sample=5)
     return dataset
 
 def test_kinemanet_pipeline(kinematics_dataset):

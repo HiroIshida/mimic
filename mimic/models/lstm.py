@@ -10,7 +10,9 @@ import torch
 from torch._C import device
 import torch.nn as nn
 
-from mimic.models.common import _Model, NullConfig, _ModelConfigBase
+from mimic.datatype import FeatureInfo
+from mimic.robot import RobotSpecBase
+from mimic.models.common import _PropModel, NullConfig, _ModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import AutoRegressiveDataset
 
@@ -37,13 +39,14 @@ class BiasedLSTMConfig(_ModelConfigBase):
 class AugedLSTMConfig(_ModelConfigBase):
     n_state: int
     n_aug: int
+    robot_spec: RobotSpecBase
     n_hidden: int = 200
     n_layer: int = 2
     @property
     def n_bias(self) -> int: return 0
 
 LSTMConfigT = TypeVar('LSTMConfigT', bound=_ModelConfigBase)
-class LSTMBase(_Model[LSTMConfigT]):
+class LSTMBase(_PropModel[LSTMConfigT]):
     """
     Note that n_state 
     """
@@ -62,8 +65,8 @@ class LSTMBase(_Model[LSTMConfigT]):
     @property
     def n_layer(self) -> int: return self.config.n_layer # type: ignore
 
-    def __init__(self, device: device, config: LSTMConfigT):
-        _Model.__init__(self, device, config)
+    def __init__(self, device: device, config: LSTMConfigT, finfo: Optional[FeatureInfo]):
+        _PropModel.__init__(self, device, config, finfo)
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
@@ -89,8 +92,8 @@ class LSTMBase(_Model[LSTMConfigT]):
         n_output_expect = self.n_state + self.n_aug
         assert n_batch == n_batch2 
         assert n_seq == n_seq2
-        assert n_input == self.n_state + self.n_bias, 'expect: {}, got: {}'.format(n_input_expect, n_input)
-        assert n_output == self.n_state, 'expect: {}, got: {}'.format(n_output_expect, n_output)
+        assert n_input == n_input_expect, 'expect: {}, got: {}'.format(n_input_expect, n_input)
+        assert n_output == n_output_expect, 'expect: {}, got: {}'.format(n_output_expect, n_output)
 
         if state_slicer is None:
             state_slicer = slice(None)
@@ -101,16 +104,16 @@ class LSTMBase(_Model[LSTMConfigT]):
         return LossDict({'prediction': loss_value})
 
 class LSTM(LSTMBase[LSTMConfig]):
-    def __init__(self, device: device, config: LSTMConfig):
+    def __init__(self, device: device, config: LSTMConfig, finfo: FeatureInfo=None):
         assert isinstance(config, LSTMConfig)
-        super().__init__(device, config)
+        super().__init__(device, config, finfo)
 
 class BiasedLSTM(LSTMBase):
-    def __init__(self, device: device, config: BiasedLSTMConfig):
+    def __init__(self, device: device, config: BiasedLSTMConfig, finfo: FeatureInfo=None):
         assert isinstance(config, BiasedLSTMConfig)
-        super().__init__(device, config)
+        super().__init__(device, config, finfo)
 
 class AugedLSTM(LSTMBase):
-    def __init__(self, device: device, config: AugedLSTMConfig):
+    def __init__(self, device: device, config: AugedLSTMConfig, finfo: FeatureInfo=None):
         assert isinstance(config, AugedLSTMConfig)
-        super().__init__(device, config)
+        super().__init__(device, config, finfo)

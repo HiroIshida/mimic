@@ -14,6 +14,8 @@ from dataclasses import dataclass
 import pickle
 import hashlib
 
+from mimic.datatype import FeatureInfo
+
 LossDict = NewType('LossDict', Dict[str, torch.Tensor])
 LossDictFloat = NewType('LossDictFloat', Dict[str, float])
 
@@ -70,3 +72,11 @@ class _Model(nn.Module, ABC, Generic[MConfigT]):
     @abstractmethod
     def _create_layers(self, **kwargs) -> None: ...
 
+class _PropModel(_Model[MConfigT]):
+    finfo: Optional[FeatureInfo]
+    def __init__(self, device: torch.device, config: MConfigT, finfo: Optional[FeatureInfo]=None):
+        super().__init__(device, config)
+        self.finfo = finfo
+
+    def has_feature_info(self) -> bool:
+        return self.finfo != None

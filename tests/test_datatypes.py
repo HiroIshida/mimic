@@ -8,7 +8,9 @@ from mimic.datatype import CommandDataSequence
 from mimic.datatype import CommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.datatype import ImageCommandDataChunk
+from mimic.datatype import AugedImageCommandDataChunk
 from mimic.models import ImageAutoEncoder
+from mimic.robot import KukaSpec
 
 def test_dataseq_slice():
     seq = CommandDataSequence(np.zeros((10, 3)))
@@ -55,6 +57,11 @@ def image_datachunk_with_encoder():
         chunk.push_epoch(imgseq)
     imgseq = np.random.randn(n_seq-2, n_pixel, n_pixel, n_channel) # to test autoregressive
     chunk.push_epoch(imgseq)
+
+    fi = chunk.get_feature_info()
+    assert fi.n_img_feature == 16
+    assert fi.n_cmd_feature == None
+    assert fi.n_aug_feature == None
     return chunk
 
 @pytest.fixture(scope='session')
@@ -68,6 +75,12 @@ def image_command_datachunk_with_encoder():
         imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
         cmdseq = np.random.randn(n_seq, 7)
         chunk.push_epoch((imgseq, cmdseq))
+
+    fi = chunk.get_feature_info()
+    assert fi.n_img_feature == 16
+    assert fi.n_cmd_feature == 7
+    assert fi.n_aug_feature == None
+
     return chunk
 
 def test_dump_load(cmd_datachunk):
@@ -106,3 +119,19 @@ def test_image_featureseq_list_generateion_pipeline(image_datachunk, image_datac
 def test_image_command_datachunk_with_encoder_pipeline(image_command_datachunk_with_encoder):
     fslist = image_command_datachunk_with_encoder.to_featureseq_list()
     assert list(fslist[0].size()) == [100, 16 + 7]
+
+@pytest.fixture(scope='session')
+def auged_image_command_datachunk(image_command_datachunk_with_encoder):
+    chunk_other: ImageCommandDataChunk = image_command_datachunk_with_encoder
+    chunk = AugedImageCommandDataChunk.from_imgcmd_chunk(chunk_other, KukaSpec())
+
+    fi = chunk.get_feature_info()
+    assert fi.n_img_feature == 16
+    assert fi.n_cmd_feature == 7
+    assert fi.n_aug_feature == KukaSpec().n_out
+
+    return chunk
+
+def test_auged_image_command_datachunk_pipeline(auged_image_command_datachunk):
+    fslist = auged_image_command_datachunk.to_featureseq_list()
+    assert list(fslist[0].size()) == [100, 16 + 7 + 6]

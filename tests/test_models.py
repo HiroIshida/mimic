@@ -3,10 +3,11 @@ import torch
 
 from mimic.models import ImageAutoEncoder
 from mimic.dataset import AutoRegressiveDataset
+from mimic.dataset import AugedAutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
-from mimic.models import LSTM, LSTMConfig, BiasedLSTMConfig
-from mimic.models import BiasedLSTM
+from mimic.models import LSTM, LSTMConfig, BiasedLSTMConfig, AugedLSTMConfig
+from mimic.models import BiasedLSTM, AugedLSTM
 from mimic.models import DenseProp, DenseConfig, BiasedDenseConfig, KinemaNetConfig
 from mimic.models import BiasedDenseProp
 from mimic.models import DeprecatedDenseProp
@@ -15,6 +16,7 @@ from mimic.models.denseprop import KinemaNet
 from test_datatypes import cmd_datachunk
 from test_datatypes import image_datachunk_with_encoder
 from test_datatypes import image_command_datachunk_with_encoder
+from test_datatypes import auged_image_command_datachunk
 from test_dataset import kinematics_dataset
 
 def test_image_auto_encoder():
@@ -37,6 +39,18 @@ def test_lstm_with_image(image_datachunk_with_encoder):
     dataset = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     n_seq, n_state = dataset.data[0].shape 
     model = LSTM(torch.device('cpu'), LSTMConfig(n_state))
+    sample_ = dataset[0]
+    assert isinstance(sample_, tuple)
+    sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
+    loss = model.loss(sample)
+    assert len(list(loss.values())) == 1
+    assert float(loss['prediction'].item()) > 0.0 # check if positive scalar 
+
+    loss_sliced = model.loss(sample, slice(5, None))
+
+def test_auged_lstm_with_image(auged_image_command_datachunk): 
+    dataset = AugedAutoRegressiveDataset.from_chunk(auged_image_command_datachunk)
+    model = AugedLSTM(torch.device('cpu'), AugedLSTMConfig(dataset.n_state, dataset.n_aug, dataset.robot_spec))
     sample_ = dataset[0]
     assert isinstance(sample_, tuple)
     sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
@@ -105,7 +119,7 @@ def test_deprecateddenseprop_pipeline(image_command_datachunk_with_encoder):
 
 def test_kinemanet_pipeline(kinematics_dataset):
     dataset = kinematics_dataset
-    model = KinemaNet(torch.device('cpu'), dataset.meta_data, KinemaNetConfig())
+    model = KinemaNet(torch.device('cpu'), dataset.robot_spec, KinemaNetConfig())
     pre, post = dataset[0]
     sample = (pre.unsqueeze(0), post.unsqueeze(0))
     ret = model.forward(pre.unsqueeze(0))

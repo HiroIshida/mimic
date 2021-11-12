@@ -1,4 +1,5 @@
 from mimic import file
+from mimic import robot
 from mimic import primitives 
 from mimic import datatype
 from mimic import dataset

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import copy
+from dataclasses import dataclass
 import torch
 import torch.nn as nn
 import torchvision
@@ -19,8 +20,19 @@ from torch.functional import Tensor
 
 from mimic.file import dump_pickled_data
 from mimic.file import load_pickled_data
+from mimic.robot import RobotSpecBase
 from mimic.primitives import AbstractEncoder
 
+# TODO
+# class is not flexible, meaning that when a user want to add another 
+# property such as audio feature, user how to modiry the library.
+# So, the class idearly should be a dict.
+# However, for my own use class is sufficient, because I am the god.
+@dataclass
+class FeatureInfo:
+    n_img_feature: Optional[int]=None
+    n_cmd_feature: Optional[int]=None
+    n_aug_feature: Optional[int]=None
 
 SeqT = TypeVar('SeqT', bound='AbstractDataSequence')
 class AbstractDataSequence(ABC):
@@ -30,6 +42,9 @@ class AbstractDataSequence(ABC):
 
     @abstractmethod
     def to_featureseq(self) -> torch.Tensor: ...
+
+    @abstractmethod
+    def edit_feature_info(self, fi: FeatureInfo) -> None: ...
 
     def get_segment(self: SeqT, slicer: Any) -> SeqT:
         # TODO(HiroIshida) too dirty. there must be a sane way...
@@ -63,6 +78,13 @@ class AbstractDataChunk(ABC, Generic[DataT]):
             seqtorch_list.append(seqtorch)
         return seqtorch_list
 
+    def get_feature_info(self) -> FeatureInfo:
+        seqs = self.seqs_list[0]
+        fi = FeatureInfo()
+        for seq in seqs:
+            seq.edit_feature_info(fi)
+        return fi
+
     @classmethod
     def load(cls: Type[ChunkT], project_name: str) -> ChunkT:
         data_list = load_pickled_data(project_name, cls)
@@ -85,9 +107,17 @@ class AbstractDataChunk(ABC, Generic[DataT]):
     def __getitem__(self, index: int) -> DataT:
         return self.seqs_list[index]
 
-class CommandDataSequence(AbstractDataSequence):
+class VectorDataSequence(AbstractDataSequence):
     def to_featureseq(self):
         return torch.from_numpy(self.data).float()
+
+class CommandDataSequence(VectorDataSequence):
+    def edit_feature_info(self, fi: FeatureInfo):
+        fi.n_cmd_feature = self.data.shape[1]
+
+class AugDataSequence(VectorDataSequence):
+    def edit_feature_info(self, fi: FeatureInfo):
+        fi.n_aug_feature = self.data.shape[1]
 
 _CommandDataSequence = Tuple[CommandDataSequence]
 class CommandDataChunk(AbstractDataChunk[_CommandDataSequence]):
@@ -110,6 +140,12 @@ class ImageDataSequence(AbstractDataSequence):
         encoder = self.encoder_holder['encoder']
         out = encoder(data_torch).detach().clone() if encoder else data_torch
         return out
+
+    def edit_feature_info(self, fi: FeatureInfo):
+        fi.n_img_feature = None
+        encoder = self.encoder_holder['encoder']
+        if encoder is not None:
+            fi.n_img_feature = encoder.n_output
 
 class ImageDataChunkBase:
     encoder_holder : Dict[str, Optional[AbstractEncoder]]
@@ -164,3 +200,42 @@ class ImageCommandDataChunk(AbstractDataChunk[_ImageCommandDataSequence], ImageD
         img_data_seq = ImageDataSequence(imgseq, self.encoder_holder)
         cmd_data_seq = CommandDataSequence(cmdseq)
         super()._push_epoch((img_data_seq, cmd_data_seq))
+
+_AugedImageCommandDataSequence = Tuple[ImageDataSequence, CommandDataSequence, AugDataSequence]
+class AugedImageCommandDataChunk(AbstractDataChunk[_AugedImageCommandDataSequence], ImageDataChunkBase):
+    robot_spec: RobotSpecBase
+    def __init__(self, robot_spec: RobotSpecBase, encoder: Optional[AbstractEncoder] = None):
+        super().__init__([]) # TODO enable optional seq input??
+        ImageDataChunkBase.__init__(self, encoder)
+        self.robot_spec = robot_spec
+
+    def push_epoch(self, auged_imgcmd_seq: Tuple[np.ndarray, np.ndarray, np.ndarray]) -> None:
+        """
+        auged_imgcmd_seq with (img, cmd, aug) order
+        """
+        imgseq, cmdseq, augseq = auged_imgcmd_seq
+        assert imgseq.ndim == 4 and cmdseq.ndim == 2
+        img_data_seq = ImageDataSequence(imgseq, self.encoder_holder)
+        cmd_data_seq = CommandDataSequence(cmdseq)
+        aug_data_seq = AugDataSequence(augseq)
+        super()._push_epoch((img_data_seq, cmd_data_seq, aug_data_seq))
+
+    @property
+    def n_aug(self) -> int: 
+        img_seq, cmd_seq, aug_seq = self.seqs_list[0]
+        return aug_seq.data.shape[1]
+
+    @classmethod
+    def from_imgcmd_chunk(cls, chunk_other: ImageCommandDataChunk, 
+            robot_spec: RobotSpecBase) -> 'AugedImageCommandDataChunk':
+        img_seq, cmd_seq = chunk_other.seqs_list[0]
+        _, n_dof = cmd_seq.data.shape
+        assert n_dof == len(robot_spec.joint_names)
+
+        fksolver = robot_spec.create_fksolver()
+
+        obj = cls(robot_spec, chunk_other.encoder_holder['encoder'])
+        for img_seq, cmd_seq in chunk_other.seqs_list:
+            coords = fksolver(cmd_seq.data)
+            obj.push_epoch((img_seq.data, cmd_seq.data, coords))
+        return obj
