@@ -7,6 +7,7 @@ import torch
 from mimic.trainer import Config
 from mimic.trainer import TrainCache
 from mimic.trainer import train
+from mimic.datatype import FeatureInfo
 from mimic.datatype import AbstractDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.datatype import ImageCommandDataChunk
@@ -48,16 +49,16 @@ def train_propagator(project_name: str, model_type, config: Config) -> None:
 
     if model_type is LSTM:
         dataset = AutoRegressiveDataset.from_chunk(chunk)
-        prop_model = LSTM(device, LSTMConfig(dataset.n_state))
+        prop_model = LSTM(device, LSTMConfig(dataset.n_state), chunk.get_feature_info())
     elif model_type is BiasedLSTM:
         dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
-        prop_model = BiasedLSTM(device, BiasedLSTMConfig(dataset.n_state, dataset.n_bias))
+        prop_model = BiasedLSTM(device, BiasedLSTMConfig(dataset.n_state, dataset.n_bias), chunk.get_feature_info())
     elif model_type is DenseProp:
         dataset = AutoRegressiveDataset.from_chunk(chunk)
-        prop_model = DenseProp(device, DenseConfig(dataset.n_state))
+        prop_model = DenseProp(device, DenseConfig(dataset.n_state), chunk.get_feature_info())
     elif model_type is BiasedDenseProp:
         dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
-        prop_model = BiasedDenseProp(device, BiasedDenseConfig(dataset.n_state, dataset.n_bias))
+        prop_model = BiasedDenseProp(device, BiasedDenseConfig(dataset.n_state, dataset.n_bias), chunk.get_feature_info())
     else:
         raise RuntimeError
     tcache = TrainCache[model_type](project_name, model_type)
