@@ -8,6 +8,8 @@ from mimic.models import DenseBase, DenseConfig, BiasedDenseConfig
 from mimic.models import DenseProp
 from mimic.models import DeprecatedDenseProp
 from mimic.models import BiasedDenseProp
+from mimic.models import AugedLSTM, AugedLSTMConfig
+from mimic.robot import KukaSpec
 from mimic.predictor import SimplePredictor
 from mimic.predictor import evaluate_command_prediction_error_old
 from mimic.predictor import evaluate_command_prediction_error
@@ -85,7 +87,10 @@ def test_ImageCommandPredictor():
     denseprop = DenseProp(torch.device('cpu'), DenseConfig(16 + 7 + 1), finfo)
     depredense = DeprecatedDenseProp(torch.device('cpu'), DenseConfig(16 + 7), finfo)
 
-    for propagator in [lstm, denseprop, depredense]:
+    finfo = FeatureInfo(n_img_feature=16, n_cmd_feature=7, n_aug_feature=6)
+    auged_lstm = AugedLSTM(torch.device('cpu'), AugedLSTMConfig(7 + 16 + 1, 6, KukaSpec()), finfo)
+
+    for propagator in [lstm, denseprop, depredense, auged_lstm]:
         print('testing : {}'.format(propagator.__class__.__name__))
         predictor = ImageCommandPredictor(propagator, ae)
 
@@ -94,9 +99,11 @@ def test_ImageCommandPredictor():
             cmd = np.zeros(7)
             predictor.feed((img, cmd))
 
-        if not isinstance(propagator, (DeprecatedDenseProp)):
+        if isinstance(propagator, (AugedLSTM)):
+            assert list(predictor.states[0].shape) == [16 + 7 + 6 + 1] # flag must be attached
+        if isinstance(propagator, (LSTM, DenseProp)):
             assert list(predictor.states[0].shape) == [16 + 7 + 1] # flag must be attached
-        else:
+        if isinstance(propagator, (DeprecatedDenseProp)):
             assert list(predictor.states[0].shape) == [16 + 7] # flag must be attached
 
         imgs, cmds = zip(*predictor.predict(5))
@@ -115,6 +122,7 @@ def test_FFImageCommandPredictor():
     predictor2 = FFImageCommandPredictor(prop2, ae)
 
     for predictor in [predictor1, predictor2]:
+        print('testing : {}'.format(predictor.propagator.__class__.__name__))
         assert predictor.img_torch_one_shot is None
         for _ in range(10):
             img = np.zeros((n_pixel, n_pixel, n_channel))
