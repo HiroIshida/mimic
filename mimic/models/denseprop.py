@@ -128,10 +128,16 @@ class DenseProp(DenseBase):
         assert isinstance(config, DenseConfig)
         super().__init__(device, config, finfo)
 
+    @classmethod
+    def compat_modelconfig(cls): return DenseConfig
+
 class DeprecatedDenseProp(DenseBase):
     def __init__(self, device: device, config: DenseConfig, finfo: FeatureInfo=None):
         assert isinstance(config, DenseConfig)
         super().__init__(device, config, finfo)
+
+    @classmethod
+    def compat_modelconfig(cls): return DeprecatedDenseConfig
 
     # override!!
     def forward(self, sample_pre: torch.Tensor):
@@ -152,6 +158,9 @@ class BiasedDenseProp(DenseBase):
     def __init__(self, device: device, config: BiasedDenseConfig, finfo: FeatureInfo=None):
         assert isinstance(config, BiasedDenseConfig)
         super().__init__(device, config, finfo)
+
+    @classmethod
+    def compat_modelconfig(cls): return BiasedDenseConfig
 
 @dataclass
 class KinemaNetConfig(_ModelConfigBase):

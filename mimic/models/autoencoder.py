@@ -41,6 +41,8 @@ class AbstractEncoderDecoder(_Model[NullConfig], ABC):
         # TODO size is currently -1 tuple
         return DeepEncoder(self.encoder, (-1,), self.n_bottleneck)
 
+    def compat_modelconfig(cls): return NullConfig
+
 class ImageAutoEncoder(AbstractEncoderDecoder):
 
     def loss(self, sample : torch.Tensor) -> LossDict:

@@ -108,12 +108,21 @@ class LSTM(LSTMBase[LSTMConfig]):
         assert isinstance(config, LSTMConfig)
         super().__init__(device, config, finfo)
 
+    @classmethod
+    def compat_modelconfig(cls): return LSTMConfig
+
 class BiasedLSTM(LSTMBase):
     def __init__(self, device: device, config: BiasedLSTMConfig, finfo: FeatureInfo=None):
         assert isinstance(config, BiasedLSTMConfig)
         super().__init__(device, config, finfo)
 
+    @classmethod
+    def compat_modelconfig(cls): return BiasedLSTMConfig
+
 class AugedLSTM(LSTMBase):
     def __init__(self, device: device, config: AugedLSTMConfig, finfo: FeatureInfo=None):
         assert isinstance(config, AugedLSTMConfig)
-        super().__init__(device, config, finfo)
+        super().__init__(device, config)
+
+    @classmethod
+    def compat_modelconfig(cls): return AugedLSTMConfig

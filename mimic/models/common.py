@@ -71,6 +71,9 @@ class _Model(nn.Module, ABC, Generic[MConfigT]):
     config: MConfigT
     def __init__(self, device: torch.device, config: MConfigT):
         super().__init__()
+
+        assert isinstance(config, self.compat_modelconfig())
+
         self.device = device
         self.config = config
         logger.info('model name: {}'.format(self.__class__.__name__))
@@ -78,6 +81,9 @@ class _Model(nn.Module, ABC, Generic[MConfigT]):
         logger.info('model is initialized')
 
     def put_on_device(self): self.to(self.device)
+
+    @abstractclassmethod # python sucks...
+    def compat_modelconfig(cls) -> Type[MConfigT]: ...
 
     @property
     def hash_value(self) -> str: return self.config.hash_value
