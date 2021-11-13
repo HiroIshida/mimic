@@ -59,7 +59,7 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
         return [self._strip_if_necessary(e) for e in raw_preds]
 
     def _is_with_aug(self): 
-        return (self.propagator.finfo.n_aug_feature != None) and (self.propagator.finfo.n_cmd_feature != None)
+        return (self.propagator.finfo.n_aug_feature != 0) and (self.propagator.finfo.n_cmd_feature != 0)
 
     def _attatch_if_ncecessary(self, vec: torch.Tensor) -> torch.Tensor:
         return self._attach_flag_if_necessary(self._attach_aug_if_necessary(vec))

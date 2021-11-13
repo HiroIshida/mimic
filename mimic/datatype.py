@@ -30,9 +30,9 @@ from mimic.primitives import AbstractEncoder
 # However, for my own use class is sufficient, because I am the god.
 @dataclass
 class FeatureInfo:
-    n_img_feature: Optional[int]=None
-    n_cmd_feature: Optional[int]=None
-    n_aug_feature: Optional[int]=None
+    n_img_feature: int=0
+    n_cmd_feature: int=0
+    n_aug_feature: int=0
 
 SeqT = TypeVar('SeqT', bound='AbstractDataSequence')
 class AbstractDataSequence(ABC):
@@ -142,7 +142,7 @@ class ImageDataSequence(AbstractDataSequence):
         return out
 
     def edit_feature_info(self, fi: FeatureInfo):
-        fi.n_img_feature = None
+        fi.n_img_feature = 0
         encoder = self.encoder_holder['encoder']
         if encoder is not None:
             fi.n_img_feature = encoder.n_output
