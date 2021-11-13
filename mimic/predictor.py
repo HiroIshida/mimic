@@ -11,7 +11,7 @@ from typing import List
 from typing import TypeVar
 from typing import Generic
 from typing import NewType
-from mimic.datatype import CommandDataSequence, ImageCommandDataChunk
+from mimic.datatype import CommandDataSequence, ImageDataSequence, ImageCommandDataChunk
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import _DatasetFromChunk
 from mimic.dataset import _continue_flag
@@ -253,7 +253,14 @@ def evaluate_command_prediction_error(
     for seqs in chunk.seqs_list:
         predictor = create_predictor(autoencoder, propagator)
         cmd_pred_lst: List[np.ndarray] = []
-        img_seq, cmd_seq = seqs
+
+        img_seq = None
+        cmd_seq = None
+        for seq in seqs:
+            if isinstance(seq, ImageDataSequence): img_seq = seq
+            if isinstance(seq, CommandDataSequence): cmd_seq = seq
+        assert (img_seq is not None) and (cmd_seq is not None)
+
         for img, cmd in zip(img_seq.data[:-1], cmd_seq.data[:-1]):
             predictor.feed((img, cmd))
             pred_imgs, pred_cmds = zip(*predictor.predict(1))
