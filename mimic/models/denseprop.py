@@ -145,7 +145,6 @@ class DenseBase(_PropModel[DenseConfigT]):
 
 class DenseProp(DenseBase):
     def __init__(self, device: device, config: DenseConfig):
-        assert isinstance(config, DenseConfig)
         super().__init__(device, config)
 
     @classmethod
@@ -153,7 +152,6 @@ class DenseProp(DenseBase):
 
 class DeprecatedDenseProp(DenseBase):
     def __init__(self, device: device, config: DenseConfig):
-        assert isinstance(config, DenseConfig)
         super().__init__(device, config)
 
     @classmethod
@@ -176,7 +174,6 @@ class DeprecatedDenseProp(DenseBase):
 
 class BiasedDenseProp(DenseBase):
     def __init__(self, device: device, config: BiasedDenseConfig):
-        assert isinstance(config, BiasedDenseConfig)
         super().__init__(device, config)
 
     @classmethod
@@ -197,7 +194,6 @@ class KinemaNet(_Model[KinemaNetConfig]):
             device: device, 
             robot_spec: RobotSpecBase,
             config: KinemaNetConfig):
-        assert isinstance(config, KinemaNetConfig)
         _Model.__init__(self, device, config)
         self.robot_spec = robot_spec
         self.n_input = robot_spec.n_joint

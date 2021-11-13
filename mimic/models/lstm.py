@@ -130,7 +130,6 @@ class LSTMBase(_PropModel[LSTMConfigT]):
 
 class LSTM(LSTMBase[LSTMConfig]):
     def __init__(self, device: device, config: LSTMConfig):
-        assert isinstance(config, LSTMConfig)
         super().__init__(device, config)
 
     @classmethod
@@ -138,7 +137,6 @@ class LSTM(LSTMBase[LSTMConfig]):
 
 class BiasedLSTM(LSTMBase):
     def __init__(self, device: device, config: BiasedLSTMConfig):
-        assert isinstance(config, BiasedLSTMConfig)
         super().__init__(device, config)
 
     @classmethod
@@ -146,7 +144,6 @@ class BiasedLSTM(LSTMBase):
 
 class AugedLSTM(LSTMBase):
     def __init__(self, device: device, config: AugedLSTMConfig):
-        assert isinstance(config, AugedLSTMConfig)
         super().__init__(device, config)
 
     @classmethod
