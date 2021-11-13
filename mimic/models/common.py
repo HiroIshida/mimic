@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod, abstractclassmethod
 import logging
+from torch._C import finfo
 logger = logging.getLogger(__name__)
 
 import torch.nn as nn
@@ -45,6 +46,21 @@ class _ModelConfigBase:
         data_pickle = pickle.dumps(self)
         data_md5 = hashlib.md5(data_pickle).hexdigest()
         return data_md5[:7]
+
+class _PropModelConfigBase(_ModelConfigBase):
+    finfo: Optional[FeatureInfo] = None
+    @property
+    def n_img_feature(self): 
+        if finfo is None: return None
+        return self.finfo.n_img_feature
+    @property
+    def n_cmd_feature(self): 
+        if finfo is None: return None
+        return self.finfo.n_cmd_feature
+    @property
+    def n_aug_feature(self): 
+        if finfo is None: return None
+        return self.finfo.n_aug_feature
 
 @dataclass
 class NullConfig(_ModelConfigBase): ...
