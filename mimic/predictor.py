@@ -41,7 +41,7 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
     states: List[torch.Tensor]
     def __init__(self, propagator: PropT):
         assert propagator.has_feature_info(), \
-                'to use predictor you must set FeatureInfo to propagator model'
+                'to use predictor you must set FeatureInfo to propagator model. Probably you may want to construct Config from Config.from_finfo function'
         self.propagator = propagator
         self.states = []
 
@@ -59,7 +59,8 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
         return [self._strip_if_necessary(e) for e in raw_preds]
 
     def _is_with_aug(self): 
-        return (self.propagator.finfo.n_aug_feature != None) and (self.propagator.finfo.n_cmd_feature != None)
+        config = self.propagator.config
+        return (config.n_aug_feature != 0) and (config.n_cmd_feature != 0)
 
     def _attatch_if_ncecessary(self, vec: torch.Tensor) -> torch.Tensor:
         return self._attach_flag_if_necessary(self._attach_aug_if_necessary(vec))
@@ -71,8 +72,8 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
         if not self._is_with_aug():
             return vec_original
 
-        finfo = self.propagator.finfo
-        vec = vec_original[-finfo.n_cmd_feature:].unsqueeze(dim=0) # type: ignore
+        config = self.propagator.config
+        vec = vec_original[-config.n_cmd_feature:].unsqueeze(dim=0) # type: ignore
 
         propagator: AugedLSTM = self.propagator # type: ignore
         robot_spec = propagator.config.robot_spec
@@ -86,8 +87,8 @@ class AbstractPredictor(ABC, Generic[StateT, PropT]):
     def _strip_aug_if_necessary(self, vec: torch.Tensor) -> torch.Tensor:
         if not self._is_with_aug():
             return vec
-        finfo = self.propagator.finfo
-        return vec[:-finfo.n_aug_feature] # type: ignore
+        config = self.propagator.config
+        return vec[:-config.n_aug_feature] # type: ignore
 
     def _is_with_flag(self):
         if isinstance(self.propagator, DeprecatedDenseProp): return False

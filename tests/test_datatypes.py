@@ -60,8 +60,8 @@ def image_datachunk_with_encoder():
 
     fi = chunk.get_feature_info()
     assert fi.n_img_feature == 16
-    assert fi.n_cmd_feature == None
-    assert fi.n_aug_feature == None
+    assert fi.n_cmd_feature == 0
+    assert fi.n_aug_feature == 0
     return chunk
 
 @pytest.fixture(scope='session')
@@ -79,7 +79,7 @@ def image_command_datachunk_with_encoder():
     fi = chunk.get_feature_info()
     assert fi.n_img_feature == 16
     assert fi.n_cmd_feature == 7
-    assert fi.n_aug_feature == None
+    assert fi.n_aug_feature == 0
 
     return chunk
 

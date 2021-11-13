@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod, abstractclassmethod
 import logging
+from torch._C import finfo
 logger = logging.getLogger(__name__)
 
 import torch.nn as nn
@@ -46,6 +47,21 @@ class _ModelConfigBase:
         data_md5 = hashlib.md5(data_pickle).hexdigest()
         return data_md5[:7]
 
+class _PropModelConfigBase(_ModelConfigBase):
+    finfo: Optional[FeatureInfo] = None
+    @property
+    def n_img_feature(self): 
+        if finfo is None: return None
+        return self.finfo.n_img_feature
+    @property
+    def n_cmd_feature(self): 
+        if finfo is None: return None
+        return self.finfo.n_cmd_feature
+    @property
+    def n_aug_feature(self): 
+        if finfo is None: return None
+        return self.finfo.n_aug_feature
+
 @dataclass
 class NullConfig(_ModelConfigBase): ...
 
@@ -55,6 +71,9 @@ class _Model(nn.Module, ABC, Generic[MConfigT]):
     config: MConfigT
     def __init__(self, device: torch.device, config: MConfigT):
         super().__init__()
+
+        assert isinstance(config, self.compat_modelconfig())
+
         self.device = device
         self.config = config
         logger.info('model name: {}'.format(self.__class__.__name__))
@@ -62,6 +81,9 @@ class _Model(nn.Module, ABC, Generic[MConfigT]):
         logger.info('model is initialized')
 
     def put_on_device(self): self.to(self.device)
+
+    @abstractclassmethod # python sucks...
+    def compat_modelconfig(cls) -> Type[MConfigT]: ...
 
     @property
     def hash_value(self) -> str: return self.config.hash_value
@@ -72,11 +94,12 @@ class _Model(nn.Module, ABC, Generic[MConfigT]):
     @abstractmethod
     def _create_layers(self, **kwargs) -> None: ...
 
-class _PropModel(_Model[MConfigT]):
+PropConfigT = TypeVar('PropConfigT', bound='_PropModelConfigBase')
+class _PropModel(_Model[PropConfigT]):
     finfo: Optional[FeatureInfo]
-    def __init__(self, device: torch.device, config: MConfigT, finfo: Optional[FeatureInfo]=None):
+    def __init__(self, device: torch.device, config: PropConfigT, finfo: Optional[FeatureInfo]=None):
         super().__init__(device, config)
         self.finfo = finfo
 
     def has_feature_info(self) -> bool:
-        return self.finfo != None
+        return self.config.finfo != None

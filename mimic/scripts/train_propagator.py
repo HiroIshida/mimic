@@ -51,25 +51,26 @@ def train_propagator(project_name: str, model_type, config: Config) -> None:
 
     n_intact = 5
     _, chunk = chunk_.split(n_first=n_intact)
+    if model_type is AugedLSTM:
+        robot_spec =KukaSpec()
+        chunk = AugedImageCommandDataChunk.from_imgcmd_chunk(chunk, robot_spec)
+    finfo = chunk.get_feature_info()
 
     if model_type is LSTM:
         dataset = AutoRegressiveDataset.from_chunk(chunk)
-        prop_model = LSTM(device, LSTMConfig(dataset.n_state), chunk.get_feature_info())
+        prop_model = LSTM(device, LSTMConfig.from_finfo(finfo))
     elif model_type is BiasedLSTM:
         dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
-        prop_model = BiasedLSTM(device, BiasedLSTMConfig(dataset.n_state, dataset.n_bias), chunk.get_feature_info())
+        prop_model = BiasedLSTM(device, BiasedLSTMConfig.from_finfo(finfo))
     elif model_type is DenseProp:
         dataset = AutoRegressiveDataset.from_chunk(chunk)
-        prop_model = DenseProp(device, DenseConfig(dataset.n_state), chunk.get_feature_info())
+        prop_model = DenseProp(device, DenseConfig.from_finfo(finfo))
     elif model_type is BiasedDenseProp:
         dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
-        prop_model = BiasedDenseProp(device, BiasedDenseConfig(dataset.n_state, dataset.n_bias), chunk.get_feature_info())
+        prop_model = BiasedDenseProp(device, BiasedDenseConfig.from_finfo(finfo))
     elif model_type is AugedLSTM:
-        robot_spec =KukaSpec()
-        chunk_auged = AugedImageCommandDataChunk.from_imgcmd_chunk(chunk, robot_spec)
-        dataset = AugedAutoRegressiveDataset.from_chunk(chunk_auged)
-        # TODO: HiroIshida, please avoid hard-coding
-        prop_model = AugedLSTM(device, AugedLSTMConfig(dataset.n_state, 6, robot_spec), chunk_auged.get_feature_info())
+        dataset = AugedAutoRegressiveDataset.from_chunk(chunk)
+        prop_model = AugedLSTM(device, AugedLSTMConfig.from_finfo(finfo, robot_spec))
     else:
         raise RuntimeError
     tcache = TrainCache[model_type](project_name, model_type)
