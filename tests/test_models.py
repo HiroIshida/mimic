@@ -10,7 +10,7 @@ from mimic.models import LSTM, LSTMConfig, BiasedLSTMConfig, AugedLSTMConfig
 from mimic.models import BiasedLSTM, AugedLSTM
 from mimic.models import DenseProp, DenseConfig, BiasedDenseConfig, KinemaNetConfig
 from mimic.models import BiasedDenseProp
-from mimic.models import DeprecatedDenseProp
+from mimic.models import DeprecatedDenseProp, DeprecatedDenseConfig
 from mimic.models.denseprop import create_linear_layers
 from mimic.models.denseprop import KinemaNet
 from test_datatypes import cmd_datachunk
@@ -109,7 +109,7 @@ def test_deprecateddenseprop_pipeline(image_command_datachunk_with_encoder):
     sample_ = dataset[0]
     sample = (sample_[0].unsqueeze(0), sample_[1].unsqueeze(0))
 
-    model = DeprecatedDenseProp(torch.device('cpu'), DenseConfig(dataset.n_state))
+    model = DeprecatedDenseProp(torch.device('cpu'), DeprecatedDenseConfig(dataset.n_state))
     pred = model.forward(sample[0])
     assert pred.shape == sample[1].shape
 

@@ -12,40 +12,65 @@ import torch.nn as nn
 
 from mimic.datatype import FeatureInfo
 from mimic.robot import RobotSpecBase
-from mimic.models.common import _PropModel, NullConfig, _ModelConfigBase
+from mimic.models.common import _PropModel, NullConfig, _ModelConfigBase, _PropModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import AutoRegressiveDataset
 
 @dataclass
-class LSTMConfig(_ModelConfigBase):
+class LSTMConfig(_PropModelConfigBase):
     n_state: int
     n_hidden: int = 200
     n_layer: int = 2
+
+    @classmethod
+    def from_finfo(cls, finfo: FeatureInfo, **kwargs) -> 'LSTMConfig': 
+        obj = cls(finfo.n_img_feature + finfo.n_cmd_feature + 1, **kwargs)
+        obj.finfo = finfo
+        return obj
+
     @property
     def n_bias(self) -> int: return 0
     @property
     def n_aug(self) -> int: return 0
 
 @dataclass
-class BiasedLSTMConfig(_ModelConfigBase):
+class BiasedLSTMConfig(_PropModelConfigBase):
     n_state: int
     n_bias: int
     n_hidden: int = 200
     n_layer: int = 2
+
+    @classmethod
+    def from_finfo(cls, finfo: FeatureInfo, **kwargs) -> 'BiasedLSTMConfig': 
+        obj = cls(finfo.n_cmd_feature + 1, finfo.n_img_feature, **kwargs)
+        obj.finfo = finfo
+        return obj
+
     @property
     def n_aug(self) -> int: return 0
 
 @dataclass
-class AugedLSTMConfig(_ModelConfigBase):
+class AugedLSTMConfig(_PropModelConfigBase):
     n_state: int
     n_aug: int
     robot_spec: RobotSpecBase
     n_hidden: int = 200
     n_layer: int = 2
+
+    @classmethod
+    def from_finfo(cls, finfo: FeatureInfo, robot_spec: RobotSpecBase, **kwargs) -> 'AugedLSTMConfig': 
+        obj = cls(
+                finfo.n_cmd_feature + finfo.n_img_feature + 1, 
+                finfo.n_aug_feature, 
+                robot_spec,
+                **kwargs)
+        obj.finfo = finfo
+        return obj
+
     @property
     def n_bias(self) -> int: return 0
 
-LSTMConfigT = TypeVar('LSTMConfigT', bound=_ModelConfigBase)
+LSTMConfigT = TypeVar('LSTMConfigT', bound=_PropModelConfigBase)
 class LSTMBase(_PropModel[LSTMConfigT]):
     """
     Note that n_state 
@@ -65,8 +90,8 @@ class LSTMBase(_PropModel[LSTMConfigT]):
     @property
     def n_layer(self) -> int: return self.config.n_layer # type: ignore
 
-    def __init__(self, device: device, config: LSTMConfigT, finfo: Optional[FeatureInfo]):
-        _PropModel.__init__(self, device, config, finfo)
+    def __init__(self, device: device, config: LSTMConfigT):
+        _PropModel.__init__(self, device, config)
         self._create_layers()
 
     def _create_layers(self, **kwargs) -> None:
@@ -104,23 +129,23 @@ class LSTMBase(_PropModel[LSTMConfigT]):
         return LossDict({'prediction': loss_value})
 
 class LSTM(LSTMBase[LSTMConfig]):
-    def __init__(self, device: device, config: LSTMConfig, finfo: FeatureInfo=None):
+    def __init__(self, device: device, config: LSTMConfig):
         assert isinstance(config, LSTMConfig)
-        super().__init__(device, config, finfo)
+        super().__init__(device, config)
 
     @classmethod
     def compat_modelconfig(cls): return LSTMConfig
 
 class BiasedLSTM(LSTMBase):
-    def __init__(self, device: device, config: BiasedLSTMConfig, finfo: FeatureInfo=None):
+    def __init__(self, device: device, config: BiasedLSTMConfig):
         assert isinstance(config, BiasedLSTMConfig)
-        super().__init__(device, config, finfo)
+        super().__init__(device, config)
 
     @classmethod
     def compat_modelconfig(cls): return BiasedLSTMConfig
 
 class AugedLSTM(LSTMBase):
-    def __init__(self, device: device, config: AugedLSTMConfig, finfo: FeatureInfo=None):
+    def __init__(self, device: device, config: AugedLSTMConfig):
         assert isinstance(config, AugedLSTMConfig)
         super().__init__(device, config)
 

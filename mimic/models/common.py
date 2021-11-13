@@ -94,11 +94,12 @@ class _Model(nn.Module, ABC, Generic[MConfigT]):
     @abstractmethod
     def _create_layers(self, **kwargs) -> None: ...
 
-class _PropModel(_Model[MConfigT]):
+PropConfigT = TypeVar('PropConfigT', bound='_PropModelConfigBase')
+class _PropModel(_Model[PropConfigT]):
     finfo: Optional[FeatureInfo]
-    def __init__(self, device: torch.device, config: MConfigT, finfo: Optional[FeatureInfo]=None):
+    def __init__(self, device: torch.device, config: PropConfigT, finfo: Optional[FeatureInfo]=None):
         super().__init__(device, config)
         self.finfo = finfo
 
     def has_feature_info(self) -> bool:
-        return self.finfo != None
+        return self.config.finfo != None

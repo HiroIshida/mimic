@@ -11,28 +11,49 @@ import torch.nn as nn
 from torch.nn.modules import activation
 from mimic.datatype import FeatureInfo
 
-from mimic.models.common import _Model, _PropModel, NullConfig, _ModelConfigBase
+from mimic.models.common import _Model, _PropModel, NullConfig, _ModelConfigBase, _PropModelConfigBase
 from mimic.models.common import LossDict
 from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import KinematicsDataset
 from mimic.robot import RobotSpecBase
 
 @dataclass
-class DenseConfig(_ModelConfigBase):
+class DenseConfig(_PropModelConfigBase):
     n_state: int
     n_hidden: int = 200
     n_layer: int = 2
     activation: Optional[str] = None
+
+    @classmethod
+    def from_finfo(cls, finfo: FeatureInfo, **kwargs) -> 'DenseConfig':
+        obj = cls(finfo.n_img_feature + finfo.n_cmd_feature + 1, **kwargs)
+        obj.finfo = finfo
+        return obj
+
     @property
     def n_bias(self) -> int: return 0
 
 @dataclass
-class BiasedDenseConfig(_ModelConfigBase):
+class DeprecatedDenseConfig(DenseConfig):
+    @classmethod
+    def from_finfo(cls, finfo: FeatureInfo, **kwargs) -> 'DenseConfig':
+        obj = cls(finfo.n_img_feature + finfo.n_cmd_feature, **kwargs)
+        obj.finfo = finfo
+        return obj
+
+@dataclass
+class BiasedDenseConfig(_PropModelConfigBase):
     n_state: int
     n_bias: int
     n_hidden: int = 200
     n_layer: int = 2
     activation: Optional[str] = None
+
+    @classmethod
+    def from_finfo(cls, finfo: FeatureInfo, **kwargs) -> 'BiasedDenseConfig':
+        obj = cls(finfo.n_cmd_feature + 1, finfo.n_img_feature, **kwargs)
+        obj.finfo = finfo
+        return obj
 
 def create_linear_layers(n_input, n_output, n_hidden, n_layer,
         activation: Optional[str]) -> List[nn.Module]:
@@ -61,15 +82,14 @@ def create_linear_layers(n_input, n_output, n_hidden, n_layer,
     layers.append(output_layer)
     return layers
 
-DenseConfigT = TypeVar('DenseConfigT', bound=_ModelConfigBase)
+DenseConfigT = TypeVar('DenseConfigT', bound=_PropModelConfigBase)
 class DenseBase(_PropModel[DenseConfigT]):
     # TODO shold be part of DenseProp class
     layer: nn.Module
     def __init__(self, 
             device: device, 
-            config: DenseConfigT,
-            finfo: Optional[FeatureInfo]):
-        _PropModel.__init__(self, device, config, finfo)
+            config: DenseConfigT):
+        _PropModel.__init__(self, device, config)
         self._create_layers()
 
     @property
@@ -124,17 +144,17 @@ class DenseBase(_PropModel[DenseConfigT]):
 
 
 class DenseProp(DenseBase):
-    def __init__(self, device: device, config: DenseConfig, finfo: FeatureInfo=None):
+    def __init__(self, device: device, config: DenseConfig):
         assert isinstance(config, DenseConfig)
-        super().__init__(device, config, finfo)
+        super().__init__(device, config)
 
     @classmethod
     def compat_modelconfig(cls): return DenseConfig
 
 class DeprecatedDenseProp(DenseBase):
-    def __init__(self, device: device, config: DenseConfig, finfo: FeatureInfo=None):
+    def __init__(self, device: device, config: DenseConfig):
         assert isinstance(config, DenseConfig)
-        super().__init__(device, config, finfo)
+        super().__init__(device, config)
 
     @classmethod
     def compat_modelconfig(cls): return DeprecatedDenseConfig
@@ -155,9 +175,9 @@ class DeprecatedDenseProp(DenseBase):
         return LossDict({'prediction': loss_value})
 
 class BiasedDenseProp(DenseBase):
-    def __init__(self, device: device, config: BiasedDenseConfig, finfo: FeatureInfo=None):
+    def __init__(self, device: device, config: BiasedDenseConfig):
         assert isinstance(config, BiasedDenseConfig)
-        super().__init__(device, config, finfo)
+        super().__init__(device, config)
 
     @classmethod
     def compat_modelconfig(cls): return BiasedDenseConfig
@@ -183,6 +203,9 @@ class KinemaNet(_Model[KinemaNetConfig]):
         self.n_input = robot_spec.n_joint
         self.n_output = robot_spec.n_out
         self._create_layers()
+
+    @classmethod
+    def compat_modelconfig(cls): return KinemaNetConfig
 
     def _create_layers(self, **kwargs) -> None:
         layers = create_linear_layers(
