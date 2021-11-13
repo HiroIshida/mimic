@@ -60,7 +60,7 @@ if __name__=='__main__':
     chunk_intact, _ = chunk.split(n_intact)
     imgseq, cmdseq = chunk_intact[0]
     assert imgseq.data.ndim == 4
-    for i in range(n_prediction):
+    for i in range(20):
         predictor.feed((imgseq.data[i], cmdseq.data[i]))
     imgseq_pred, cmdseq_pred = map(list, zip(*predictor.predict(n_prediction)))
     filename = os.path.join(get_project_dir(project_name), 'prediction_result_{}.gif'.format(model_name))
