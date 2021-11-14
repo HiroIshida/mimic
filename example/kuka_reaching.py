@@ -140,7 +140,7 @@ class BulletManager(object):
         self.set_joint_angles(angles_now())
 
         img_list = []
-        for i in range(300):
+        for i in range(200):
             print(i)
             cmd = angles_now()
             rgba, _ = self.take_photo(n_pixel)
@@ -160,7 +160,8 @@ if __name__=='__main__':
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
     parser.add_argument('-model', type=str, default='lstm', help='propagator model name')
     parser.add_argument('-n', type=int, default=300, help='epoch num')
-    parser.add_argument('-m', type=int, default=112, help='pixel num') # same as mnist
+    parser.add_argument('-m', type=int, default=224, help='pixel num') # same as mnist
+    parser.add_argument('-seed', type=int, default=1, help='seed') # same as mnist
     args = parser.parse_args()
     n_epoch = args.n
     n_pixel = args.m
@@ -168,6 +169,9 @@ if __name__=='__main__':
     prediction_mode = args.predict
     project_name = args.pn
     model_name = args.model
+    seed = args.seed
+
+    np.random.seed(seed)
 
     pbdata_path = pybullet_data.getDataPath()
     urdf_path = os.path.join(pbdata_path, 'kuka_iiwa', 'model.urdf')
@@ -179,7 +183,7 @@ if __name__=='__main__':
         bm.set_box(target_pos)
         img_seq = bm.prediction_simulate(predictor, n_pixel)
 
-        filename = os.path.join(get_project_dir(project_name), "prediction.gif")
+        filename = os.path.join(get_project_dir(project_name), "simulation_{0}_seed{1}.gif".format(model_name, seed))
         clip = ImageSequenceClip([img for img in img_seq], fps=50)
         clip.write_gif(filename, fps=50)
     else:
