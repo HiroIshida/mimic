@@ -19,6 +19,7 @@ from mimic.dataset import FirstOrderARDataset
 from mimic.dataset import BiasedFirstOrderARDataset
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import AugedAutoRegressiveDataset
+from mimic.models import get_model_type_from_name
 from mimic.models import LSTMConfig, BiasedLSTMConfig
 from mimic.models import LSTM
 from mimic.models import BiasedLSTM
@@ -81,26 +82,14 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
     parser.add_argument('-n', type=int, default=1000, help='training epoch')
-    parser.add_argument('-model', type=str, default="lstm", help='model name')
+    parser.add_argument('-model', type=str, default="LSTM", help='model name')
 
     args = parser.parse_args()
     project_name = args.pn
     model_name = args.model
     n_epoch = args.n
 
-    prop_model: type
-    if model_name == 'lstm':
-        prop_model = LSTM
-    elif model_name == 'biased_lstm':
-        prop_model = BiasedLSTM
-    elif model_name == 'dense_prop':
-        prop_model = DenseProp
-    elif model_name == 'biased_dense_prop':
-        prop_model = BiasedDenseProp
-    elif model_name == 'auged_lstm':
-        prop_model = AugedLSTM
-    else:
-        raise RuntimeError('No such prop model named {} exists'.format(model_name))
+    prop_model = get_model_type_from_name(model_name)
 
     logger = create_default_logger(project_name, 'propagator_{}'.format(model_name))
     config = Config(n_epoch=n_epoch)

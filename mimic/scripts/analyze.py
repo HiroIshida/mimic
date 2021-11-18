@@ -1,7 +1,8 @@
 # mypy: ignore-errors
 import argparse
 from mimic.datatype import AugedImageCommandDataChunk
-from mimic.models import ImageAutoEncoder
+from mimic.models import get_model_type_from_name
+from mimic.models import ImageAutoEncoder, get_model_type_from_name
 from mimic.models import LSTM, AugedLSTM
 from mimic.models import BiasedLSTM
 from mimic.models import BiasedDenseProp
@@ -12,13 +13,6 @@ from mimic.trainer import TrainCache
 from mimic.predictor import evaluate_command_prediction_error
 from mimic.predictor import evaluate_command_prediction_error_old
 from mimic.scripts.train_propagator import prepare_trained_image_chunk
-
-_model_table = {
-        'lstm': LSTM,
-        'auged_lstm': AugedLSTM,
-        'biased_lstm': BiasedLSTM,
-        'biased_dense_prop': BiasedDenseProp
-        }
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
@@ -35,7 +29,7 @@ if __name__=='__main__':
         chunk = AugedImageCommandDataChunk.from_imgcmd_chunk(chunk, KukaSpec())
     n_intact = 5
     chunk_intact, _ = chunk.split(n_intact)
-    modelT = _model_table[model_name]
+    modelT = get_model_type_from_name(model_name)
     prop_train_cache = TrainCache.load(project_name, modelT)
 
     DatasetT = get_compat_dataset_type(prop_train_cache.best_model)

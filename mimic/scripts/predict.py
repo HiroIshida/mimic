@@ -6,6 +6,7 @@ from typing import Union
 import numpy as np
 import torch
 
+from mimic.models import get_model_type_from_name
 from mimic.models import ImageAutoEncoder
 from mimic.models import LSTM
 from mimic.models import BiasedLSTM
@@ -22,15 +23,7 @@ from mimic.trainer import TrainCache
 @typing.no_type_check 
 def create_predictor_from_name(project_name: str, model_name: str) -> \
         Union[ImageCommandPredictor, FFImageCommandPredictor]:
-    dispatch_dict = {
-            'lstm': LSTM,
-            'biased_lstm': BiasedLSTM,
-            'auged_lstm': AugedLSTM,
-            'dense_prop': DenseProp,
-            'biased_dense_prop': BiasedDenseProp,
-            'depre_dense_prop': DeprecatedDenseProp,
-            }
-    ModelT = dispatch_dict[model_name]
+    ModelT = get_model_type_from_name(model_name)
     ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
     prop_train_cache = TrainCache[ModelT].load(project_name, ModelT)
     return create_predictor(ae_train_cache.best_model, prop_train_cache.best_model)
