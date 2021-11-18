@@ -1,3 +1,6 @@
+from functools import lru_cache
+from typing import Dict
+
 from .common import NullConfig
 from .autoencoder import AbstractEncoderDecoder
 from .autoencoder import ImageAutoEncoder
@@ -17,3 +20,20 @@ from .denseprop import DenseProp
 from .denseprop import DeprecatedDenseProp
 from .denseprop import BiasedDenseProp
 from .denseprop import KinemaNet
+
+from .common import _Model
+
+@lru_cache(maxsize=None)
+def create_model_dispath_table() -> Dict:
+    table = {}
+    stack = [_Model]
+    while len(stack)>0:
+        cls_here = stack.pop()
+        for cls_child in cls_here.__subclasses__():
+            table[cls_child.__name__] = cls_child
+            stack.append(cls_child)
+    return table
+
+def get_model_from_name(name: str) -> _Model:
+    table = create_model_dispath_table()
+    return table[name]
