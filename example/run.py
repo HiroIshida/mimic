@@ -36,21 +36,21 @@ cmd_generate_dataset = 'python3 {0} -pn {1} -n {2} -m {3}'.format(script_path, c
 
 cmd_train_autoencoder = 'python3 -m mimic.scripts.train_auto_encoder -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_ae)
 cmd_train_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_lstm)
-cmd_train_auged_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model auged_lstm'.format(cfg.project_name, cfg.n_train_biased_dense)
-cmd_train_biased_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model biased_lstm'.format(cfg.project_name, cfg.n_train_biased_lstm)
-cmd_train_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model dense_prop'.format(cfg.project_name, cfg.n_train_dense)
-cmd_train_biasd_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model biased_dense_prop'.format(cfg.project_name, cfg.n_train_biased_dense)
+cmd_train_auged_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model AugedLSTM'.format(cfg.project_name, cfg.n_train_biased_dense)
+cmd_train_biased_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model BiasedLSTM'.format(cfg.project_name, cfg.n_train_biased_lstm)
+cmd_train_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model DenseProp'.format(cfg.project_name, cfg.n_train_dense)
+cmd_train_biasd_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model BiasedDenseProp'.format(cfg.project_name, cfg.n_train_biased_dense)
 cmd_visualize_train_result = 'python3 -m mimic.scripts.visualize_train_result -pn {0}'.format(cfg.project_name)
 
-cmd_run_predictor_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model lstm'.format(cfg.project_name)
-cmd_run_predictor_auged_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model auged_lstm'.format(cfg.project_name)
-cmd_run_predictor_biased_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model biased_lstm'.format(cfg.project_name)
-cmd_run_predictor_dense_prop = 'python3 -m mimic.scripts.predict -pn {0} -model dense_prop'.format(cfg.project_name)
-cmd_run_predictor_biased_dense_prop = 'python3 -m mimic.scripts.predict -pn {0} -model biased_dense_prop'.format(cfg.project_name)
+cmd_run_predictor_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model LSTM'.format(cfg.project_name)
+cmd_run_predictor_auged_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model AugedLSTM'.format(cfg.project_name)
+cmd_run_predictor_biased_lstm = 'python3 -m mimic.scripts.predict -pn {0} -model BiasedLSTM'.format(cfg.project_name)
+cmd_run_predictor_dense_prop = 'python3 -m mimic.scripts.predict -pn {0} -model DenseProp'.format(cfg.project_name)
+cmd_run_predictor_biased_dense_prop = 'python3 -m mimic.scripts.predict -pn {0} -model BiasedDenseProp'.format(cfg.project_name)
 
-cmd_analyze_lstm = 'python3 -m mimic.scripts.analyze -pn {0} -model lstm'.format(cfg.project_name)
-cmd_analyze_biasd_lstm = 'python3 -m mimic.scripts.analyze -pn {0} -model biased_lstm'.format(cfg.project_name)
-cmd_analyze_biasd_dense_prop = 'python3 -m mimic.scripts.analyze -pn {0} -model biased_dense_prop'.format(cfg.project_name)
+cmd_analyze_lstm = 'python3 -m mimic.scripts.analyze -pn {0} -model LSTM'.format(cfg.project_name)
+cmd_analyze_biasd_lstm = 'python3 -m mimic.scripts.analyze -pn {0} -model BiasedLSTM'.format(cfg.project_name)
+cmd_analyze_biasd_dense_prop = 'python3 -m mimic.scripts.analyze -pn {0} -model BiasedDenseProp'.format(cfg.project_name)
 
 # NOTE Hard-coding without for-loop on purpose so that it can be easily commented out
 subprocess.check_call(cmd_train_kinematics, shell=True)
