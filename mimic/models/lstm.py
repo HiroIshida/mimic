@@ -109,6 +109,21 @@ class LSTMBase(_PropModel[LSTMConfigT]):
         out = self.output_layer(lstm_out)
         return out
 
+    def _loss(self, pred_output: torch.Tensor, sample_output: torch.Tensor, reduction) -> LossDict:
+        if (self.config.finfo is not None): 
+            finfo = self.config.finfo
+            if (finfo.n_img_feature>0 and finfo.n_cmd_feature>0):
+                img_pred_loss = nn.MSELoss(reduction=reduction)(pred_output[:, :, :finfo.n_img_feature], sample_output[:, :, :finfo.n_img_feature])
+                cmd_pred_loss = nn.MSELoss(reduction=reduction)(pred_output[:, :, finfo.n_img_feature:-1], sample_output[:, :, finfo.n_img_feature:-1])
+                flag_pred_loss = nn.MSELoss(reduction=reduction)(pred_output[:, :, -1].unsqueeze(dim=2), sample_output[:, :, -1].unsqueeze(dim=2))
+
+                ISHIDA_FUCK_VALUE = 0.2
+                loss_value = img_pred_loss * ISHIDA_FUCK_VALUE + cmd_pred_loss + flag_pred_loss
+                return LossDict({'prediction': loss_value})
+
+        loss_value = nn.MSELoss(reduction=reduction)(pred_output, sample_output)
+        return LossDict({'prediction': loss_value})
+
     def loss(self, samples: Tuple[torch.Tensor, torch.Tensor], state_slicer: Optional[slice] = None, reduction='mean') -> LossDict:
         sample_input, sample_output = samples
         n_batch, n_seq, n_input = sample_input.shape
@@ -125,8 +140,8 @@ class LSTMBase(_PropModel[LSTMConfigT]):
         assert state_slicer.step == None
 
         pred_output = self.forward(sample_input)
-        loss_value = nn.MSELoss(reduction=reduction)(pred_output[:, state_slicer], sample_output[:, state_slicer])
-        return LossDict({'prediction': loss_value})
+        return self._loss(pred_output, sample_output, reduction)
+
 
 class LSTM(LSTMBase[LSTMConfig]):
     def __init__(self, device: device, config: LSTMConfig):
@@ -141,6 +156,10 @@ class BiasedLSTM(LSTMBase):
 
     @classmethod
     def compat_modelconfig(cls): return BiasedLSTMConfig
+
+    def _loss(self, pred_output: torch.Tensor, sample_output: torch.Tensor, reduction) -> LossDict:
+        loss_value = nn.MSELoss(reduction=reduction)(pred_output, sample_output)
+        return LossDict({'prediction': loss_value})
 
 class AugedLSTM(LSTMBase):
     def __init__(self, device: device, config: AugedLSTMConfig):
