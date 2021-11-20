@@ -147,9 +147,10 @@ class ImageDataSequence(AbstractDataSequence):
         if encoder is not None:
             fi.n_img_feature = encoder.n_output
 
-class ImageDataChunkBase:
+class ImageDataChunkBase(AbstractDataChunk[DataT]):
     encoder_holder : Dict[str, Optional[AbstractEncoder]]
-    def __init__(self, encoder: Optional[AbstractEncoder]):
+    def __init__(self, seqs_list: Optional[List[DataT]]=None, encoder: Optional[AbstractEncoder]=None):
+        super().__init__(seqs_list)
         self.encoder_holder = {'encoder': encoder}
 
     def set_encoder(self, encoder: Optional[AbstractEncoder]) -> None:
@@ -166,14 +167,7 @@ class ImageDataChunkBase:
         return None
 
 _ImageDataSequence = Tuple[ImageDataSequence]
-class ImageDataChunk(AbstractDataChunk[_ImageDataSequence], ImageDataChunkBase):
-    def __init__(self, 
-            encoder: Optional[AbstractEncoder] = None, 
-            seqs_list: Optional[List[_ImageDataSequence]] = None):
-        if seqs_list is None:
-            seqs_list = []
-        AbstractDataChunk.__init__(self, seqs_list)
-        ImageDataChunkBase.__init__(self, encoder)
+class ImageDataChunk(ImageDataChunkBase[_ImageDataSequence]):
 
     def push_epoch(self, seq: np.ndarray) -> None:
         imgseq = ImageDataSequence(seq, self.encoder_holder)
@@ -189,10 +183,7 @@ class ImageDataChunk(AbstractDataChunk[_ImageDataSequence], ImageDataChunkBase):
         return ImageDataChunk(seqs_list=seqs_list_new)
 
 _ImageCommandDataSequence = Tuple[ImageDataSequence, CommandDataSequence]
-class ImageCommandDataChunk(AbstractDataChunk[_ImageCommandDataSequence], ImageDataChunkBase):
-    def __init__(self, encoder: Optional[AbstractEncoder] = None):
-        super().__init__([]) # TODO enable optional seq input??
-        ImageDataChunkBase.__init__(self, encoder)
+class ImageCommandDataChunk(ImageDataChunkBase[_ImageCommandDataSequence]):
 
     def push_epoch(self, imgcmd_seq: Tuple[np.ndarray, np.ndarray]) -> None:
         imgseq, cmdseq = imgcmd_seq
@@ -202,11 +193,13 @@ class ImageCommandDataChunk(AbstractDataChunk[_ImageCommandDataSequence], ImageD
         super()._push_epoch((img_data_seq, cmd_data_seq))
 
 _AugedImageCommandDataSequence = Tuple[ImageDataSequence, CommandDataSequence, AugDataSequence]
-class AugedImageCommandDataChunk(AbstractDataChunk[_AugedImageCommandDataSequence], ImageDataChunkBase):
+class AugedImageCommandDataChunk(ImageDataChunkBase[_AugedImageCommandDataSequence]):
     robot_spec: RobotSpecBase
-    def __init__(self, robot_spec: RobotSpecBase, encoder: Optional[AbstractEncoder] = None):
-        super().__init__([]) # TODO enable optional seq input??
-        ImageDataChunkBase.__init__(self, encoder)
+    def __init__(self, 
+            robot_spec: RobotSpecBase, 
+            seqs_list: Optional[List[_AugedImageCommandDataSequence]]=None, 
+            encoder: Optional[AbstractEncoder] = None):
+        ImageDataChunkBase.__init__(self, seqs_list=seqs_list, encoder=encoder)
         self.robot_spec = robot_spec
 
     def push_epoch(self, auged_imgcmd_seq: Tuple[np.ndarray, np.ndarray, np.ndarray]) -> None:
@@ -234,7 +227,7 @@ class AugedImageCommandDataChunk(AbstractDataChunk[_AugedImageCommandDataSequenc
 
         fksolver = robot_spec.create_fksolver()
 
-        obj = cls(robot_spec, chunk_other.encoder_holder['encoder'])
+        obj = cls(robot_spec, encoder=chunk_other.encoder_holder['encoder'])
         for img_seq, cmd_seq in chunk_other.seqs_list:
             coords = fksolver(cmd_seq.data)
             obj.push_epoch((img_seq.data, cmd_seq.data, coords))
