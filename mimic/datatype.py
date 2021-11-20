@@ -157,6 +157,13 @@ class ImageDataChunkBase(AbstractDataChunk[DataT]):
         self.encoder_holder['encoder'] = encoder
 
     @property
+    def with_depth(self) -> bool:
+        seqs = self.seqs_list[0]
+        img_seq: ImageDataSequence = next(filter(lambda seq: isinstance(seq, ImageDataSequence), seqs)) # type: ignore
+        _, _, _, n_channel = img_seq.data.shape
+        return n_channel == 4
+
+    @property
     def has_encoder(self) -> bool:
         return (self.encoder_holder['encoder'] != None)
 
