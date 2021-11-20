@@ -32,7 +32,7 @@ script_path = os.path.join(here, 'kuka_reaching.py')
 
 cmd_train_kinematics = 'python3 -m mimic.scripts.train_kinemanet -n 10 -m 10 -pn _kinematics_test'
 
-cmd_generate_dataset = 'python3 {0} -pn {1} -n {2} -m {3}'.format(script_path, cfg.project_name, cfg.n_data, cfg.m_pixel)
+cmd_generate_dataset = 'python3 {0} -pn {1} -n {2} -m {3} --depth'.format(script_path, cfg.project_name, cfg.n_data, cfg.m_pixel)
 
 cmd_train_autoencoder = 'python3 -m mimic.scripts.train_auto_encoder -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_ae)
 cmd_train_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_lstm)
