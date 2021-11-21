@@ -118,12 +118,14 @@ class BulletManager(object):
         img_list = []
         for angles in angles_seq:
             self.set_joint_angles(angles)
-            rgba, depth = self.take_photo(n_pixel)
+            rgba, depth_normalized = self.take_photo(n_pixel) # pybullet return 0. ~ 1. depth image
+            depth = np.round(depth_normalized * 255.0)
             if with_depth:
                 depth = depth.reshape(*depth.shape, 1)
                 image = np.concatenate((rgba[:, :, :3], depth), axis=2)
             else:
                 image = rgba[:, :, :3]
+            image = image.astype(dtype=np.uint8)
             img_list.append(image)
 
         for i in range(30): # augument the data (after reaching)
@@ -209,5 +211,8 @@ if __name__=='__main__':
         chunk.dump(project_name)
 
         filename = os.path.join(get_project_dir(project_name), "sample.gif")
-        clip = ImageSequenceClip([img for img in img_seqs[0]], fps=50)
+        if(with_depth):
+            clip = ImageSequenceClip([img[:, :, 1:] for img in img_seqs[0]], fps=50)
+        else:
+            clip = ImageSequenceClip([img for img in img_seqs[0]], fps=50)
         clip.write_gif(filename, fps=50)
