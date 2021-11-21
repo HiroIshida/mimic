@@ -25,7 +25,7 @@ dryrun = args.dryrun
 if dryrun:
     cfg = Config('_kuka_reaching_test', 15, 112, 3, 3, 3, 3, 3, 3)
 else:
-    cfg = Config('kuka_reaching', 300, 224, 1000, 4000, 4000, 2000, 2000, 2000)
+    cfg = Config('kuka_reaching', 55, 224, 1000, 4000, 4000, 2000, 2000, 2000)
 
 here = os.path.dirname(os.path.realpath(sys.argv[0]))
 script_path = os.path.join(here, 'kuka_reaching.py')
