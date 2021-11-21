@@ -32,7 +32,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
     parser.add_argument('-n', type=int, default=1000, help='training epoch')
-    parser.add_argument('-bottleneck', type=int, default=16, help='latent dimension')
+    parser.add_argument('-bottleneck', type=int, default=32, help='latent dimension')
     args = parser.parse_args()
     project_name = args.pn
     n_epoch = args.n
