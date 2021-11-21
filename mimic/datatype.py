@@ -131,6 +131,11 @@ class ImageDataSequence(AbstractDataSequence):
     encoder_holder : Dict[str, Optional[AbstractEncoder]]
     def __init__(self, data: np.ndarray, encoder_holder: Dict):
         super().__init__(data)
+        eps = 1e-7
+        is_integer_data = np.all(data - data//1 < eps)
+        assert is_integer_data, 'image data must be integer'
+        assert np.max(data) < 255 + eps, 'max val of image data cannot exceed 255'
+        assert np.min(data) > -eps, 'min val of image data cannot lower 0'
         self.encoder_holder = encoder_holder
 
     def to_featureseq(self) -> torch.Tensor:

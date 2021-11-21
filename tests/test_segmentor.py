@@ -24,7 +24,7 @@ def dummy_img_chunk():
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     chunk = ImageDataChunk(encoder=ae.get_encoder())
     for i in range(2):
-        imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
+        imgseq = np.random.randint(256, size=(n_seq, n_pixel, n_pixel, n_channel))
         chunk.push_epoch(imgseq)
     chunk.push_epoch(imgseq)
     return chunk
