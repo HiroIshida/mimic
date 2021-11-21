@@ -56,6 +56,9 @@ def test_depthimage_datachunk():
         chunk.push_epoch(imgseq)
     assert chunk.with_depth
 
+    chunk_no_depth = chunk.to_depth_stripped()
+    assert not chunk_no_depth.with_depth
+
 @pytest.fixture(scope='session')
 def image_datachunk_with_encoder():
     n_seq = 100
