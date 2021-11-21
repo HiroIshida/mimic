@@ -147,6 +147,16 @@ class ImageDataSequence(AbstractDataSequence):
         if encoder is not None:
             fi.n_img_feature = encoder.n_output
 
+    @property
+    def with_depth(self) -> bool:
+        _, _, _, n_channel =  self.data.shape
+        return n_channel == 4
+
+    def to_depth_stripped(self: 'ImageDataSequence') -> None:
+        assert self.with_depth
+        self.data = self.data[:, :, :, :-1]
+
+ImageDataChunkT = TypeVar('ImageDataChunkT', bound='ImageDataChunkBase')
 class ImageDataChunkBase(AbstractDataChunk[DataT]):
     encoder_holder : Dict[str, Optional[AbstractEncoder]]
     def __init__(self, seqs_list: Optional[List[DataT]]=None, encoder: Optional[AbstractEncoder]=None):
@@ -172,6 +182,15 @@ class ImageDataChunkBase(AbstractDataChunk[DataT]):
         if self.encoder_holder['encoder']: # because mypy is dumb, cannot use has_encoder
             return self.encoder_holder['encoder'].n_output
         return None
+
+    def to_depth_stripped(self: ImageDataChunkT) -> ImageDataChunkT:
+        assert self.with_depth
+        chunk_new = copy.deepcopy(self)
+        for seqs in chunk_new.seqs_list:
+            for idx in range(len(seqs)):
+                if(isinstance(seqs[idx], ImageDataSequence)):
+                    seqs[idx].to_depth_stripped()
+        return chunk_new
 
 _ImageDataSequence = Tuple[ImageDataSequence]
 class ImageDataChunk(ImageDataChunkBase[_ImageDataSequence]):
