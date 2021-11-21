@@ -208,7 +208,9 @@ if __name__=='__main__':
         for img_cmd_seq_tuple in zip(img_seqs, cmd_seqs):
             chunk.push_epoch(img_cmd_seq_tuple)
 
-        chunk = chunk.to_depth_stripped()
+        if chunk.with_depth:
+            chunk = chunk.to_depth_stripped()
+            assert not chunk.with_depth
         chunk.dump(project_name)
 
         filename = os.path.join(get_project_dir(project_name), "sample.gif")
