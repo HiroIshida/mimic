@@ -131,6 +131,7 @@ class ImageDataSequence(AbstractDataSequence):
     encoder_holder : Dict[str, Optional[AbstractEncoder]]
     def __init__(self, data: np.ndarray, encoder_holder: Dict):
         super().__init__(data)
+        assert data.dtype == np.dtype(np.uint8)
         self.encoder_holder = encoder_holder
 
     def to_featureseq(self) -> torch.Tensor:
