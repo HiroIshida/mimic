@@ -32,6 +32,30 @@ class _DatasetFromChunk(Dataset, Generic[ChunkT]):
     def from_chunk(cls: Type[DatasetT], chunk: ChunkT) -> DatasetT: ...
     def __len__(self) -> int: ...
 
+def compute_covariance_matrix(seqs_list: List[torch.Tensor]):
+    diffs = []
+    for seqs in seqs_list:
+        x_pre = seqs[:-1, :]
+        x_post = seqs[1:, :]
+        diff = x_post - x_pre
+        diffs.append(diff)
+    diffs_cat = torch.cat(diffs, axis=0)
+    cov = torch.cov(diffs_cat.T)
+    return cov
+
+def augment_data(seqs_list: List[torch.Tensor], n_data_aug=10, cov_scale=0.3):
+    cov = compute_covariance_matrix(seqs_list) * cov_scale ** 2
+    cov_dim = cov.shape[0]
+    walks_new = []
+    for walk in seqs_list:
+        n_seq, n_dim = walk.shape
+        assert cov_dim == n_dim
+        for _ in range(n_data_aug):
+            rand_aug = np.random.multivariate_normal(mean=np.zeros(n_dim), cov=cov, size=n_seq)
+            assert rand_aug.shape == walk.shape
+            walks_new.append(walk + torch.from_numpy(rand_aug).float())
+    return walks_new
+
 class ReconstructionDataset(_DatasetFromChunk[ImageDataChunk]):
     data: torch.Tensor
     def __init__(self, data):
@@ -76,11 +100,12 @@ class AutoRegressiveDataset(_DatasetFromChunk):
         self.data = attach_flag_info(seq_list)
 
     @classmethod
-    def from_chunk(cls, chunk: AbstractDataChunk) -> 'AutoRegressiveDataset':
+    def from_chunk(cls, chunk: AbstractDataChunk, n_data_aug: int=10) -> 'AutoRegressiveDataset':
         if isinstance(chunk, ImageDataChunk) or isinstance(chunk, ImageCommandDataChunk):
             assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
-        return AutoRegressiveDataset(featureseq_list)
+        featureseq_list_new = augment_data(featureseq_list, n_data_aug)
+        return AutoRegressiveDataset(featureseq_list_new)
 
     @property
     def n_state(self) -> int: return self.data[0].shape[1]
@@ -106,7 +131,8 @@ class AugedAutoRegressiveDataset(_DatasetFromChunk):
     def from_chunk(cls, chunk: AugedImageCommandDataChunk) -> 'AugedAutoRegressiveDataset':
         assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
-        return cls(featureseq_list, chunk.n_aug, chunk.robot_spec)
+        featureseq_list_new = augment_data(featureseq_list)
+        return cls(featureseq_list_new, chunk.n_aug, chunk.robot_spec)
 
     @property
     def n_state(self) -> int: return self.data[0].shape[1] - self.n_aug
