@@ -36,15 +36,17 @@ def test_attach_flag_info():
 
     continue_flag = mimic.dataset._continue_flag
     end_flag = mimic.dataset._end_flag
-    val_padding = mimic. dataset._val_padding
     assert seq_list_with_flag[0][9, 3] == continue_flag
     assert seq_list_with_flag[0][10, 3] == end_flag
     assert seq_list_with_flag[1][11, 3] == continue_flag
     assert seq_list_with_flag[1][12, 3] == end_flag
     assert seq_list_with_flag[2][13, 3] == continue_flag
 
-    assert seq_list_with_flag[0][10:, :3].sum() == 0.0
-    assert seq_list_with_flag[0][12:, :3].sum() == 0.0
+    for i in [10, 11, 12, 13]:
+        assert torch.norm(seq_list_with_flag[0][i, :3] - seq_list_with_flag[0][9, :3]) < 1e-8
+
+    for i in [12, 13]:
+        assert torch.norm(seq_list_with_flag[0][i, :3] - seq_list_with_flag[0][11, :3]) < 1e-8
 
 def test_autoregressive_dataset_pipeline1(image_datachunk_with_encoder):
     dataset = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)

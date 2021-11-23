@@ -24,7 +24,6 @@ from dataclasses import dataclass
 
 _continue_flag = 0.0
 _end_flag = 1.0
-_val_padding = 0.0
 
 ChunkT = TypeVar('ChunkT', bound=AbstractDataChunk)
 DatasetT = TypeVar('DatasetT', bound='_DatasetFromChunk')
@@ -62,7 +61,7 @@ def attach_flag_info(seq_list: List[torch.Tensor]) -> List[torch.Tensor]:
         n_seq = len(seq)
         n_padding = n_max - n_seq
         tensor_flags = torch.cat((torch.ones(n_seq) * _continue_flag, torch.ones(n_padding) * _end_flag))
-        tensor_concat = torch.ones(n_padding, n_state) * _val_padding
+        tensor_concat = seq[-1].repeat((n_padding, 1))
         tmp = torch.cat((seq, tensor_concat), dim=0)
         seq_list[i] = torch.cat((tmp, torch.unsqueeze(tensor_flags, 1)), dim=1)
     return seq_list
