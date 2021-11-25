@@ -35,9 +35,9 @@ cmd_train_kinematics = 'python3 -m mimic.scripts.train_kinemanet -n 10 -m 10 -pn
 cmd_generate_dataset = 'python3 {0} -pn {1} -n {2} -m {3}'.format(script_path, cfg.project_name, cfg.n_data, cfg.m_pixel)
 
 cmd_train_autoencoder = 'python3 -m mimic.scripts.train_auto_encoder -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_ae)
-cmd_train_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1}'.format(cfg.project_name, cfg.n_train_lstm)
+cmd_train_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -daug 10'.format(cfg.project_name, cfg.n_train_lstm)
 cmd_train_auged_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model AugedLSTM'.format(cfg.project_name, cfg.n_train_biased_dense)
-cmd_train_biased_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model BiasedLSTM'.format(cfg.project_name, cfg.n_train_biased_lstm)
+cmd_train_biased_lstm = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model BiasedLSTM -daug 10'.format(cfg.project_name, cfg.n_train_biased_lstm)
 cmd_train_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model DenseProp'.format(cfg.project_name, cfg.n_train_dense)
 cmd_train_biasd_dense_prop = 'python3 -m mimic.scripts.train_propagator -pn {0} -n {1} -model BiasedDenseProp'.format(cfg.project_name, cfg.n_train_biased_dense)
 cmd_visualize_train_result = 'python3 -m mimic.scripts.visualize_train_result -pn {0}'.format(cfg.project_name)
