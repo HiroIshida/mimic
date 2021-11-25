@@ -33,13 +33,13 @@ class _DatasetFromChunk(Dataset, Generic[ChunkT]):
     def __len__(self) -> int: ...
 
 def compute_covariance_matrix(seqs_list: List[torch.Tensor]):
-    diffs = []
+    diffs: List[torch.Tensor] = []
     for seqs in seqs_list:
         x_pre = seqs[:-1, :]
         x_post = seqs[1:, :]
         diff = x_post - x_pre
         diffs.append(diff)
-    diffs_cat = torch.cat(diffs, axis=0)
+    diffs_cat = torch.cat(diffs, dim=0)
     cov = torch.cov(diffs_cat.T)
     return cov
 
