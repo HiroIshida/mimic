@@ -46,7 +46,7 @@ def prepare_trained_image_chunk(project_name: str) -> AbstractDataChunk:
 # TODO what is type of model_type. how to specify 'class' type??
 # TODO Do type check! but this function is type-wise tricky...
 @typing.no_type_check 
-def train_propagator(project_name: str, model_type, config: Config) -> None:
+def train_propagator(project_name: str, model_type, config: Config, n_data_aug: int=0) -> None:
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     chunk_ = prepare_trained_image_chunk(project_name)
 
@@ -58,19 +58,19 @@ def train_propagator(project_name: str, model_type, config: Config) -> None:
     finfo = chunk.get_feature_info()
 
     if model_type is LSTM:
-        dataset = AutoRegressiveDataset.from_chunk(chunk)
+        dataset = AutoRegressiveDataset.from_chunk(chunk, n_data_aug=n_data_aug)
         prop_model = LSTM(device, LSTMConfig.from_finfo(finfo))
     elif model_type is BiasedLSTM:
-        dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
+        dataset = BiasedAutoRegressiveDataset.from_chunk(chunk, n_data_aug=n_data_aug)
         prop_model = BiasedLSTM(device, BiasedLSTMConfig.from_finfo(finfo))
     elif model_type is DenseProp:
-        dataset = AutoRegressiveDataset.from_chunk(chunk)
+        dataset = AutoRegressiveDataset.from_chunk(chunk, n_data_aug=n_data_aug)
         prop_model = DenseProp(device, DenseConfig.from_finfo(finfo))
     elif model_type is BiasedDenseProp:
-        dataset = BiasedAutoRegressiveDataset.from_chunk(chunk)
+        dataset = BiasedAutoRegressiveDataset.from_chunk(chunk, n_data_aug=n_data_aug)
         prop_model = BiasedDenseProp(device, BiasedDenseConfig.from_finfo(finfo))
     elif model_type is AugedLSTM:
-        dataset = AugedAutoRegressiveDataset.from_chunk(chunk)
+        dataset = AugedAutoRegressiveDataset.from_chunk(chunk, n_data_aug=n_data_aug)
         prop_model = AugedLSTM(device, AugedLSTMConfig.from_finfo(finfo, robot_spec))
     else:
         raise RuntimeError
@@ -82,15 +82,17 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
     parser.add_argument('-n', type=int, default=1000, help='training epoch')
+    parser.add_argument('-daug', type=int, default=0, help='number of data augmentation')
     parser.add_argument('-model', type=str, default="LSTM", help='model name')
 
     args = parser.parse_args()
     project_name = args.pn
     model_name = args.model
     n_epoch = args.n
+    n_data_aug = args.daug
 
     prop_model = get_model_type_from_name(model_name)
 
     logger = create_default_logger(project_name, 'propagator_{}'.format(model_name))
     config = Config(n_epoch=n_epoch)
-    train_propagator(project_name, prop_model, config)
+    train_propagator(project_name, prop_model, config, n_data_aug)
