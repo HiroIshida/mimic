@@ -60,6 +60,13 @@ def test_autoregressive_dataset_pipeline2(cmd_datachunk):
         assert list(seq.shape) == [20, 8]
     assert len(dataset) == 10
 
+def test_autoregressive_dataset_pipeline3_with_data_augmentation(cmd_datachunk):
+    n_data_aug = 10
+    dataset = AutoRegressiveDataset.from_chunk(cmd_datachunk, n_data_aug=n_data_aug)
+    for seq in dataset.data:
+        assert list(seq.shape) == [20, 8]
+    assert len(dataset) == 10 * n_data_aug
+
 def test_auged_autoregressive_dataset_pipeline(auged_image_command_datachunk):
     dataset = AutoRegressiveDataset.from_chunk(auged_image_command_datachunk)
     assert len(dataset) == 10
