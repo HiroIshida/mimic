@@ -44,6 +44,8 @@ def compute_covariance_matrix(seqs_list: List[torch.Tensor]):
     return cov
 
 def augment_data(seqs_list: List[torch.Tensor], n_data_aug=10, cov_scale=0.3):
+    if n_data_aug < 1:
+        return seqs_list
     cov = compute_covariance_matrix(seqs_list) * cov_scale ** 2
     cov_dim = cov.shape[0]
     walks_new = []
@@ -100,7 +102,7 @@ class AutoRegressiveDataset(_DatasetFromChunk):
         self.data = attach_flag_info(seq_list)
 
     @classmethod
-    def from_chunk(cls, chunk: AbstractDataChunk, n_data_aug: int=10) -> 'AutoRegressiveDataset':
+    def from_chunk(cls, chunk: AbstractDataChunk, n_data_aug: int=0) -> 'AutoRegressiveDataset':
         if isinstance(chunk, ImageDataChunk) or isinstance(chunk, ImageCommandDataChunk):
             assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
@@ -128,10 +130,10 @@ class AugedAutoRegressiveDataset(_DatasetFromChunk):
         self.robot_spec = robot_sepec
 
     @classmethod
-    def from_chunk(cls, chunk: AugedImageCommandDataChunk) -> 'AugedAutoRegressiveDataset':
+    def from_chunk(cls, chunk: AugedImageCommandDataChunk, n_data_aug: int=0) -> 'AugedAutoRegressiveDataset':
         assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
-        featureseq_list_new = augment_data(featureseq_list)
+        featureseq_list_new = augment_data(featureseq_list, n_data_aug)
         return cls(featureseq_list_new, chunk.n_aug, chunk.robot_spec)
 
     @property
@@ -153,10 +155,11 @@ class BiasedAutoRegressiveDataset(_DatasetFromChunk[ImageCommandDataChunk]):
         self.data = attach_flag_info(seq_list)
 
     @classmethod
-    def from_chunk(cls, chunk: ImageCommandDataChunk) -> 'BiasedAutoRegressiveDataset':
+    def from_chunk(cls, chunk: ImageCommandDataChunk, n_data_aug: int=0) -> 'BiasedAutoRegressiveDataset':
         assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
-        return BiasedAutoRegressiveDataset(featureseq_list, chunk.n_encoder_output())
+        featureseq_list_new = augment_data(featureseq_list, n_data_aug)
+        return BiasedAutoRegressiveDataset(featureseq_list_new, chunk.n_encoder_output())
 
     @property
     def n_state(self) -> int: return self.data[0].shape[1] - self.n_bias
