@@ -8,6 +8,9 @@ from typing import Type
 from typing import TypeVar
 from typing import Optional
 
+import logging
+logger = logging.getLogger(__name__)
+
 def get_data_dir() -> str:
     dirname = osp.expanduser('~/.mimic')
     if not osp.exists(dirname):
@@ -59,5 +62,7 @@ def load_pickled_data(project_name: str, cls: Type[DataT],
 def dump_pickled_data(data: Any, project_name: str, 
         prefix: Optional[str] = None, postfix: Optional[str] = None) -> None:
     wholename = _cache_name(project_name, data.__class__, prefix, postfix)
+    logger.info('dump pickle to {}'.format(wholename))
+
     with open(wholename, 'wb') as f:
         pickle.dump(data, f)
