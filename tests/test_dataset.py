@@ -6,6 +6,9 @@ from mimic.datatype import ImageDataChunk
 from mimic.dataset import ReconstructionDataset
 import mimic.dataset
 from mimic.dataset import attach_flag_info
+from mimic.dataset import augment_noisy_sequence
+from mimic.dataset import randomly_shrink_sequence
+from mimic.dataset import randomly_extend_sequence
 from mimic.dataset import AutoRegressiveDataset
 from mimic.dataset import BiasedAutoRegressiveDataset
 from mimic.dataset import FirstOrderARDataset
@@ -48,6 +51,22 @@ def test_attach_flag_info():
     for i in [12, 13]:
         assert torch.norm(seq_list_with_flag[0][i, :3] - seq_list_with_flag[0][11, :3]) < 1e-8
 
+def test_data_augmentation(cmd_datachunk):
+    n_data_aug = 10
+    chunk = cmd_datachunk
+    seq_list = chunk.to_featureseq_list()
+    n_dim = seq_list[0].shape[1]
+    cov = torch.eye(n_dim)
+
+    seq_list_auged = augment_noisy_sequence(seq_list, cov, n_data_aug=n_data_aug)
+    assert len(seq_list_auged) == len(seq_list) * n_data_aug
+    for seq in seq_list_auged: 
+        seq_shrinked = randomly_shrink_sequence(seq)
+        assert len(seq_shrinked) <= len(seq)
+
+        seq_extended = randomly_extend_sequence(seq, cov=cov)
+        assert len(seq_extended) >= len(seq)
+
 def test_autoregressive_dataset_pipeline1(image_datachunk_with_encoder):
     dataset = AutoRegressiveDataset.from_chunk(image_datachunk_with_encoder)
     for seq in dataset.data:
@@ -59,13 +78,6 @@ def test_autoregressive_dataset_pipeline2(cmd_datachunk):
     for seq in dataset.data:
         assert list(seq.shape) == [20, 8]
     assert len(dataset) == 10
-
-def test_autoregressive_dataset_pipeline3_with_data_augmentation(cmd_datachunk):
-    n_data_aug = 10
-    dataset = AutoRegressiveDataset.from_chunk(cmd_datachunk, n_data_aug=n_data_aug)
-    for seq in dataset.data:
-        assert list(seq.shape) == [20, 8]
-    assert len(dataset) == 10 * n_data_aug
 
 def test_auged_autoregressive_dataset_pipeline(auged_image_command_datachunk):
     dataset = AutoRegressiveDataset.from_chunk(auged_image_command_datachunk)
