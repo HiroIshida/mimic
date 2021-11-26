@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import torch
 
@@ -15,6 +16,24 @@ def compute_covariance_matrix(seqs_list: List[torch.Tensor]):
     diffs_cat = torch.cat(diffs, dim=0)
     cov = torch.cov(diffs_cat.T)
     return cov
+
+def generate_insert_partitoin(n_seq_len: int) -> Tuple[np.ndarray, np.ndarray]:
+    n_insert_total = np.random.randint(int(n_seq_len * 1.5))
+    n_insert_list = []
+    count = 0
+    while True:
+        n_insert = np.random.randint(int(n_seq_len * 0.2)) + 1
+        if count + n_insert > n_insert_total:
+            n_insert = n_insert_total - count
+            if n_insert > 0:
+                n_insert_list.append(n_insert)
+            break
+        n_insert_list.append(n_insert)
+        count += n_insert
+    idxes_insert = np.array(random.sample(range(n_seq_len), len(n_insert_list)))
+    arg_idxes = np.argsort(idxes_insert)
+    assert sum(n_insert_list) == n_insert_total
+    return idxes_insert[arg_idxes], np.array(n_insert_list)[arg_idxes]
 
 def augment_data(seqs_list: List[torch.Tensor], n_data_aug: int=10, cov_scale: float=0.3) -> List[torch.Tensor]:
     if n_data_aug < 1:
@@ -58,15 +77,18 @@ def randomly_shrink_sequence(seq: torch.Tensor) -> torch.Tensor:
 def randomly_extend_sequence(seq: torch.Tensor, cov: torch.Tensor) -> torch.Tensor:
     # insertion
     n_seq_len, n_dim = seq.shape
-    idxes_insert = np.random.randint(n_seq_len, size=int(n_seq_len * np.random.rand() * 0.5))
+    idxes_insert, n_insert_list = generate_insert_partitoin(n_seq_len)
 
     seq_new = []
     for i in range(n_seq_len):
         seq_new.append(seq[i]) 
-        if i in set(idxes_insert):
-            n_insert_len = np.random.randint(int(n_seq_len * 0.1))
-            noises = np.random.multivariate_normal(mean=np.zeros(n_dim), cov=cov, size=n_insert_len)
-            for j in range(n_insert_len):
-                seq_new.append(seq[i] + noises[j])
-    return torch.stack(seq_new).float()
 
+        idx_insert_inner = np.where(idxes_insert==i)[0]
+        not_found = len(idx_insert_inner) == 0
+        if not_found: continue
+
+        n_insert = n_insert_list[idx_insert_inner]
+        noises = np.random.multivariate_normal(mean=np.zeros(n_dim), cov=cov, size=n_insert)
+        for noise in noises:
+            seq_new.append(seq[i] + noise)
+    return torch.stack(seq_new).float()
