@@ -17,6 +17,7 @@ from typing import Tuple
 from typing import NewType
 
 from torch.functional import Tensor
+import albumentations as A
 
 from mimic.file import dump_pickled_data
 from mimic.file import load_pickled_data
@@ -134,11 +135,31 @@ class ImageDataSequence(AbstractDataSequence):
         self.encoder_holder = encoder_holder
 
     def to_featureseq(self) -> torch.Tensor:
-        tf = torchvision.transforms.ToTensor()
-        img_list = [tf(img).float() for img in self.data]
-        data_torch = torch.stack(img_list)
         encoder = self.encoder_holder['encoder']
-        out = encoder(data_torch).detach().clone() if encoder else data_torch
+        with_feature_encoding = encoder is not None
+
+        # TODO(HiroIshida) too ad-hoc impl
+        if with_feature_encoding:
+            # no aug
+            np_data = self.data
+        else:
+            f_aug = A.Compose([A.GaussNoise(p=1), A.RGBShift(p=1)])
+            auged_imgseq_list = []
+            _n_image_data_aug = 9
+            for _ in range(_n_image_data_aug):
+                aug_seq = np.array([f_aug(image=img)['image'] for img in self.data])
+                auged_imgseq_list.append(aug_seq)
+                print(aug_seq.shape)
+            auged_imgseq_list.append(self.data)
+            np_data = np.concatenate(auged_imgseq_list, axis=0)
+
+        tf = torchvision.transforms.ToTensor()
+        img_list = [tf(img).float() for img in np_data]
+        data_torch = torch.stack(img_list)
+        if with_feature_encoding:
+            out = encoder(data_torch).detach().clone() # type: ignore
+        else:
+            out = data_torch
         return out
 
     def edit_feature_info(self, fi: FeatureInfo):
