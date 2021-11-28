@@ -19,7 +19,7 @@ from mimic.datatype import ImageCommandDataChunk
 from mimic.datatype import AugedImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.robot import RobotSpecBase
-from mimic.augmentation import augment_data
+from mimic.augmentation import augment_seq_data
 
 from dataclasses import dataclass
 import logging
@@ -82,7 +82,7 @@ class AutoRegressiveDataset(_DatasetFromChunk):
         if isinstance(chunk, ImageDataChunk) or isinstance(chunk, ImageCommandDataChunk):
             assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
-        featureseq_list_new = augment_data(featureseq_list, n_data_aug, cov_scale)
+        featureseq_list_new = augment_seq_data(featureseq_list, n_data_aug, cov_scale)
         return AutoRegressiveDataset(featureseq_list_new)
 
     @property
@@ -109,7 +109,7 @@ class AugedAutoRegressiveDataset(_DatasetFromChunk):
     def from_chunk(cls, chunk: AugedImageCommandDataChunk, n_data_aug: int=0, cov_scale: float=0.3) -> 'AugedAutoRegressiveDataset':
         assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
-        featureseq_list_new = augment_data(featureseq_list, n_data_aug, cov_scale)
+        featureseq_list_new = augment_seq_data(featureseq_list, n_data_aug, cov_scale)
         return cls(featureseq_list_new, chunk.n_aug, chunk.robot_spec)
 
     @property
@@ -134,7 +134,7 @@ class BiasedAutoRegressiveDataset(_DatasetFromChunk[ImageCommandDataChunk]):
     def from_chunk(cls, chunk: ImageCommandDataChunk, n_data_aug: int=0, cov_scale: float=0.3) -> 'BiasedAutoRegressiveDataset':
         assert chunk.has_encoder
         featureseq_list = chunk.to_featureseq_list()
-        featureseq_list_new = augment_data(featureseq_list, n_data_aug, cov_scale)
+        featureseq_list_new = augment_seq_data(featureseq_list, n_data_aug, cov_scale)
         return BiasedAutoRegressiveDataset(featureseq_list_new, chunk.n_encoder_output())
 
     @property

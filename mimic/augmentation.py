@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import random
 import numpy as np
 import torch
@@ -35,7 +36,7 @@ def generate_insert_partitoin(n_seq_len: int) -> Tuple[np.ndarray, np.ndarray]:
     assert sum(n_insert_list) == n_insert_total
     return idxes_insert[arg_idxes], np.array(n_insert_list)[arg_idxes]
 
-def augment_data(seqs_list: List[torch.Tensor], n_data_aug: int=10, cov_scale: float=0.3, with_shrink_extend:bool = False) -> List[torch.Tensor]:
+def augment_seq_data(seqs_list: List[torch.Tensor], n_data_aug: int, cov_scale: float, with_shrink_extend:bool = False) -> List[torch.Tensor]:
     if n_data_aug < 1:
         logger.info("because n_data_aug < 1, skip data augmentation process..")
         return seqs_list
@@ -94,3 +95,20 @@ def randomly_extend_sequence(seq: torch.Tensor, cov: torch.Tensor) -> torch.Tens
         for noise in noises:
             seq_new.append(seq[i] + noise)
     return torch.stack(seq_new).float()
+
+class PostTorchAugmentation(ABC):
+    @abstractmethod
+    def __call__(self, seqs_list: List[torch.Tensor]) -> List[torch.Tensor]: ...
+
+class DummyPostTorchAugmentation(PostTorchAugmentation):
+    def __call__(self, seqs_list): return seqs_list
+
+class SequenceAugmentation(PostTorchAugmentation):
+    n_data_aug: int
+    cov_scale: float
+    def __init__(self, n_data_aug: int=10, cov_scale: float=0.2):
+        self.n_data_aug = n_data_aug
+        self.cov_scale = cov_scale
+
+    def __call__(self, seqs_list):
+        return augment_seq_data(seqs_list, self.n_data_aug, self.cov_scale)
