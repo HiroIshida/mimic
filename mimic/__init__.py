@@ -2,6 +2,7 @@ from mimic import file
 from mimic import robot
 from mimic import primitives 
 from mimic import datatype
+from mimic import augmentation
 from mimic import dataset
 from mimic import models 
 from mimic import trainer

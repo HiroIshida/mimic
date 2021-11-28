@@ -19,6 +19,7 @@ from mimic.datatype import ImageCommandDataChunk
 from mimic.datatype import AugedImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.robot import RobotSpecBase
+from mimic.augmentation import augment_data
 
 from dataclasses import dataclass
 import logging
@@ -33,36 +34,6 @@ class _DatasetFromChunk(Dataset, Generic[ChunkT]):
     @classmethod
     def from_chunk(cls: Type[DatasetT], chunk: ChunkT) -> DatasetT: ...
     def __len__(self) -> int: ...
-
-def compute_covariance_matrix(seqs_list: List[torch.Tensor]):
-    diffs: List[torch.Tensor] = []
-    for seqs in seqs_list:
-        x_pre = seqs[:-1, :]
-        x_post = seqs[1:, :]
-        diff = x_post - x_pre
-        diffs.append(diff)
-    diffs_cat = torch.cat(diffs, dim=0)
-    cov = torch.cov(diffs_cat.T)
-    return cov
-
-def augment_data(seqs_list: List[torch.Tensor], n_data_aug=10, cov_scale=0.3):
-    if n_data_aug < 1:
-        logger.info("because n_data_aug < 1, skip data augmentation process..")
-        return seqs_list
-    logger.info("augment data with parmas: n_data_aug {0}, cov_scale {1}".format(
-        n_data_aug, cov_scale))
-    cov = compute_covariance_matrix(seqs_list) * cov_scale ** 2
-    cov_dim = cov.shape[0]
-    walks_new = []
-    for walk in seqs_list:
-        n_seq, n_dim = walk.shape
-        assert cov_dim == n_dim
-        for _ in range(n_data_aug):
-            rand_aug = np.random.multivariate_normal(mean=np.zeros(n_dim), cov=cov, size=n_seq)
-            assert rand_aug.shape == walk.shape
-            walks_new.append(walk + torch.from_numpy(rand_aug).float())
-    return walks_new
-
 class ReconstructionDataset(_DatasetFromChunk[ImageDataChunk]):
     data: torch.Tensor
     def __init__(self, data):
