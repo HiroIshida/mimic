@@ -35,7 +35,7 @@ def generate_insert_partitoin(n_seq_len: int) -> Tuple[np.ndarray, np.ndarray]:
     assert sum(n_insert_list) == n_insert_total
     return idxes_insert[arg_idxes], np.array(n_insert_list)[arg_idxes]
 
-def augment_data(seqs_list: List[torch.Tensor], n_data_aug: int=10, cov_scale: float=0.3) -> List[torch.Tensor]:
+def augment_data(seqs_list: List[torch.Tensor], n_data_aug: int=10, cov_scale: float=0.3, with_shrink_extend:bool = False) -> List[torch.Tensor]:
     if n_data_aug < 1:
         logger.info("because n_data_aug < 1, skip data augmentation process..")
         return seqs_list
@@ -45,13 +45,15 @@ def augment_data(seqs_list: List[torch.Tensor], n_data_aug: int=10, cov_scale: f
     seqs_list = augment_noisy_sequence(seqs_list, cov, n_data_aug)
 
     # finally add deleted and extended sequences
-    seqs_additional = []
-    for seq in seqs_list:
-        seq_shrinked = randomly_shrink_sequence(seq)
-        seqs_additional.append(seq_shrinked)
-        seq_extend = randomly_extend_sequence(seq_shrinked, cov)
-        seqs_additional.append(seq_extend)
-    seqs_list.extend(seqs_additional)
+    if with_shrink_extend:
+        raise NotImplementedError('Under construction. From experiences so far, this augmentation leads to worse results.')
+        seqs_additional = []
+        for seq in seqs_list:
+            seq_shrinked = randomly_shrink_sequence(seq)
+            seqs_additional.append(seq_shrinked)
+            seq_extend = randomly_extend_sequence(seq_shrinked, cov)
+            seqs_additional.append(seq_extend)
+        seqs_list.extend(seqs_additional)
     return seqs_list
 
 def augment_noisy_sequence(
