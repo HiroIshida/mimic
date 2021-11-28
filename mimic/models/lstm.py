@@ -21,6 +21,7 @@ class LSTMConfig(_PropModelConfigBase):
     n_state: int
     n_hidden: int = 200
     n_layer: int = 2
+    n_output_layer: int = 1
 
     @classmethod
     def from_finfo(cls, finfo: FeatureInfo, **kwargs) -> 'LSTMConfig': 
@@ -39,6 +40,7 @@ class BiasedLSTMConfig(_PropModelConfigBase):
     n_bias: int
     n_hidden: int = 200
     n_layer: int = 2
+    n_output_layer: int = 1
 
     @classmethod
     def from_finfo(cls, finfo: FeatureInfo, **kwargs) -> 'BiasedLSTMConfig': 
@@ -56,6 +58,7 @@ class AugedLSTMConfig(_PropModelConfigBase):
     robot_spec: RobotSpecBase
     n_hidden: int = 200
     n_layer: int = 2
+    n_output_layer: int = 1
 
     @classmethod
     def from_finfo(cls, finfo: FeatureInfo, robot_spec: RobotSpecBase, **kwargs) -> 'AugedLSTMConfig': 
@@ -77,7 +80,7 @@ class LSTMBase(_PropModel[LSTMConfigT]):
     """
     n_flag: int = 1
     lstm_layer: nn.LSTM
-    output_layer: nn.Linear
+    output_layer: nn.Sequential
 
     @property
     def n_state(self) -> int: return self.config.n_state # type: ignore
@@ -89,6 +92,8 @@ class LSTMBase(_PropModel[LSTMConfigT]):
     def n_hidden(self) -> int: return self.config.n_hidden # type: ignore
     @property
     def n_layer(self) -> int: return self.config.n_layer # type: ignore
+    @property
+    def n_output_layer(self) -> int: return self.config.n_output_layer # type: ignore
 
     def __init__(self, device: device, config: LSTMConfigT):
         _PropModel.__init__(self, device, config)
@@ -98,7 +103,9 @@ class LSTMBase(_PropModel[LSTMConfigT]):
         n_input = self.n_state + self.n_aug + self.n_bias
         n_output =  self.n_state + self.n_aug
         self.lstm_layer = nn.LSTM(n_input, self.n_hidden, self.n_layer, batch_first=True)
-        self.output_layer = nn.Linear(self.n_hidden, n_output)
+
+        output_layers = [nn.Linear(self.n_hidden, self.n_hidden) for _ in range(self.n_output_layer)] + [nn.Linear(self.n_hidden, n_output)]
+        self.output_layer = nn.Sequential(*output_layers)
 
     def forward(self, sample_input: torch.Tensor) -> torch.Tensor:
         n_batch, n_seq, n_input = sample_input.shape
