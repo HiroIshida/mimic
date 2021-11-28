@@ -96,14 +96,14 @@ def randomly_extend_sequence(seq: torch.Tensor, cov: torch.Tensor) -> torch.Tens
             seq_new.append(seq[i] + noise)
     return torch.stack(seq_new).float()
 
-class PostTorchAugmentation(ABC):
+class AugmentationPost(ABC):
     @abstractmethod
     def __call__(self, seqs_list: List[torch.Tensor]) -> List[torch.Tensor]: ...
 
-class DummyPostTorchAugmentation(PostTorchAugmentation):
+class DummyAugmentationPost(AugmentationPost):
     def __call__(self, seqs_list): return seqs_list
 
-class SequenceAugmentation(PostTorchAugmentation):
+class SequenceAugmentation(AugmentationPost):
     n_data_aug: int
     cov_scale: float
     def __init__(self, n_data_aug: int=10, cov_scale: float=0.2):
