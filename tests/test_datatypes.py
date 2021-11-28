@@ -41,9 +41,23 @@ def image_datachunk():
     for i in range(10):
         if i==9:
             n_seq = n_seq + _img_chunk_uneven_n # to test uneven dataset 
-        imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
+        imgseq = np.random.randint(256, size=(n_seq, n_pixel, n_pixel, n_channel), dtype=np.uint8)
         chunk.push_epoch(imgseq)
+    assert not chunk.with_depth
     return chunk
+
+def test_depthimage_datachunk():
+    n_seq = 100
+    n_channel = 4
+    n_pixel = 28
+    chunk = ImageDataChunk()
+    for i in range(10):
+        imgseq = np.random.randint(256, size=(n_seq, n_pixel, n_pixel, n_channel), dtype=np.uint8)
+        chunk.push_epoch(imgseq)
+    assert chunk.with_depth
+
+    chunk_no_depth = chunk.to_depth_stripped()
+    assert not chunk_no_depth.with_depth
 
 @pytest.fixture(scope='session')
 def image_datachunk_with_encoder():
@@ -53,9 +67,9 @@ def image_datachunk_with_encoder():
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     chunk = ImageDataChunk(encoder=ae.get_encoder())
     for i in range(9):
-        imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
+        imgseq = np.random.randint(256, size=(n_seq, n_pixel, n_pixel, n_channel), dtype=np.uint8)
         chunk.push_epoch(imgseq)
-    imgseq = np.random.randn(n_seq-2, n_pixel, n_pixel, n_channel) # to test autoregressive
+    imgseq = np.random.randint(256, size=(n_seq, n_pixel, n_pixel, n_channel), dtype=np.uint8)
     chunk.push_epoch(imgseq)
 
     fi = chunk.get_feature_info()
@@ -72,7 +86,7 @@ def image_command_datachunk_with_encoder():
     ae = ImageAutoEncoder(torch.device('cpu'), 16, image_shape=(n_channel, n_pixel, n_pixel))
     chunk = ImageCommandDataChunk(encoder=ae.get_encoder())
     for i in range(10):
-        imgseq = np.random.randn(n_seq, n_pixel, n_pixel, n_channel)
+        imgseq = np.random.randint(256, size=(n_seq, n_pixel, n_pixel, n_channel), dtype=np.uint8)
         cmdseq = np.random.randn(n_seq, 7)
         chunk.push_epoch((imgseq, cmdseq))
 
