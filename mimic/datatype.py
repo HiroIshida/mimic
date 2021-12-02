@@ -24,6 +24,9 @@ from mimic.file import load_pickled_data
 from mimic.robot import RobotSpecBase
 from mimic.primitives import AbstractEncoder
 
+import logging
+logger = logging.getLogger(__name__)
+
 # TODO
 # class is not flexible, meaning that when a user want to add another 
 # property such as audio feature, user how to modiry the library.
@@ -145,11 +148,11 @@ class ImageDataSequence(AbstractDataSequence):
         else:
             f_aug = A.Compose([A.GaussNoise(p=1), A.RGBShift(p=1)])
             auged_imgseq_list = []
-            _n_image_data_aug = 9
+            _n_image_data_aug = 0
+            logger.info('albumentation augmentation : {}'.format(_n_image_data_aug))
             for _ in range(_n_image_data_aug):
                 aug_seq = np.array([f_aug(image=img)['image'] for img in self.data])
                 auged_imgseq_list.append(aug_seq)
-                print(aug_seq.shape)
             auged_imgseq_list.append(self.data)
             np_data = np.concatenate(auged_imgseq_list, axis=0)
 
