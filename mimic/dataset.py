@@ -12,6 +12,7 @@ import tinyfk
 import torch
 from torch.functional import Tensor
 from torch.utils.data import Dataset
+from torchvision.transforms import ToTensor, ToPILImage
 
 from mimic.robot import RobotSpecBase
 from mimic.datatype import AbstractDataChunk
@@ -34,9 +35,10 @@ class _DatasetFromChunk(Dataset, Generic[ChunkT]):
     @classmethod
     def from_chunk(cls: Type[DatasetT], chunk: ChunkT) -> DatasetT: ...
     def __len__(self) -> int: ...
+
 class ReconstructionDataset(_DatasetFromChunk[ImageDataChunk]):
-    data: torch.Tensor
-    def __init__(self, data):
+    data: np.ndarray # Unlike other set, data is np.ndarray for using Albumentation
+    def __init__(self, data: np.ndarray):
         self.data = data
 
     @classmethod
@@ -45,14 +47,14 @@ class ReconstructionDataset(_DatasetFromChunk[ImageDataChunk]):
         featureseq_list = chunk.to_featureseq_list()
         n_seq, n_channel, n_pixel1, n_pixel2 = featureseq_list[0].shape
         tmp = torch.cat(featureseq_list, dim=0)
-        data = torch.reshape(tmp, (-1, n_channel, n_pixel1, n_pixel2))
-        return ReconstructionDataset(data)
+        torch_data = torch.reshape(tmp, (-1, n_channel, n_pixel1, n_pixel2))
+        np_data = np.array([np.array(ToPILImage()(torch_image)) for torch_image in torch_data])
+        return ReconstructionDataset(np_data)
 
-    def __len__(self) -> int:
-        return len(self.data)
+    def __len__(self) -> int: return self.data.shape[0]
 
-    def __getitem__(self, idx: int) -> torch.Tensor:
-        return self.data[idx]
+    def __getitem__(self, idx: int) -> torch.Tensor: 
+        return ToTensor()(self.data[idx])
 
 def attach_flag_info(seq_list: List[torch.Tensor]) -> List[torch.Tensor]:
     n_state = len(seq_list[0][0])
