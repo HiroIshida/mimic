@@ -9,7 +9,8 @@ install_requires = [
         "torchvision",
         "tinyfk",
         "tqdm",
-        "matplotlib"
+        "matplotlib",
+        "albumentations"
         ]
 
 # for running demo

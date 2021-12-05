@@ -5,6 +5,7 @@ from typing import Tuple
 from typing import Type
 from typing import Generic
 from typing import TypeVar
+from typing import Callable
 import math
 import numpy as np
 import tinyfk
@@ -21,6 +22,7 @@ from mimic.datatype import AugedImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.robot import RobotSpecBase
 from mimic.augmentation import augment_data
+import albumentations as album
 
 from dataclasses import dataclass
 import logging
@@ -38,23 +40,29 @@ class _DatasetFromChunk(Dataset, Generic[ChunkT]):
 
 class ReconstructionDataset(_DatasetFromChunk[ImageDataChunk]):
     data: np.ndarray # Unlike other set, data is np.ndarray for using Albumentation
-    def __init__(self, data: np.ndarray):
+    def __init__(self, data: np.ndarray, f_np_aug: Callable[[np.ndarray], np.ndarray]):
         self.data = data
+        self.f_np_aug = f_np_aug
 
     @classmethod
-    def from_chunk(cls, chunk: ImageDataChunk) -> 'ReconstructionDataset':
+    def from_chunk(cls, chunk: ImageDataChunk, 
+            f_np_aug: Optional[Callable[[np.ndarray], np.ndarray]]=None) -> 'ReconstructionDataset':
         assert (not chunk.has_encoder)
         featureseq_list = chunk.to_featureseq_list()
         n_seq, n_channel, n_pixel1, n_pixel2 = featureseq_list[0].shape
         tmp = torch.cat(featureseq_list, dim=0)
         torch_data = torch.reshape(tmp, (-1, n_channel, n_pixel1, n_pixel2))
         np_data = np.array([np.array(ToPILImage()(torch_image)) for torch_image in torch_data])
-        return ReconstructionDataset(np_data)
+
+        if f_np_aug is None:
+            aug = album.Compose([album.GaussNoise(p=1), album.RGBShift(p=1)])
+            f_np_aug = lambda img: aug(image=img)['image']
+        return ReconstructionDataset(np_data, f_np_aug)
 
     def __len__(self) -> int: return self.data.shape[0]
 
     def __getitem__(self, idx: int) -> torch.Tensor: 
-        return ToTensor()(self.data[idx])
+        return ToTensor()(self.f_np_aug(self.data[idx]))
 
 def attach_flag_info(seq_list: List[torch.Tensor]) -> List[torch.Tensor]:
     n_state = len(seq_list[0][0])
