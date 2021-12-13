@@ -5,6 +5,7 @@ from typing import Tuple
 from typing import Type
 from typing import Generic
 from typing import TypeVar
+from typing import Callable
 import math
 import numpy as np
 import tinyfk
@@ -12,6 +13,7 @@ import tinyfk
 import torch
 from torch.functional import Tensor
 from torch.utils.data import Dataset
+from torchvision.transforms import ToTensor, ToPILImage
 
 from mimic.robot import RobotSpecBase
 from mimic.datatype import AbstractDataChunk
@@ -20,6 +22,7 @@ from mimic.datatype import AugedImageCommandDataChunk
 from mimic.datatype import ImageDataChunk
 from mimic.robot import RobotSpecBase
 from mimic.augmentation import augment_data
+import albumentations as album
 
 from dataclasses import dataclass
 import logging
@@ -34,25 +37,38 @@ class _DatasetFromChunk(Dataset, Generic[ChunkT]):
     @classmethod
     def from_chunk(cls: Type[DatasetT], chunk: ChunkT) -> DatasetT: ...
     def __len__(self) -> int: ...
+
 class ReconstructionDataset(_DatasetFromChunk[ImageDataChunk]):
     data: torch.Tensor
-    def __init__(self, data):
+    def __init__(self, data: torch.Tensor):
         self.data = data
 
     @classmethod
-    def from_chunk(cls, chunk: ImageDataChunk) -> 'ReconstructionDataset':
+    def from_chunk(cls, chunk: ImageDataChunk, 
+            f_np_aug: Optional[Callable[[np.ndarray], np.ndarray]]=None,
+            n_augmentation: int=2,
+            ) -> 'ReconstructionDataset':
         assert (not chunk.has_encoder)
         featureseq_list = chunk.to_featureseq_list()
         n_seq, n_channel, n_pixel1, n_pixel2 = featureseq_list[0].shape
         tmp = torch.cat(featureseq_list, dim=0)
-        data = torch.reshape(tmp, (-1, n_channel, n_pixel1, n_pixel2))
-        return ReconstructionDataset(data)
+        torch_data = torch.reshape(tmp, (-1, n_channel, n_pixel1, n_pixel2))
+        np_data = [np.array(ToPILImage()(torch_image)) for torch_image in torch_data]
 
-    def __len__(self) -> int:
-        return len(self.data)
+        if n_augmentation==0: 
+            np_auged_data = [ToTensor()(e) for e in np_data]
+        else:
+            aug = album.Compose([album.GaussNoise(p=1), album.RGBShift(p=1)])
+            f_np_aug = lambda img: aug(image=img)['image']
+            logger.info('augmenting with n_aug: {}'.format(n_augmentation))
+            np_auged_data = [ToTensor()(f_np_aug(e)) for e in np_data]
 
-    def __getitem__(self, idx: int) -> torch.Tensor:
-        return self.data[idx]
+        torch_auged_data = torch.stack(np_auged_data)
+        return ReconstructionDataset(torch_auged_data)
+
+    def __len__(self) -> int: return self.data.shape[0]
+
+    def __getitem__(self, idx: int) -> torch.Tensor: return self.data[idx]
 
 def attach_flag_info(seq_list: List[torch.Tensor]) -> List[torch.Tensor]:
     n_state = len(seq_list[0][0])
