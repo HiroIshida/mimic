@@ -17,7 +17,6 @@ from typing import Tuple
 from typing import NewType
 
 from torch.functional import Tensor
-import albumentations as A
 
 from mimic.file import dump_pickled_data
 from mimic.file import load_pickled_data
