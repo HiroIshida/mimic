@@ -50,6 +50,25 @@ def test_predictor_core():
     cmd_pred_direct = out[0][-1, :-1].detach().numpy()
     assert np.all(cmd_pred == cmd_pred_direct)
 
+    # check if pred values from batch predict and sequencial predict are the same
+    n_predict = 5
+
+    # first compute batch predict values
+    predictor = SimplePredictor(lstm)
+    predictor.feed(seq[0].detach().numpy())
+    pred_values_batch = predictor.predict(n_predict)
+
+    # second compute batch predict values
+    predictor = SimplePredictor(lstm)
+    predictor.feed(seq[0].detach().numpy())
+    pred_values_seq = []
+    for i in range(n_predict):
+        pred_value = predictor.predict(1)[0]
+        predictor.feed(pred_value)
+        pred_values_seq.append(pred_value)
+    np.testing.assert_almost_equal(np.stack(pred_values_batch), np.stack(pred_values_seq), decimal=1e-4)
+
+
 def test_ImagePredictor():
     n_seq = 100
     n_channel = 3
