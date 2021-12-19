@@ -27,6 +27,9 @@ from mimic.dataset import _continue_flag
 
 from test_datatypes import image_command_datachunk_with_encoder
 
+def create_random_iamge(n_pixel, n_channel):
+    return np.random.randint(256, size=(n_pixel, n_pixel, n_channel))
+
 def assert_batch_seq_prediction_consistency(predictor_, input_init):
     # check if pred values from batch predict and sequencial predict are the same
     n_predict = 5
@@ -90,11 +93,11 @@ def test_ImagePredictor():
         print('testing : {}'.format(propagator.__class__.__name__))
         predictor = ImagePredictor(propagator, ae)
 
-        init_input = np.zeros((n_pixel, n_pixel, n_channel))
+        init_input = create_random_iamge(n_pixel, n_channel)
         assert_batch_seq_prediction_consistency(predictor, init_input)
 
         for _ in range(10):
-            img = np.zeros((n_pixel, n_pixel, n_channel))
+            img = create_random_iamge(n_pixel, n_channel)
             predictor.feed(img)
         assert len(predictor.states) == 10
         if isinstance(propagator, (LSTMBase, DenseBase)):
@@ -127,12 +130,12 @@ def test_ImageCommandPredictor():
         print('testing : {}'.format(propagator.__class__.__name__))
         predictor = ImageCommandPredictor(propagator, ae)
 
-        init_input = (np.zeros((n_pixel, n_pixel, n_channel)), np.zeros(7))
+        init_input = (create_random_iamge(n_pixel, n_channel), np.random.randn(7))
         assert_batch_seq_prediction_consistency(predictor, init_input)
 
         for _ in range(10):
-            img = np.zeros((n_pixel, n_pixel, n_channel))
-            cmd = np.zeros(7)
+            img = create_random_iamge(n_pixel, n_channel)
+            cmd = np.random.randn(7)
             predictor.feed((img, cmd))
 
         if isinstance(propagator, (AugedLSTM)):
