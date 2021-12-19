@@ -34,17 +34,22 @@ def assert_batch_seq_prediction_consistency(predictor_, input_init):
     # first compute batch predict values
     predictor = copy.deepcopy(predictor_)
     predictor.feed(input_init)
-    pred_values_batch = predictor.predict(n_predict)
+    preds_batch = predictor.predict(n_predict)
 
     # second compute batch predict values
     predictor = copy.deepcopy(predictor_)
     predictor.feed(input_init)
-    pred_values_seq = []
+    preds_sequential = []
     for i in range(n_predict):
         pred_value = predictor.predict(1)[0]
         predictor.feed(pred_value)
-        pred_values_seq.append(pred_value)
-    np.testing.assert_almost_equal(np.stack(pred_values_batch), np.stack(pred_values_seq), decimal=1e-4)
+        preds_sequential.append(pred_value)
+
+    pred_seqs_batch = list(map(list, zip(*preds_batch)))
+    pred_seqs_sequential = list(map(list, zip(*preds_sequential)))
+    for i in range(len(pred_seqs_batch)):
+        # for each component of predicted values (like img, cmd, ...)
+        np.testing.assert_almost_equal(np.stack(pred_seqs_batch[i]), np.stack(pred_seqs_sequential[i]), decimal=1e-4)
 
 def test_predictor_core():
     chunk = CommandDataChunk()
