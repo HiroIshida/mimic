@@ -21,11 +21,12 @@ from mimic.predictor import create_predictor
 from mimic.trainer import TrainCache
 
 @typing.no_type_check 
-def create_predictor_from_name(project_name: str, model_name: str) -> \
+def create_predictor_from_name(project_name: str, model_name: str,
+        ae_model_prefix: str="", predictor_model_prefix: str="") -> \
         Union[ImageCommandPredictor, FFImageCommandPredictor]:
     ModelT = get_model_type_from_name(model_name)
-    ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder)
-    prop_train_cache = TrainCache[ModelT].load(project_name, ModelT)
+    ae_train_cache = TrainCache[ImageAutoEncoder].load(project_name, ImageAutoEncoder, ae_model_prefix)
+    prop_train_cache = TrainCache[ModelT].load(project_name, ModelT, predictor_model_prefix)
     return create_predictor(ae_train_cache.best_model, prop_train_cache.best_model)
 
 if __name__=='__main__':
