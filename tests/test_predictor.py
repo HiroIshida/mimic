@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import torch
 from mimic.models import ImageAutoEncoder
@@ -26,6 +27,33 @@ from mimic.dataset import _continue_flag
 
 from test_datatypes import image_command_datachunk_with_encoder
 
+def create_random_iamge(n_pixel, n_channel):
+    return np.random.randint(256, size=(n_pixel, n_pixel, n_channel))
+
+def assert_batch_seq_prediction_consistency(predictor_, input_init):
+    # check if pred values from batch predict and sequencial predict are the same
+    n_predict = 5
+
+    # first compute batch predict values
+    predictor = copy.deepcopy(predictor_)
+    predictor.feed(input_init)
+    preds_batch = predictor.predict(n_predict)
+
+    # second compute batch predict values
+    predictor = copy.deepcopy(predictor_)
+    predictor.feed(input_init)
+    preds_sequential = []
+    for i in range(n_predict):
+        pred_value = predictor.predict(1)[0]
+        predictor.feed(pred_value)
+        preds_sequential.append(pred_value)
+
+    pred_seqs_batch = list(map(list, zip(*preds_batch)))
+    pred_seqs_sequential = list(map(list, zip(*preds_sequential)))
+    for i in range(len(pred_seqs_batch)):
+        # for each component of predicted values (like img, cmd, ...)
+        np.testing.assert_almost_equal(np.stack(pred_seqs_batch[i]), np.stack(pred_seqs_sequential[i]), decimal=1e-4)
+
 def test_predictor_core():
     chunk = CommandDataChunk()
     seq = np.random.randn(50, 7)
@@ -50,6 +78,8 @@ def test_predictor_core():
     cmd_pred_direct = out[0][-1, :-1].detach().numpy()
     assert np.all(cmd_pred == cmd_pred_direct)
 
+    assert_batch_seq_prediction_consistency(SimplePredictor(lstm), seq[0].detach().numpy())
+
 def test_ImagePredictor():
     n_seq = 100
     n_channel = 3
@@ -63,8 +93,11 @@ def test_ImagePredictor():
         print('testing : {}'.format(propagator.__class__.__name__))
         predictor = ImagePredictor(propagator, ae)
 
+        init_input = create_random_iamge(n_pixel, n_channel)
+        assert_batch_seq_prediction_consistency(predictor, init_input)
+
         for _ in range(10):
-            img = np.zeros((n_pixel, n_pixel, n_channel))
+            img = create_random_iamge(n_pixel, n_channel)
             predictor.feed(img)
         assert len(predictor.states) == 10
         if isinstance(propagator, (LSTMBase, DenseBase)):
@@ -78,6 +111,7 @@ def test_ImagePredictor():
 
         imgs_with_feeds = predictor.predict(5, with_feeds=True)
         assert len(imgs_with_feeds) == (5 + 10)
+
 
 def test_ImageCommandPredictor():
     n_seq = 100
@@ -96,9 +130,12 @@ def test_ImageCommandPredictor():
         print('testing : {}'.format(propagator.__class__.__name__))
         predictor = ImageCommandPredictor(propagator, ae)
 
+        init_input = (create_random_iamge(n_pixel, n_channel), np.random.randn(7))
+        assert_batch_seq_prediction_consistency(predictor, init_input)
+
         for _ in range(10):
-            img = np.zeros((n_pixel, n_pixel, n_channel))
-            cmd = np.zeros(7)
+            img = create_random_iamge(n_pixel, n_channel)
+            cmd = np.random.randn(7)
             predictor.feed((img, cmd))
 
         if isinstance(propagator, (AugedLSTM)):
