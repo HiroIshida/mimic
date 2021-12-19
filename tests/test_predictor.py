@@ -85,6 +85,9 @@ def test_ImagePredictor():
         print('testing : {}'.format(propagator.__class__.__name__))
         predictor = ImagePredictor(propagator, ae)
 
+        init_input = np.zeros((n_pixel, n_pixel, n_channel))
+        assert_batch_seq_prediction_consistency(predictor, init_input)
+
         for _ in range(10):
             img = np.zeros((n_pixel, n_pixel, n_channel))
             predictor.feed(img)
@@ -118,6 +121,9 @@ def test_ImageCommandPredictor():
     for propagator in [lstm, denseprop, depredense, auged_lstm]:
         print('testing : {}'.format(propagator.__class__.__name__))
         predictor = ImageCommandPredictor(propagator, ae)
+
+        init_input = (np.zeros((n_pixel, n_pixel, n_channel)), np.zeros(7))
+        assert_batch_seq_prediction_consistency(predictor, init_input)
 
         for _ in range(10):
             img = np.zeros((n_pixel, n_pixel, n_channel))
