@@ -1,6 +1,7 @@
 from functools import lru_cache
 from copy import deepcopy
 from typing import List
+from typing import Optional
 from typing import TypeVar
 import numpy as np
 from mimic.file import dump_pickled_data
@@ -11,11 +12,13 @@ ChunkT = TypeVar('ChunkT', bound=AbstractDataChunk)
 class Segmentor:
     n_phase: int
     data: List[np.ndarray]
-    def __init__(self, data: List[np.ndarray]):
+    loglikelihoods: Optional[List[float]]
+    def __init__(self, data: List[np.ndarray], loglikelihoods: Optional[List[float]]=None):
         n_epoch = len(data)
         n_seq, n_phase = data[0].shape
         self.n_phase = n_phase
         self.data = data
+        self.loglikelihoods = loglikelihoods
 
     def dump(self, project_name: str) -> None:
         dump_pickled_data(self, project_name)
@@ -40,6 +43,12 @@ class Segmentor:
 
     def __getitem__(self, idx: int) -> np.ndarray:
         return self.to_labelseq_list()[idx]
+
+    def _loglikelihood_based_discard_idxes(self, std_scale=1.0):
+        mean = np.mean(self.loglikelihoods)
+        std = np.std(self.loglikelihoods)
+        idxes_bad = np.where(self.loglikelihoods < mean - std * std_scale)[0]
+        return idxes_bad
 
     def __call__(self, chunk: ChunkT) -> List[ChunkT]:
         assert self.is_ordered, "currently support only ordered case"
