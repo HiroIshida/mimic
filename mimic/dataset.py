@@ -46,7 +46,7 @@ class ReconstructionDataset(_DatasetFromChunk[ImageDataChunk]):
     @classmethod
     def from_chunk(cls, chunk: ImageDataChunk, 
             f_np_aug: Optional[Callable[[np.ndarray], np.ndarray]]=None,
-            n_augmentation: int=2,
+            n_augmentation: int=2, aug_rgb_shift=40,
             ) -> 'ReconstructionDataset':
         assert (not chunk.has_encoder)
         featureseq_list = chunk.to_featureseq_list()
@@ -58,7 +58,9 @@ class ReconstructionDataset(_DatasetFromChunk[ImageDataChunk]):
         if n_augmentation==0: 
             np_auged_data = [ToTensor()(e) for e in np_data]
         else:
-            aug = album.Compose([album.GaussNoise(p=1), album.RGBShift(p=1)])
+            aug = album.Compose([
+                album.GaussNoise(p=1), 
+                album.RGBShift(r_shift_limit=aug_rgb_shift, g_shift_limit=aug_rgb_shift, b_shift_limit=aug_rgb_shift)])
             f_np_aug = lambda img: aug(image=img)['image']
             logger.info('augmenting with n_aug: {}'.format(n_augmentation))
             np_auged_data = [ToTensor()(f_np_aug(e)) for e in np_data]
