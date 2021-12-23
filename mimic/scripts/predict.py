@@ -39,8 +39,8 @@ if __name__=='__main__':
     from mimic.datatype import ImageCommandDataChunk
     parser = argparse.ArgumentParser()
     parser.add_argument('-pn', type=str, default='kuka_reaching', help='project name')
-    parser.add_argument('-n', type=int, default=50, help='prediction length')
-    parser.add_argument('-model', type=str, default='lstm', help='propagator model name')
+    parser.add_argument('-n', type=int, default=200, help='prediction length')
+    parser.add_argument('-model', type=str, default='LSTM', help='propagator model name')
     parser.add_argument('-bottleneck', type=int, default=16, help='latent dimension')
 
     args = parser.parse_args()
@@ -52,14 +52,14 @@ if __name__=='__main__':
     chunk = ImageCommandDataChunk.load(project_name)
     n_intact = 5
     chunk_intact, _ = chunk.split(n_intact)
-    imgseq, cmdseq = chunk_intact[0]
+    imgseq, cmdseq = chunk_intact[3]
     assert imgseq.data.ndim == 4
-    for i in range(20):
+    for i in range(1):
         predictor.feed((imgseq.data[i], cmdseq.data[i]))
     imgseq_pred, cmdseq_pred = map(list, zip(*predictor.predict(n_prediction)))
     filename = os.path.join(get_project_dir(project_name), 'prediction_result_{}.gif'.format(model_name))
     if isinstance(predictor, FFImageCommandPredictor):
         print('images can not be predicted by biased model') 
     else:
-        clip = ImageSequenceClip(imgseq_pred, fps=50)
-        clip.write_gif(filename, fps=50)
+        clip = ImageSequenceClip(imgseq_pred, fps=20)
+        clip.write_gif(filename, fps=20)

@@ -23,6 +23,7 @@ class DenseConfig(_PropModelConfigBase):
     n_hidden: int = 200
     n_layer: int = 2
     activation: Optional[str] = None
+    p_dropout: float = 0.3
 
     @classmethod
     def from_finfo(cls, finfo: FeatureInfo, **kwargs) -> 'DenseConfig':
@@ -48,6 +49,7 @@ class BiasedDenseConfig(_PropModelConfigBase):
     n_hidden: int = 200
     n_layer: int = 2
     activation: Optional[str] = None
+    p_dropout: float = 0.0
 
     @classmethod
     def from_finfo(cls, finfo: FeatureInfo, **kwargs) -> 'BiasedDenseConfig':
@@ -55,8 +57,19 @@ class BiasedDenseConfig(_PropModelConfigBase):
         obj.finfo = finfo
         return obj
 
+class DropoutLayer(nn.Module):
+    # https://stackoverflow.com/questions/53419474/using-dropout-in-pytorch-nn-dropout-vs-f-dropout
+    def __init__(self, p=0.0):
+        super().__init__()
+        self.p = p
+
+    def forward(self, inputs):
+        return nn.functional.dropout(inputs, p=self.p, training=True)
+
 def create_linear_layers(n_input, n_output, n_hidden, n_layer,
-        activation: Optional[str]) -> List[nn.Module]:
+        activation: Optional[str], p_dropout: float) -> List[nn.Module]:
+
+    use_dropout = p_dropout > 0.0
 
     AT: Optional[Type[nn.Module]] = None
     if activation=='relu':
@@ -71,6 +84,9 @@ def create_linear_layers(n_input, n_output, n_hidden, n_layer,
     layers.append(input_layer)
     if AT is not None:
         layers.append(AT())
+    if use_dropout:
+        nn.Dropout
+        layers.append(DropoutLayer(p_dropout))
 
     for _ in range(n_layer):
         middle_layer = nn.Linear(n_hidden, n_hidden)
@@ -102,6 +118,8 @@ class DenseBase(_PropModel[DenseConfigT]):
     def n_layer(self) -> int: return self.config.n_layer # type: ignore
     @property
     def activation(self) -> Optional[str]: return self.config.activation # type: ignore
+    @property
+    def p_dropout(self) -> float: return self.config.p_dropout # type: ignore
 
     def _create_layers(self, **kwargs) -> None:
         layers = create_linear_layers(
@@ -109,7 +127,8 @@ class DenseBase(_PropModel[DenseConfigT]):
                 self.n_state, 
                 self.n_hidden, 
                 self.n_layer, 
-                self.activation)
+                self.activation,
+                self.p_dropout)
         self.layer = nn.Sequential(*layers)
 
     def forward(self, sample_input: torch.Tensor):
@@ -209,7 +228,8 @@ class KinemaNet(_Model[KinemaNetConfig]):
                 self.n_output, 
                 self.config.n_hidden, 
                 self.config.n_layer,
-                self.config.activation
+                self.config.activation,
+                p_dropout=0.0,
                 )
         self.layer = nn.Sequential(*layers)
 
