@@ -72,9 +72,9 @@ def test_biased_lstm_pipeline(image_command_datachunk_with_encoder):
 
 def test_create_linear_layers():
     for activation in ['relu', 'tanh', 'sigmoid']:
-        layers = create_linear_layers(10, 10, 20, 2, activation)
+        layers = create_linear_layers(10, 10, 20, 2, activation, p_dropout=0.0)
         assert len(layers) == 7
-    layers = create_linear_layers(10, 10, 20, 2, None)
+    layers = create_linear_layers(10, 10, 20, 2, None, p_dropout=0.0)
     assert len(layers) == 4
 
 def test_denseprop_pipeline(image_command_datachunk_with_encoder):
